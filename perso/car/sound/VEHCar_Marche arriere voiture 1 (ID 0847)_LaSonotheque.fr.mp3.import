@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dxpw5rseho80x"
+path="res://.godot/imported/VEHCar_Marche arriere voiture 1 (ID 0847)_LaSonotheque.fr.mp3-de1e960f54dfb74d543ab10c4e1372ce.mp3str"
+
+[deps]
+
+source_file="res://perso/car/sound/VEHCar_Marche arriere voiture 1 (ID 0847)_LaSonotheque.fr.mp3"
+dest_files=["res://.godot/imported/VEHCar_Marche arriere voiture 1 (ID 0847)_LaSonotheque.fr.mp3-de1e960f54dfb74d543ab10c4e1372ce.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

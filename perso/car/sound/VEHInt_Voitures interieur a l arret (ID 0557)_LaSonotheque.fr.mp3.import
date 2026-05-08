@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://j1e02v8kmxeb"
+path="res://.godot/imported/VEHInt_Voitures interieur a l arret (ID 0557)_LaSonotheque.fr.mp3-9cf4e6acc21bb2d7c8c454f783adf237.mp3str"
+
+[deps]
+
+source_file="res://perso/car/sound/VEHInt_Voitures interieur a l arret (ID 0557)_LaSonotheque.fr.mp3"
+dest_files=["res://.godot/imported/VEHInt_Voitures interieur a l arret (ID 0557)_LaSonotheque.fr.mp3-9cf4e6acc21bb2d7c8c454f783adf237.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

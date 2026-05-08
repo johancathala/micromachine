@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://bxdsjoghcodvk"]
+
+[ext_resource type="PackedScene" uid="uid://qwh3qhdtflx3" path="res://level/scene/base_level.tscn" id="1_hmicp"]
+
+[node name="Level2" unique_id=1725700049 instance=ExtResource("1_hmicp")]
+
+[node name="6_Props" parent="Map" parent_id_path=PackedInt32Array(797463035) index="6" unique_id=1460331938]
+visible = false
+
+[node name="Player" parent="." index="1" unique_id=1903934719]
+position = Vector2(979, 527)

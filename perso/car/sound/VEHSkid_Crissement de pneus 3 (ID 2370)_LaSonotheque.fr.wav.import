@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://da5esuwqgoelq"
+path="res://.godot/imported/VEHSkid_Crissement de pneus 3 (ID 2370)_LaSonotheque.fr.wav-192be820dffd154aa258974f717d23e5.sample"
+
+[deps]
+
+source_file="res://perso/car/sound/VEHSkid_Crissement de pneus 3 (ID 2370)_LaSonotheque.fr.wav"
+dest_files=["res://.godot/imported/VEHSkid_Crissement de pneus 3 (ID 2370)_LaSonotheque.fr.wav-192be820dffd154aa258974f717d23e5.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dr1lork0b0nd7"
+path="res://.godot/imported/VEHTruck_Moteur de camion 2 (ID 1443)_LaSonotheque.fr.mp3-3d810c4153d02bca2ea03615305b789b.mp3str"
+
+[deps]
+
+source_file="res://perso/car/sound/VEHTruck_Moteur de camion 2 (ID 1443)_LaSonotheque.fr.mp3"
+dest_files=["res://.godot/imported/VEHTruck_Moteur de camion 2 (ID 1443)_LaSonotheque.fr.mp3-3d810c4153d02bca2ea03615305b789b.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

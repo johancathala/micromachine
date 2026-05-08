@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dvgbr2ut1kywe"
+path="res://.godot/imported/VEHCar_Voiture marche arriere et arret (ID 0188)_LaSonotheque.fr.mp3-27bd4f252ee3bd41476fca13d2786e73.mp3str"
+
+[deps]
+
+source_file="res://perso/car/sound/VEHCar_Voiture marche arriere et arret (ID 0188)_LaSonotheque.fr.mp3"
+dest_files=["res://.godot/imported/VEHCar_Voiture marche arriere et arret (ID 0188)_LaSonotheque.fr.mp3-27bd4f252ee3bd41476fca13d2786e73.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4
