@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://di60s0rosl7ks"]
+
+[ext_resource type="Texture2D" uid="uid://d070dyi1jwkeh" path="res://ui/interactable/item/sprite/card_statue.png" id="1_n3qik"]
+[ext_resource type="Script" uid="uid://bqi7uslv2nr8e" path="res://ui/interactable/item/script/item_data.gd" id="1_tdewr"]
+
+[resource]
+script = ExtResource("1_tdewr")
+id = &"Card"
+item_type = 3
+display_name = "Carte Statue"
+description = "Carte Statue"
+icon = ExtResource("1_n3qik")
+texture = ExtResource("1_n3qik")
+can_be_picked = true
+max_stack_size = 3
+metadata/_custom_type_script = "uid://bqi7uslv2nr8e"

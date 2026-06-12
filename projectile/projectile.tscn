@@ -1,0 +1,64 @@
+[gd_scene format=3 uid="uid://dj7udq4snrbxx"]
+
+[ext_resource type="Script" uid="uid://6qw7wsyfdcxy" path="res://scene/projectile/script/projectile.gd" id="1_6ehn6"]
+[ext_resource type="Texture2D" uid="uid://cp6jrsjfflde8" path="res://scene/projectile/sprite/ProjectileSpriteSheet.png" id="1_7hb7m"]
+[ext_resource type="AudioStream" uid="uid://dqhojjctfqt2i" path="res://scene/projectile/sprite/LASRGun_Blaster star wars 4.ogg" id="3_ofce5"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6ehn6"]
+atlas = ExtResource("1_7hb7m")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ofce5"]
+atlas = ExtResource("1_7hb7m")
+region = Rect2(16, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lsm2h"]
+atlas = ExtResource("1_7hb7m")
+region = Rect2(32, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dpdsb"]
+atlas = ExtResource("1_7hb7m")
+region = Rect2(48, 0, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_7gdso"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6ehn6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ofce5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lsm2h")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dpdsb")
+}],
+"loop": true,
+"name": &"default",
+"speed": 12.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_6ehn6"]
+radius = 6.5
+
+[node name="Pojectile" type="Area2D" unique_id=1924422289]
+collision_layer = 2
+collision_mask = 4
+script = ExtResource("1_6ehn6")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=225604395]
+position = Vector2(-4, 0)
+sprite_frames = SubResource("SpriteFrames_7gdso")
+autoplay = "default"
+frame_progress = 0.066789694
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=796912153]
+position = Vector2(-1, 0)
+shape = SubResource("CircleShape2D_6ehn6")
+
+[node name="SoundFire" type="AudioStreamPlayer2D" parent="." unique_id=450321889]
+stream = ExtResource("3_ofce5")
+
+[connection signal="area_entered" from="." to="." method="_on_area_entered"]

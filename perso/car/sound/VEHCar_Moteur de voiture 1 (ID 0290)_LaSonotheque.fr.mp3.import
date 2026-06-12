@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dwsvij7ea8lkt"
+path="res://.godot/imported/VEHCar_Moteur de voiture 1 (ID 0290)_LaSonotheque.fr.mp3-9513f99922024ccea95bed84910aad76.mp3str"
+
+[deps]
+
+source_file="res://perso/car/sound/VEHCar_Moteur de voiture 1 (ID 0290)_LaSonotheque.fr.mp3"
+dest_files=["res://.godot/imported/VEHCar_Moteur de voiture 1 (ID 0290)_LaSonotheque.fr.mp3-9513f99922024ccea95bed84910aad76.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

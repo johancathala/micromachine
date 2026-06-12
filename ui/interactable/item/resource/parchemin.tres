@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://dxyp17jwwyab7"]
+
+[ext_resource type="Script" uid="uid://bqi7uslv2nr8e" path="res://ui/interactable/item/script/item_data.gd" id="1_rvvsf"]
+[ext_resource type="Texture2D" uid="uid://c2aha8yhhihkn" path="res://ui/interactable/item/sprite/parchment.png" id="1_w0k67"]
+
+[resource]
+script = ExtResource("1_rvvsf")
+id = &"Parchemin"
+item_type = 2
+display_name = "Parchemin"
+description = "Woula woula"
+icon = ExtResource("1_w0k67")
+texture = ExtResource("1_w0k67")
+can_interact = true
+can_be_picked = true
+metadata/_custom_type_script = "uid://bqi7uslv2nr8e"

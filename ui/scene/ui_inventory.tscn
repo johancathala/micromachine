@@ -1,0 +1,78 @@
+[gd_scene format=3 uid="uid://bue461xyv05ie"]
+
+[ext_resource type="Script" uid="uid://ddnq50ug8c5be" path="res://ui/script/ui_inventory.gd" id="1_488kd"]
+[ext_resource type="Script" uid="uid://byp3qw05ixck2" path="res://ui/script/debug_inventory.gd" id="2_03kef"]
+
+[node name="UI Inventory" type="CanvasLayer" unique_id=632794021]
+script = ExtResource("1_488kd")
+
+[node name="Root" type="VBoxContainer" parent="." unique_id=1803272802]
+custom_minimum_size = Vector2(400, 0)
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_right = 1.0
+grow_vertical = 2
+
+[node name="CardSection" type="VBoxContainer" parent="Root" unique_id=712901444]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Label" type="Label" parent="Root/CardSection" unique_id=1322098874]
+layout_mode = 2
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 20
+text = "CARDS"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Root/CardSection" unique_id=697487514]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="GridContainer" type="GridContainer" parent="Root/CardSection/ScrollContainer" unique_id=863914313]
+layout_mode = 2
+
+[node name="MainSection" type="VBoxContainer" parent="Root" unique_id=2052142737]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Label" type="Label" parent="Root/MainSection" unique_id=1697515415]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "MAIN"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Root/MainSection" unique_id=1427196539]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="GridContainer" type="GridContainer" parent="Root/MainSection/ScrollContainer" unique_id=936007697]
+layout_mode = 2
+
+[node name="Debug" type="HBoxContainer" parent="." unique_id=1190992510]
+visible = false
+anchors_preset = -1
+anchor_left = 0.4
+anchor_top = 0.8
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("2_03kef")
+
+[node name="AddCard" type="Button" parent="Debug" unique_id=1397799675]
+layout_mode = 2
+text = "Add Card"
+
+[node name="AddItem" type="Button" parent="Debug" unique_id=2019529300]
+layout_mode = 2
+text = "Add Item"
+
+[node name="RemoveCard" type="Button" parent="Debug" unique_id=1705614131]
+layout_mode = 2
+text = "Remove Card"
+
+[node name="RemoveItem" type="Button" parent="Debug" unique_id=250833812]
+layout_mode = 2
+text = "Remove Item"
+
+[node name="RichTextLabel" type="RichTextLabel" parent="Debug" unique_id=369143494]
+layout_mode = 2
+size_flags_horizontal = 3

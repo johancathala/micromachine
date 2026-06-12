@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dkmag1ewpqets"
+path="res://.godot/imported/VEHCar_Moteur ac cobra (ID 0534)_LaSonotheque.fr.mp3-227a0da78c72da78b1be811bd1b3689d.mp3str"
+
+[deps]
+
+source_file="res://perso/car/sound/VEHCar_Moteur ac cobra (ID 0534)_LaSonotheque.fr.mp3"
+dest_files=["res://.godot/imported/VEHCar_Moteur ac cobra (ID 0534)_LaSonotheque.fr.mp3-227a0da78c72da78b1be811bd1b3689d.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

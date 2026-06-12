@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://cpudrxt5iy0hn"
+path="res://.godot/imported/LASRGun_Blaster star wars 2.wav-8c1baae7eb486bf8a58d05cfe4a61208.sample"
+
+[deps]
+
+source_file="res://projectile/sprite/LASRGun_Blaster star wars 2.wav"
+dest_files=["res://.godot/imported/LASRGun_Blaster star wars 2.wav-8c1baae7eb486bf8a58d05cfe4a61208.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

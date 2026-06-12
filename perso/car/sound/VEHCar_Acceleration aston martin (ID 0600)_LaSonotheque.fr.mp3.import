@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bsof7t1ndet72"
+path="res://.godot/imported/VEHCar_Acceleration aston martin (ID 0600)_LaSonotheque.fr.mp3-abfd04821f38e10ec0082e363e3fbe2d.mp3str"
+
+[deps]
+
+source_file="res://perso/car/sound/VEHCar_Acceleration aston martin (ID 0600)_LaSonotheque.fr.mp3"
+dest_files=["res://.godot/imported/VEHCar_Acceleration aston martin (ID 0600)_LaSonotheque.fr.mp3-abfd04821f38e10ec0082e363e3fbe2d.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

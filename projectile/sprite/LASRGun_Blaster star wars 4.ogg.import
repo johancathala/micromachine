@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://dqhojjctfqt2i"
+path="res://.godot/imported/LASRGun_Blaster star wars 4.ogg-d0f6df3c00a70720147eab08c1bd92c7.oggvorbisstr"
+
+[deps]
+
+source_file="res://projectile/sprite/LASRGun_Blaster star wars 4.ogg"
+dest_files=["res://.godot/imported/LASRGun_Blaster star wars 4.ogg-d0f6df3c00a70720147eab08c1bd92c7.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4
