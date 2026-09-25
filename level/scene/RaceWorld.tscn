@@ -1,21 +1,21 @@
 [gd_scene format=4 uid="uid://cj3xa47s74fn8"]
 
-[ext_resource type="Script" uid="uid://btj7chjtoaumi" path="res://level/script/base_level.gd" id="1_b3d4c"]
-[ext_resource type="Texture2D" uid="uid://b5nmgycwj1v5s" path="res://level/sprite/T_VFX_Glow_1_1.PNG" id="2_kjjs4"]
-[ext_resource type="Texture2D" uid="uid://cjbm0ummbx3h7" path="res://level/sprite/Modern_Exteriors_Chaussée1_Tileset_32x32.png" id="2_wfyf5"]
-[ext_resource type="Script" uid="uid://bjtt6jub0fu63" path="res://ui/script/debug.gd" id="5_5gwtv"]
-[ext_resource type="PackedScene" uid="uid://jmiulko26v5p" path="res://perso/car/car.tscn" id="5_l87o1"]
-[ext_resource type="Texture2D" uid="uid://cbgemfa2vklp1" path="res://level/sprite/Modern_Exteriors_arbre_Tileset_32x32.png" id="5_wfyf5"]
-[ext_resource type="Texture2D" uid="uid://bh57qqfnblvhf" path="res://level/sprite/tilsetRacingJC.png" id="6_7btll"]
-[ext_resource type="Texture2D" uid="uid://jny2nywwr145" path="res://level/sprite/Modern_Exteriors_bat1_Tileset_32x32.png" id="6_mguig"]
-[ext_resource type="Texture2D" uid="uid://hlq3j1rugy4l" path="res://level/sprite/Modern_Exteriors_SportDeco1_Tileset_32x32.png" id="6_qupih"]
-[ext_resource type="Texture2D" uid="uid://ctokj68cgwxtd" path="res://level/sprite/Modern_Exteriors_Voiture1_Tileset_32x32.png" id="7_7btll"]
-[ext_resource type="Texture2D" uid="uid://c8167bt084c70" path="res://level/sprite/Modern_Exteriors_PneuMilitaire_Tileset_32x32.png" id="8_7btll"]
-[ext_resource type="PackedScene" uid="uid://c6dhgndnkrsuw" path="res://ui/scene/ui_course.tscn" id="12_b3d4c"]
-[ext_resource type="PackedScene" uid="uid://bxdbprsk6st55" path="res://level/scene/section.tscn" id="13_7btll"]
+[ext_resource type="Script" uid="uid://btj7chjtoaumi" path="res://level/script/base_level.gd" id="1_fo27f"]
+[ext_resource type="Texture2D" uid="uid://cjbm0ummbx3h7" path="res://level/sprite/Modern_Exteriors_Chaussée1_Tileset_32x32.png" id="2_4u7n6"]
+[ext_resource type="Texture2D" uid="uid://bh57qqfnblvhf" path="res://level/sprite/tilsetRacingJC.png" id="3_07j15"]
+[ext_resource type="Texture2D" uid="uid://cbgemfa2vklp1" path="res://level/sprite/Modern_Exteriors_arbre_Tileset_32x32.png" id="4_0jwpy"]
+[ext_resource type="Texture2D" uid="uid://jny2nywwr145" path="res://level/sprite/Modern_Exteriors_bat1_Tileset_32x32.png" id="5_sw01p"]
+[ext_resource type="Texture2D" uid="uid://hlq3j1rugy4l" path="res://level/sprite/Modern_Exteriors_SportDeco1_Tileset_32x32.png" id="6_l7jcg"]
+[ext_resource type="Texture2D" uid="uid://ctokj68cgwxtd" path="res://level/sprite/Modern_Exteriors_Voiture1_Tileset_32x32.png" id="7_uyasd"]
+[ext_resource type="Texture2D" uid="uid://c8167bt084c70" path="res://level/sprite/Modern_Exteriors_PneuMilitaire_Tileset_32x32.png" id="8_afmga"]
+[ext_resource type="Texture2D" uid="uid://b5nmgycwj1v5s" path="res://level/sprite/T_VFX_Glow_1_1.PNG" id="9_3nlpv"]
+[ext_resource type="PackedScene" uid="uid://c6dhgndnkrsuw" path="res://ui/scene/ui_course.tscn" id="10_pl307"]
+[ext_resource type="PackedScene" uid="uid://jmiulko26v5p" path="res://perso/car/car.tscn" id="11_mmqb6"]
+[ext_resource type="Script" uid="uid://bjtt6jub0fu63" path="res://ui/script/debug.gd" id="12_80r8o"]
+[ext_resource type="PackedScene" uid="uid://bxdbprsk6st55" path="res://level/scene/section.tscn" id="13_50kts"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_mguig"]
-texture = ExtResource("2_wfyf5")
+texture = ExtResource("2_4u7n6")
 texture_region_size = Vector2i(32, 32)
 0:0/0 = 0
 1:0/0 = 0
@@ -8686,7 +8686,7 @@ texture_region_size = Vector2i(32, 32)
 63:170/0 = 0
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_g2xb5"]
-texture = ExtResource("6_7btll")
+texture = ExtResource("3_07j15")
 margins = Vector2i(6, 25)
 texture_region_size = Vector2i(32, 32)
 37:0/0 = 0
@@ -13813,7 +13813,7 @@ sources/0 = SubResource("TileSetAtlasSource_mguig")
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_wfyf5"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_qupih"]
-texture = ExtResource("5_wfyf5")
+texture = ExtResource("4_0jwpy")
 margins = Vector2i(6, 0)
 texture_region_size = Vector2i(32, 32)
 2:2/0 = 0
@@ -19240,7 +19240,7 @@ texture_region_size = Vector2i(32, 32)
 10:114/0/physics_layer_0/polygon_0/points = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16)
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_7btll"]
-texture = ExtResource("6_mguig")
+texture = ExtResource("5_sw01p")
 margins = Vector2i(15, 28)
 texture_region_size = Vector2i(32, 32)
 0:0/0 = 0
@@ -56657,7 +56657,7 @@ texture_region_size = Vector2i(32, 32)
 121:213/0/physics_layer_0/polygon_0/points = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16)
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_b3d4c"]
-texture = ExtResource("2_wfyf5")
+texture = ExtResource("2_4u7n6")
 texture_region_size = Vector2i(32, 32)
 0:0/0 = 0
 1:0/0 = 0
@@ -65330,7 +65330,7 @@ texture_region_size = Vector2i(32, 32)
 63:170/0 = 0
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_h4hrk"]
-texture = ExtResource("6_qupih")
+texture = ExtResource("6_l7jcg")
 texture_region_size = Vector2i(32, 32)
 1:0/0 = 0
 2:0/0 = 0
@@ -77118,7 +77118,7 @@ texture_region_size = Vector2i(32, 32)
 167:103/0 = 0
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ixnmx"]
-texture = ExtResource("7_7btll")
+texture = ExtResource("7_uyasd")
 texture_region_size = Vector2i(32, 32)
 0:0/0 = 0
 1:0/0 = 0
@@ -83862,7 +83862,7 @@ texture_region_size = Vector2i(32, 32)
 114:61/0 = 0
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_raqc5"]
-texture = ExtResource("8_7btll")
+texture = ExtResource("8_afmga")
 margins = Vector2i(0, 33)
 texture_region_size = Vector2i(32, 32)
 1:0/0 = 0
@@ -110393,11 +110393,11 @@ sources/4 = SubResource("TileSetAtlasSource_ixnmx")
 sources/5 = SubResource("TileSetAtlasSource_raqc5")
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_7btll"]
-atlas = ExtResource("2_wfyf5")
+atlas = ExtResource("2_4u7n6")
 region = Rect2(160, 760, 32, 64)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_b3d4c"]
-atlas = ExtResource("2_wfyf5")
+atlas = ExtResource("2_4u7n6")
 region = Rect2(96, 760, 32, 64)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_h4hrk"]
@@ -110414,9 +110414,9 @@ animations = [{
 "speed": 5.0
 }]
 
-[node name="BaseLevel2" type="Node2D" unique_id=1725700049]
+[node name="RaceWorld" type="Node2D" unique_id=1725700049]
 y_sort_enabled = true
-script = ExtResource("1_b3d4c")
+script = ExtResource("1_fo27f")
 
 [node name="Map" type="Node2D" parent="." unique_id=797463035]
 y_sort_enabled = true
@@ -110488,53 +110488,53 @@ visible = false
 position = Vector2(288, 193)
 color = Color(0.7607843, 0.5254902, 0.23529412, 1)
 energy = 3.48
-texture = ExtResource("2_kjjs4")
+texture = ExtResource("9_3nlpv")
 
 [node name="LightTorch2" type="PointLight2D" parent="Map" unique_id=989140882]
 visible = false
 position = Vector2(607, 191)
 color = Color(0.7607843, 0.5254902, 0.23529412, 1)
 energy = 3.48
-texture = ExtResource("2_kjjs4")
+texture = ExtResource("9_3nlpv")
 
 [node name="LightTorch3" type="PointLight2D" parent="Map" unique_id=962849445]
 visible = false
 position = Vector2(876, 418)
 color = Color(0.7607843, 0.5254902, 0.23529412, 1)
 energy = 3.48
-texture = ExtResource("2_kjjs4")
+texture = ExtResource("9_3nlpv")
 
 [node name="LightTorch4" type="PointLight2D" parent="Map" unique_id=1982099376]
 visible = false
 position = Vector2(1250, 183)
 color = Color(0.7607843, 0.5254902, 0.23529412, 1)
 energy = 3.48
-texture = ExtResource("2_kjjs4")
+texture = ExtResource("9_3nlpv")
 
 [node name="LightTorch5" type="PointLight2D" parent="Map" unique_id=519609317]
 visible = false
 position = Vector2(1628, 189)
 color = Color(0.7607843, 0.5254902, 0.23529412, 1)
 energy = 3.48
-texture = ExtResource("2_kjjs4")
+texture = ExtResource("9_3nlpv")
 
 [node name="LightTorch6" type="PointLight2D" parent="Map" unique_id=1776349902]
 visible = false
 position = Vector2(545, 584)
 color = Color(0.7607843, 0.5254902, 0.23529412, 1)
 energy = 3.48
-texture = ExtResource("2_kjjs4")
+texture = ExtResource("9_3nlpv")
 
 [node name="LightTorch7" type="PointLight2D" parent="Map" unique_id=1320130999]
 visible = false
 position = Vector2(1343, 585)
 color = Color(0.7607843, 0.5254902, 0.23529412, 1)
 energy = 3.48
-texture = ExtResource("2_kjjs4")
+texture = ExtResource("9_3nlpv")
 
-[node name="UI Course" parent="." unique_id=1807404594 instance=ExtResource("12_b3d4c")]
+[node name="UI Course" parent="." unique_id=1807404594 instance=ExtResource("10_pl307")]
 
-[node name="Car" parent="." unique_id=1639454759 instance=ExtResource("5_l87o1")]
+[node name="Car" parent="." unique_id=1639454759 instance=ExtResource("11_mmqb6")]
 unique_name_in_owner = true
 position = Vector2(702.99994, 2198.0002)
 rotation = -1.5623184
@@ -110548,7 +110548,7 @@ rotation = -1.5623184
 
 [node name="Debug" type="Node2D" parent="." unique_id=1474414581]
 visible = false
-script = ExtResource("5_5gwtv")
+script = ExtResource("12_80r8o")
 
 [node name="FeuDepartLevel" type="Node2D" parent="." unique_id=2104607161]
 unique_name_in_owner = true
@@ -110612,34 +110612,34 @@ frame_progress = 0.74750143
 [node name="Section" type="Node2D" parent="." unique_id=1163598768]
 unique_name_in_owner = true
 
-[node name="0" parent="Section" unique_id=618922154 instance=ExtResource("13_7btll")]
+[node name="0" parent="Section" unique_id=618922154 instance=ExtResource("13_50kts")]
 position = Vector2(400.00003, 1352.0001)
 scale = Vector2(5, 5)
 
-[node name="1" parent="Section" unique_id=665296348 instance=ExtResource("13_7btll")]
+[node name="1" parent="Section" unique_id=665296348 instance=ExtResource("13_50kts")]
 position = Vector2(-2096, -3704)
 scale = Vector2(5, 5)
 
-[node name="2" parent="Section" unique_id=1705435823 instance=ExtResource("13_7btll")]
+[node name="2" parent="Section" unique_id=1705435823 instance=ExtResource("13_50kts")]
 position = Vector2(-7256, -8176.0005)
 scale = Vector2(5, 5)
 
-[node name="3" parent="Section" unique_id=931273675 instance=ExtResource("13_7btll")]
+[node name="3" parent="Section" unique_id=931273675 instance=ExtResource("13_50kts")]
 position = Vector2(3767.9995, -9455.999)
 rotation = 0.5235988
 scale = Vector2(5, 5)
 
-[node name="4" parent="Section" unique_id=721070996 instance=ExtResource("13_7btll")]
+[node name="4" parent="Section" unique_id=721070996 instance=ExtResource("13_50kts")]
 position = Vector2(1488.0002, -5408)
 rotation = 1.5707964
 scale = Vector2(3, 3)
 
-[node name="5" parent="Section" unique_id=1569294469 instance=ExtResource("13_7btll")]
+[node name="5" parent="Section" unique_id=1569294469 instance=ExtResource("13_50kts")]
 position = Vector2(2264.0002, -4176)
 rotation = 0.5235988
 scale = Vector2(3, 3)
 
-[node name="6" parent="Section" unique_id=1621438102 instance=ExtResource("13_7btll")]
+[node name="6" parent="Section" unique_id=1621438102 instance=ExtResource("13_50kts")]
 position = Vector2(1232.0001, 6056)
 rotation = 1.5707964
 scale = Vector2(3, 3)
