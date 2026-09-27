@@ -1,0 +1,104 @@
+[gd_scene format=3 uid="uid://bsjoj6lc5y3ic"]
+
+[ext_resource type="Script" uid="uid://cvo80nocyslb5" path="res://ui/script/setting/Options.gd" id="1_cvpa2"]
+
+[sub_resource type="SystemFont" id="SystemFont_re1gs"]
+font_names = PackedStringArray("Impact")
+
+[sub_resource type="Theme" id="Theme_jt108"]
+default_font = SubResource("SystemFont_re1gs")
+default_font_size = 40
+
+[sub_resource type="SystemFont" id="SystemFont_v3gh2"]
+font_names = PackedStringArray("Impact")
+
+[sub_resource type="LabelSettings" id="LabelSettings_p52qu"]
+font = SubResource("SystemFont_v3gh2")
+font_size = 80
+
+[node name="Options" type="Control" unique_id=1321216319]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_jt108")
+script = ExtResource("1_cvpa2")
+
+[node name="Background" type="ColorRect" parent="." unique_id=536769449]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.36862746, 0.5058824, 1, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1733793454]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 45.0
+offset_top = 45.0
+offset_right = -45.0
+offset_bottom = -50.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=1166384158]
+layout_mode = 2
+
+[node name="Header" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=1860619079]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Title" type="Label" parent="MarginContainer/VBoxContainer/Header" unique_id=680575838]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "OPTIONS"
+label_settings = SubResource("LabelSettings_p52qu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="OptionsContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=1701469352]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 3
+
+[node name="ProfileButton" type="Button" parent="MarginContainer/VBoxContainer/OptionsContainer" unique_id=2026838359]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 80
+text = "PROFIL"
+
+[node name="ControlsButton" type="Button" parent="MarginContainer/VBoxContainer/OptionsContainer" unique_id=1153963906]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 80
+text = "CONTROLES"
+
+[node name="AudioButton" type="Button" parent="MarginContainer/VBoxContainer/OptionsContainer" unique_id=1234123889]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 80
+text = "AUDIO"
+
+[node name="DisplayButton" type="Button" parent="MarginContainer/VBoxContainer/OptionsContainer" unique_id=155026297]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 80
+text = "AFFICHAGE"
+
+[node name="BackButton" type="Button" parent="MarginContainer/VBoxContainer/OptionsContainer" unique_id=1725822448]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 80
+text = "RETOUR MENU PRINCIPAL"
+
+[node name="SpacerBottom" type="Control" parent="MarginContainer/VBoxContainer" unique_id=1279042709]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_vertical = 3

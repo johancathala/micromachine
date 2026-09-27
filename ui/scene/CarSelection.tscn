@@ -1,0 +1,154 @@
+[gd_scene format=3 uid="uid://che7u1xas0q6"]
+
+[ext_resource type="Script" uid="uid://cay0ku6c802g" path="res://ui/script/race/CarSelection.gd" id="1_vv833"]
+
+[sub_resource type="SystemFont" id="SystemFont_vv833"]
+font_names = PackedStringArray("Impact")
+subpixel_positioning = 0
+
+[sub_resource type="Theme" id="Theme_a82yr"]
+default_font = SubResource("SystemFont_vv833")
+default_font_size = 25
+
+[node name="CarSelection" type="Control" unique_id=198434691]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_a82yr")
+script = ExtResource("1_vv833")
+
+[node name="Background" type="ColorRect" parent="." unique_id=272531995]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.36862746, 0.5058824, 1, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1080845144]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.0234375
+anchor_top = 0.041666668
+anchor_right = 0.9765625
+anchor_bottom = 0.9537037
+grow_horizontal = 2
+grow_vertical = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=32325418]
+layout_mode = 2
+
+[node name="Header" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=1136023939]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MarginContainer/VBoxContainer/Header" unique_id=1817060141]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 40
+text = "SELECTION DES VOITURES"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MainContent" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=678890823]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ParticipantsPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer/MainContent" unique_id=1129108820]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ParticipantsMargin" type="MarginContainer" parent="MarginContainer/VBoxContainer/MainContent/ParticipantsPanel" unique_id=1677408882]
+layout_mode = 2
+
+[node name="ParticipantsVBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/ParticipantsPanel/ParticipantsMargin" unique_id=547720851]
+layout_mode = 2
+
+[node name="SectionTitle" type="Label" parent="MarginContainer/VBoxContainer/MainContent/ParticipantsPanel/ParticipantsMargin/ParticipantsVBox" unique_id=981718013]
+layout_mode = 2
+
+[node name="ParticipantScroll" type="ScrollContainer" parent="MarginContainer/VBoxContainer/MainContent/ParticipantsPanel/ParticipantsMargin/ParticipantsVBox" unique_id=1348362417]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ParticipantList" type="VBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/ParticipantsPanel/ParticipantsMargin/ParticipantsVBox/ParticipantScroll" unique_id=1095908353]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="SelectionPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer/MainContent" unique_id=291794077]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SelectionMargin" type="MarginContainer" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel" unique_id=1696268947]
+layout_mode = 2
+
+[node name="SelectionVBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin" unique_id=2051807126]
+layout_mode = 2
+
+[node name="SelectedParticipant" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox" unique_id=2109226196]
+layout_mode = 2
+
+[node name="CarSectionTitle" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox" unique_id=1994955819]
+layout_mode = 2
+
+[node name="CarGridScroll" type="ScrollContainer" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox" unique_id=1980141893]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CarGrid" type="GridContainer" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox/CarGridScroll" unique_id=621817159]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ColorSectionTitle" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox" unique_id=709952902]
+layout_mode = 2
+
+[node name="ColorGrid" type="GridContainer" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox" unique_id=174474823]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PreviewPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox" unique_id=2005428265]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PreviewVBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox/PreviewPanel" unique_id=1621853513]
+layout_mode = 2
+
+[node name="PreviewImage" type="TextureRect" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox/PreviewPanel/PreviewVBox" unique_id=212479864]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CarName" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox/PreviewPanel/PreviewVBox" unique_id=1822241586]
+layout_mode = 2
+
+[node name="CarDescription" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox/PreviewPanel/PreviewVBox" unique_id=802754867]
+layout_mode = 2
+
+[node name="SelectionStatus" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox" unique_id=219307472]
+layout_mode = 2
+
+[node name="Spacer" type="Control" parent="MarginContainer/VBoxContainer" unique_id=1010302561]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+
+[node name="Footer" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=991888966]
+layout_mode = 2
+
+[node name="BackButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" unique_id=466855097]
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+text = "RETOUR"
+
+[node name="HelpLabel" type="Label" parent="MarginContainer/VBoxContainer/Footer" unique_id=396321679]
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 1
+
+[node name="StartButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" unique_id=184580182]
+layout_mode = 2
+text = "COMMENCER LA COURSE"

@@ -5,7 +5,3 @@ extends Node2D
 func _ready() -> void:
 	#UIManager.show_popup("Nouvel Objet", "Tu as trouvé une clé ancienne ✨", PopupMessage.PositionMode.CENTER, PopupMessage.TextMode.TYPEWRITER)
 	pass
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
-	pass

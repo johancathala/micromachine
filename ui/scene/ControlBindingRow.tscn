@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://3q55oc8hfodx"]
+
+[ext_resource type="Script" uid="uid://ccl5ux32c2lyk" path="res://ui/script/player/ControlBindingRow.gd" id="1_c57hy"]
+
+[node name="ControlBindingRow" type="HBoxContainer" unique_id=1690139771]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 23.0
+grow_horizontal = 2
+script = ExtResource("1_c57hy")
+
+[node name="ActionLabel" type="Label" parent="." unique_id=658490000]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "ACCELERER"
+horizontal_alignment = 1
+
+[node name="BindingButton" type="Button" parent="." unique_id=170344358]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "space"

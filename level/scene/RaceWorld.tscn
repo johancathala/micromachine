@@ -1,6 +1,6 @@
 [gd_scene format=4 uid="uid://cj3xa47s74fn8"]
 
-[ext_resource type="Script" uid="uid://btj7chjtoaumi" path="res://level/script/base_level.gd" id="1_fo27f"]
+[ext_resource type="Script" uid="uid://btj7chjtoaumi" path="res://level/script/RaceWorld.gd" id="1_fo27f"]
 [ext_resource type="Texture2D" uid="uid://cjbm0ummbx3h7" path="res://level/sprite/Modern_Exteriors_Chaussée1_Tileset_32x32.png" id="2_4u7n6"]
 [ext_resource type="Texture2D" uid="uid://bh57qqfnblvhf" path="res://level/sprite/tilsetRacingJC.png" id="3_07j15"]
 [ext_resource type="Texture2D" uid="uid://cbgemfa2vklp1" path="res://level/sprite/Modern_Exteriors_arbre_Tileset_32x32.png" id="4_0jwpy"]
@@ -9,7 +9,7 @@
 [ext_resource type="Texture2D" uid="uid://ctokj68cgwxtd" path="res://level/sprite/Modern_Exteriors_Voiture1_Tileset_32x32.png" id="7_uyasd"]
 [ext_resource type="Texture2D" uid="uid://c8167bt084c70" path="res://level/sprite/Modern_Exteriors_PneuMilitaire_Tileset_32x32.png" id="8_afmga"]
 [ext_resource type="Texture2D" uid="uid://b5nmgycwj1v5s" path="res://level/sprite/T_VFX_Glow_1_1.PNG" id="9_3nlpv"]
-[ext_resource type="PackedScene" uid="uid://c6dhgndnkrsuw" path="res://ui/scene/ui_course.tscn" id="10_pl307"]
+[ext_resource type="PackedScene" uid="uid://c6dhgndnkrsuw" path="res://ui/overlay/ui_course.tscn" id="10_pl307"]
 [ext_resource type="PackedScene" uid="uid://jmiulko26v5p" path="res://perso/car/car.tscn" id="11_mmqb6"]
 [ext_resource type="Script" uid="uid://bjtt6jub0fu63" path="res://ui/script/debug.gd" id="12_80r8o"]
 [ext_resource type="PackedScene" uid="uid://bxdbprsk6st55" path="res://level/scene/section.tscn" id="13_50kts"]
@@ -110409,7 +110409,7 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_b3d4c")
 }],
-"loop": false,
+"loop": 0,
 "name": &"default",
 "speed": 5.0
 }]

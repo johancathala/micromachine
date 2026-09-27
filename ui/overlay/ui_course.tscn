@@ -1,0 +1,176 @@
+[gd_scene format=3 uid="uid://c6dhgndnkrsuw"]
+
+[ext_resource type="Script" uid="uid://dv82vjoead47d" path="res://ui/script/overlay/ui_course.gd" id="1_5b6bv"]
+[ext_resource type="Script" path="res://ui/script/margin_container.gd" id="2_5b6bv"]
+[ext_resource type="Texture2D" uid="uid://cjbm0ummbx3h7" path="res://level/sprite/Modern_Exteriors_Chaussée1_Tileset_32x32.png" id="3_gmdgo"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7btll"]
+atlas = ExtResource("3_gmdgo")
+region = Rect2(160, 760, 32, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_b3d4c"]
+atlas = ExtResource("3_gmdgo")
+region = Rect2(96, 760, 32, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_jld8g"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7btll")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_b3d4c")
+}],
+"loop": false,
+"name": &"default",
+"speed": 5.0
+}]
+
+[node name="UI Course" type="CanvasLayer" unique_id=632794021]
+script = ExtResource("1_5b6bv")
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=867136623]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_5b6bv")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer" unique_id=870468379]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/HBoxContainer" unique_id=1975543497]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Tour" type="Label" parent="MarginContainer/HBoxContainer/VBoxContainer" unique_id=697377001]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Tour 0/3"
+
+[node name="TimeRun" type="Label" parent="MarginContainer/HBoxContainer/VBoxContainer" unique_id=78462254]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Temps de course : "
+
+[node name="TimeLap" type="Label" parent="MarginContainer/HBoxContainer/VBoxContainer" unique_id=143065829]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Tour en cours : "
+
+[node name="TimeDelta" type="Label" parent="MarginContainer/HBoxContainer/VBoxContainer" unique_id=449849138]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Ecart : "
+
+[node name="TimeLastLap" type="Label" parent="MarginContainer/HBoxContainer/VBoxContainer" unique_id=1619762515]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Dernier tour : "
+
+[node name="TimeBestLap" type="Label" parent="MarginContainer/HBoxContainer/VBoxContainer" unique_id=350030793]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Meilleur tour :"
+
+[node name="VBoxContainer4" type="VBoxContainer" parent="MarginContainer/HBoxContainer" unique_id=1992260682]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CenterContainer" type="CenterContainer" parent="MarginContainer/HBoxContainer/VBoxContainer4" unique_id=1534422273]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="FeuDepart" type="Node2D" parent="MarginContainer/HBoxContainer/VBoxContainer4/CenterContainer" unique_id=836940778]
+unique_name_in_owner = true
+position = Vector2(318, 269)
+scale = Vector2(3, 3)
+
+[node name="Feu1" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/VBoxContainer4/CenterContainer/FeuDepart" unique_id=681123087]
+position = Vector2(-165, 12)
+sprite_frames = SubResource("SpriteFrames_jld8g")
+
+[node name="Feu2" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/VBoxContainer4/CenterContainer/FeuDepart" unique_id=326857369]
+position = Vector2(-133, 12)
+sprite_frames = SubResource("SpriteFrames_jld8g")
+
+[node name="Feu3" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/VBoxContainer4/CenterContainer/FeuDepart" unique_id=1257647852]
+position = Vector2(-101, 12)
+sprite_frames = SubResource("SpriteFrames_jld8g")
+
+[node name="Feu4" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/VBoxContainer4/CenterContainer/FeuDepart" unique_id=1443147181]
+position = Vector2(-69, 12)
+sprite_frames = SubResource("SpriteFrames_jld8g")
+
+[node name="Feu5" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/VBoxContainer4/CenterContainer/FeuDepart" unique_id=567225705]
+position = Vector2(-37, 12)
+sprite_frames = SubResource("SpriteFrames_jld8g")
+
+[node name="Feu6" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/VBoxContainer4/CenterContainer/FeuDepart" unique_id=1348942857]
+position = Vector2(-5, 12)
+sprite_frames = SubResource("SpriteFrames_jld8g")
+
+[node name="Feu7" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/VBoxContainer4/CenterContainer/FeuDepart" unique_id=1479270884]
+position = Vector2(27, 12)
+sprite_frames = SubResource("SpriteFrames_jld8g")
+
+[node name="Feu8" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/VBoxContainer4/CenterContainer/FeuDepart" unique_id=1300758206]
+position = Vector2(59, 12)
+sprite_frames = SubResource("SpriteFrames_jld8g")
+
+[node name="Feu9" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/VBoxContainer4/CenterContainer/FeuDepart" unique_id=1860093083]
+position = Vector2(91, 12)
+sprite_frames = SubResource("SpriteFrames_jld8g")
+
+[node name="Feu10" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/VBoxContainer4/CenterContainer/FeuDepart" unique_id=947359633]
+position = Vector2(123, 12)
+sprite_frames = SubResource("SpriteFrames_jld8g")
+
+[node name="Feu11" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/VBoxContainer4/CenterContainer/FeuDepart" unique_id=602942862]
+position = Vector2(155, 12)
+sprite_frames = SubResource("SpriteFrames_jld8g")
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="MarginContainer/HBoxContainer/VBoxContainer4" unique_id=393348174]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+alignment = 2
+
+[node name="Speed" type="Label" parent="MarginContainer/HBoxContainer/VBoxContainer4/VBoxContainer2" unique_id=929403640]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Speed"
+horizontal_alignment = 1
+
+[node name="LifeContainer" type="AspectRatioContainer" parent="MarginContainer/HBoxContainer/VBoxContainer4/VBoxContainer2" unique_id=1872534990]
+custom_minimum_size = Vector2(0, 25)
+layout_mode = 2
+ratio = 10.0
+stretch_mode = 1
+
+[node name="LifeColor" type="ColorRect" parent="MarginContainer/HBoxContainer/VBoxContainer4/VBoxContainer2/LifeContainer" unique_id=1340844374]
+layout_mode = 2
+color = Color(0.1764706, 1, 0.16078432, 1)
+
+[node name="VBoxContainer3" type="VBoxContainer" parent="MarginContainer/HBoxContainer" unique_id=754249131]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Position" type="Label" parent="MarginContainer/HBoxContainer/VBoxContainer3" unique_id=1498469920]
+layout_mode = 2
+text = "Position"
+horizontal_alignment = 2
+
+[node name="TimeBestLapEve" type="Label" parent="MarginContainer/HBoxContainer/VBoxContainer3" unique_id=1438069504]
+layout_mode = 2
+text = "BestLapEver"
+horizontal_alignment = 2
+
+[node name="TimerStart" type="Timer" parent="." unique_id=1542121175]
+unique_name_in_owner = true
+wait_time = 4.0
+
+[connection signal="timeout" from="TimerStart" to="." method="_on_start"]

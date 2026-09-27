@@ -1,0 +1,140 @@
+[gd_scene format=3 uid="uid://jlyr8ol625lx"]
+
+[ext_resource type="Script" uid="uid://cg3gsl8i4s1sb" path="res://ui/script/setting/Controls.gd" id="1_mdrwf"]
+
+[sub_resource type="SystemFont" id="SystemFont_re1gs"]
+font_names = PackedStringArray("Impact")
+
+[sub_resource type="Theme" id="Theme_jt108"]
+default_font = SubResource("SystemFont_re1gs")
+default_font_size = 40
+
+[sub_resource type="SystemFont" id="SystemFont_v3gh2"]
+font_names = PackedStringArray("Impact")
+
+[sub_resource type="LabelSettings" id="LabelSettings_p52qu"]
+font = SubResource("SystemFont_v3gh2")
+font_size = 80
+
+[node name="Controls" type="Control" unique_id=1321216319]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_jt108")
+script = ExtResource("1_mdrwf")
+
+[node name="Background" type="ColorRect" parent="." unique_id=536769449]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.36862746, 0.5058824, 1, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1733793454]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 45.0
+offset_top = 45.0
+offset_right = -45.0
+offset_bottom = -50.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=1166384158]
+layout_mode = 2
+
+[node name="Header" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=1860619079]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MarginContainer/VBoxContainer/Header" unique_id=680575838]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "CONTROLES"
+label_settings = SubResource("LabelSettings_p52qu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DeviceSelector" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=2110863068]
+layout_mode = 2
+
+[node name="DeviceLabel" type="Label" parent="MarginContainer/VBoxContainer/DeviceSelector" unique_id=950397730]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Type de controlleur"
+label_settings = SubResource("LabelSettings_p52qu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DeviceOption" type="OptionButton" parent="MarginContainer/VBoxContainer/DeviceSelector" unique_id=311530937]
+layout_mode = 2
+size_flags_horizontal = 4
+selected = 0
+item_count = 2
+popup/item_0/text = "Clavier"
+popup/item_0/id = 0
+popup/item_1/text = "Manette"
+popup/item_1/id = 1
+
+[node name="ControlsScroll" type="ScrollContainer" parent="MarginContainer/VBoxContainer" unique_id=1376254041]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ControlsList" type="VBoxContainer" parent="MarginContainer/VBoxContainer/ControlsScroll" unique_id=646554228]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="AccelerateRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/ControlsScroll/ControlsList" unique_id=765663139]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BrakeRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/ControlsScroll/ControlsList" unique_id=1256044575]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="LeftRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/ControlsScroll/ControlsList" unique_id=1240680424]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="RightRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/ControlsScroll/ControlsList" unique_id=1489923197]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HandbrakeRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/ControlsScroll/ControlsList" unique_id=846433697]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="RespawnRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/ControlsScroll/ControlsList" unique_id=682949869]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PauseRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/ControlsScroll/ControlsList" unique_id=561433436]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Footer" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=1297238458]
+layout_mode = 2
+
+[node name="BackButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" unique_id=2082323202]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "RETOUR AU MENU OPTION"
+
+[node name="Control" type="Control" parent="MarginContainer/VBoxContainer/Footer" unique_id=1205067019]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ResetButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" unique_id=621959034]
+layout_mode = 2
+text = "REINISTIALISER"
+
+[node name="Control2" type="Control" parent="MarginContainer/VBoxContainer/Footer" unique_id=1909148586]
+layout_mode = 2
+size_flags_horizontal = 3

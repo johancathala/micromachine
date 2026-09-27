@@ -1,0 +1,96 @@
+[gd_scene format=3 uid="uid://du3m00hi3201v"]
+
+[ext_resource type="Script" uid="uid://cucr12rgpr64r" path="res://ui/script/start/FirstLaunchScreen.gd" id="1_bc18d"]
+
+[sub_resource type="SystemFont" id="SystemFont_p3oq4"]
+font_names = PackedStringArray("Impact")
+
+[sub_resource type="Theme" id="Theme_re1gs"]
+default_font = SubResource("SystemFont_p3oq4")
+default_font_size = 40
+
+[node name="FirstLaunchScreen" type="Control" unique_id=1740465069]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_re1gs")
+script = ExtResource("1_bc18d")
+
+[node name="Background" type="ColorRect" parent="." unique_id=310745702]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.36862746, 0.5058824, 1, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1074961192]
+layout_mode = 0
+offset_left = 45.0
+offset_top = 45.0
+offset_right = 1875.0
+offset_bottom = 1030.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=505937401]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MarginContainer/VBoxContainer" unique_id=1956631757]
+layout_mode = 2
+size_flags_vertical = 6
+theme_override_font_sizes/font_size = 80
+text = "BIENVENUE DANS QUISSAC RACER"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Spacer" type="Control" parent="MarginContainer/VBoxContainer" unique_id=1579367598]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Description" type="Label" parent="MarginContainer/VBoxContainer" unique_id=1963270441]
+layout_mode = 2
+size_flags_vertical = 6
+theme_override_font_sizes/font_size = 60
+text = "Premier démarrage"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="NicknameLabel" type="Label" parent="MarginContainer/VBoxContainer" unique_id=1174339672]
+layout_mode = 2
+size_flags_vertical = 6
+theme_override_font_sizes/font_size = 60
+text = "Choisissez votre pseudo"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="NicknameEdit" type="LineEdit" parent="MarginContainer/VBoxContainer" unique_id=485333561]
+custom_minimum_size = Vector2(500, 80)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 3
+alignment = 1
+
+[node name="ErrorLabel" type="Label" parent="MarginContainer/VBoxContainer" unique_id=1655039693]
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 60
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Spacer2" type="Control" parent="MarginContainer/VBoxContainer" unique_id=1602737993]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ContinueButton" type="Button" parent="MarginContainer/VBoxContainer" unique_id=2047686189]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 90
+text = "Continuer"
+
+[node name="Spacer3" type="Control" parent="MarginContainer/VBoxContainer" unique_id=1328255232]
+layout_mode = 2
+size_flags_vertical = 3

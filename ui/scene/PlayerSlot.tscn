@@ -1,0 +1,52 @@
+[gd_scene format=3 uid="uid://drtt6cnp2tx6u"]
+
+[ext_resource type="Script" uid="uid://dxko5r68ptyki" path="res://ui/script/player/PlayerSlot.gd" id="1_cc680"]
+
+[sub_resource type="SystemFont" id="SystemFont_1ngav"]
+font_names = PackedStringArray("Leelawadee UI")
+subpixel_positioning = 0
+
+[sub_resource type="Theme" id="Theme_p52qu"]
+default_font = SubResource("SystemFont_1ngav")
+default_font_size = 25
+
+[node name="PlayerSlot" type="PanelContainer" unique_id=738916685]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 72.0
+grow_horizontal = 2
+theme = SubResource("Theme_p52qu")
+script = ExtResource("1_cc680")
+
+[node name="PanelContainer" type="PanelContainer" parent="." unique_id=1557426926]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer" unique_id=1544790036]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer/MarginContainer" unique_id=409980878]
+layout_mode = 2
+
+[node name="PlayerLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer" unique_id=1845416040]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "P1"
+horizontal_alignment = 1
+
+[node name="DeviceLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer" unique_id=653906998]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Manette 1"
+horizontal_alignment = 1
+
+[node name="NicknameEdit" type="LineEdit" parent="PanelContainer/MarginContainer/HBoxContainer" unique_id=2142217491]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Johan"
+placeholder_text = "Pseudo"
+max_length = 20
+
+[node name="RemoveButton" type="Button" parent="PanelContainer/MarginContainer/HBoxContainer" unique_id=688065502]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "Supprimer"
