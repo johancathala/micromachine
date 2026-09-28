@@ -93,7 +93,7 @@ func _refresh_controls() -> void:
 
 		controls_list.add_child(row)
 
-		var binding_text := \
+		var binding_text : String = \
 			InputManager.get_binding_display_name(
 				selected_device_type,
 				selected_device_id,

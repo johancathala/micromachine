@@ -270,7 +270,7 @@ func _try_join_keyboard() -> void:
 
 	var player_id := race_config.get_next_player_id()
 
-	var nickname := SaveManager.get_nickname()
+	var nickname : String = SaveManager.get_nickname()
 
 	if nickname.is_empty():
 		nickname = "Joueur 1"
@@ -308,7 +308,7 @@ func _try_join_gamepad(device_id: int) -> void:
 
 	var player_number := race_config.get_human_player_count() + 1
 
-	var nickname := SaveManager.get_player_nickname(
+	var nickname : String = SaveManager.get_player_nickname(
 		"gamepad",
 		device_id
 	)

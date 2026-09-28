@@ -149,6 +149,7 @@ func load_profile() -> void:
 
 func save_profile() -> void:
 	_ensure_profile_structure()
+	_ensure_player_nicknames_structure()
 	_ensure_audio_structure()
 	_ensure_control_structure()
 	_ensure_display_structure()
