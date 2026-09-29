@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="CarDefinition" format=3 uid="uid://20no3q18200k"]
+
+[ext_resource type="Script" uid="uid://de3h01guotde1" path="res://perso/car/definition/CarDefinition.gd" id="1_8toe7"]
+[ext_resource type="PackedScene" uid="uid://bsts4ufmrjpqn" path="res://perso/car/model/Clio.tscn" id="1_28tia"]
+
+[resource]
+script = ExtResource("1_8toe7")
+id = "clio"
+display_name = "Clio 3"
+description = "La voiture à ta daronne."
+model_scene = ExtResource("1_28tia")
+engine_force = 672.0
+brake_force = 1240.0
+reverse_force = 808.0
+max_speed = 1686.0
+max_reverse_speed = 412.0
+metadata/_custom_type_script = "uid://de3h01guotde1"

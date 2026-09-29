@@ -1,4 +1,5 @@
 extends Node2D
+class_name RaceWorld
 
 signal move_car(can_move: bool)
 

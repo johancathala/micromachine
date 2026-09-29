@@ -59,8 +59,8 @@ layout_mode = 2
 size_flags_vertical = 3
 
 [node name="ParticipantsPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer/MainContent" unique_id=1129108820]
+custom_minimum_size = Vector2(500, 0)
 layout_mode = 2
-size_flags_horizontal = 3
 
 [node name="ParticipantsMargin" type="MarginContainer" parent="MarginContainer/VBoxContainer/MainContent/ParticipantsPanel" unique_id=1677408882]
 layout_mode = 2
@@ -92,25 +92,31 @@ layout_mode = 2
 
 [node name="SelectedParticipant" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox" unique_id=2109226196]
 layout_mode = 2
+text = "SelectedParticipant"
+horizontal_alignment = 1
 
 [node name="CarSectionTitle" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox" unique_id=1994955819]
 layout_mode = 2
+text = "Voiture"
 
 [node name="CarGridScroll" type="ScrollContainer" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox" unique_id=1980141893]
+custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
-size_flags_vertical = 3
 
 [node name="CarGrid" type="GridContainer" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox/CarGridScroll" unique_id=621817159]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+columns = 8
 
 [node name="ColorSectionTitle" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox" unique_id=709952902]
 layout_mode = 2
+text = "Couleur"
 
 [node name="ColorGrid" type="GridContainer" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox" unique_id=174474823]
+custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
-size_flags_vertical = 3
+columns = 8
 
 [node name="PreviewPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox" unique_id=2005428265]
 layout_mode = 2
@@ -125,12 +131,17 @@ size_flags_vertical = 3
 
 [node name="CarName" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox/PreviewPanel/PreviewVBox" unique_id=1822241586]
 layout_mode = 2
+text = "Nom voiture"
+horizontal_alignment = 1
 
 [node name="CarDescription" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox/PreviewPanel/PreviewVBox" unique_id=802754867]
 layout_mode = 2
+text = "Description"
+horizontal_alignment = 1
 
 [node name="SelectionStatus" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox" unique_id=219307472]
 layout_mode = 2
+horizontal_alignment = 1
 
 [node name="Spacer" type="Control" parent="MarginContainer/VBoxContainer" unique_id=1010302561]
 custom_minimum_size = Vector2(0, 50)

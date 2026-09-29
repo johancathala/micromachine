@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CarDefinition" format=3 uid="uid://dgpvucbfrplu7"]
+
+[ext_resource type="Script" uid="uid://de3h01guotde1" path="res://perso/car/definition/CarDefinition.gd" id="1_hss2r"]
+
+[resource]
+script = ExtResource("1_hss2r")
+id = "ferrari"
+display_name = "Ferrari Mongolito"
+description = "Il va vite ce connard de bourgeois."
+engine_force = 3058.0
+brake_force = 2306.0
+reverse_force = 1000.0
+max_speed = 2665.0
+max_reverse_speed = 592.0
+metadata/_custom_type_script = "uid://de3h01guotde1"

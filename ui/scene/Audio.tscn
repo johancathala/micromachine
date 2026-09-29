@@ -116,7 +116,7 @@ alignment = 1
 [node name="BackButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" unique_id=788818845]
 layout_mode = 2
 size_flags_horizontal = 4
-text = "RETOUR AU MENU OPTION"
+text = "RETOUR AU MENU OPTIONS"
 
 [node name="Control" type="Control" parent="MarginContainer/VBoxContainer/Footer" unique_id=200315536]
 layout_mode = 2

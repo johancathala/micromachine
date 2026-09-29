@@ -1,0 +1,5 @@
+[gd_scene format=3 uid="uid://bsts4ufmrjpqn"]
+
+[ext_resource type="PackedScene" uid="uid://y33mux4t4ctc" path="res://perso/car/model/CarModel.tscn" id="1_lp31p"]
+
+[node name="Clio" unique_id=1257048408 instance=ExtResource("1_lp31p")]

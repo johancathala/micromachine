@@ -77,18 +77,18 @@ func setup(
 	else:
 		var car := CarCatalog.get_car(car_id)
 
-		if car.is_empty():
+		if car == null:
 			car_label.text = "Voiture : —"
 		else:
-			car_label.text = "Voiture : %s" % car.name
+			car_label.text = "Voiture : %s" % car.display_name
 
 
 	if color_id.is_empty():
 		color_label.text = "Couleur : —"
 	else:
-		var color := CarCatalog.get_color(color_id)
+		var color := ColorCatalog.get_color(color_id)
 
-		if color.is_empty():
+		if color == {}:
 			color_label.text = "Couleur : —"
 		else:
 			color_label.text = "Couleur : %s" % color.name

@@ -35,6 +35,14 @@ signal speed_changed(new_speed)
 @onready var skid_sound: AudioStreamPlayer2D = $SkidSound
 @onready var collision_sound: AudioStreamPlayer2D = $CollisionSound
 
+#CUSTOM CAR MODEL
+@onready var model: Node2D = $Model
+
+var car_sprite: AnimatedSprite2D
+var definition: CarDefinition
+
+@export var car_name : String = "Voiture"
+
 var car_can_move: bool = false
 # ---------------------------
 # FX STATE
@@ -190,6 +198,101 @@ var _surface: SurfaceProfile = SURFACE_DEFAULT
 @export var debug_draw: bool = false
 var _steer_angle: float = 0.0
 #var _surface_name: String = "default"
+
+func setup_car(car_def: CarDefinition, color: Color = Color.WHITE) -> void:
+	if car_def == null:
+		push_error("Car.setup_car() : CarDefinition invalide.")
+		return
+
+	definition = car_def
+
+	_apply_car_definition()
+	_load_car_model()
+	_apply_car_color(color)
+
+func _apply_car_definition() -> void:
+	if definition == null:
+		return
+
+	car_name = definition.display_name
+
+	engine_force = definition.engine_force
+	brake_force = definition.brake_force
+	reverse_force = definition.reverse_force
+
+	max_speed = definition.max_speed
+	max_reverse_speed = definition.max_reverse_speed
+
+	rolling_resistance = definition.rolling_resistance
+	air_drag = definition.air_drag
+
+	lateral_grip = definition.lateral_grip
+	lateral_grip_at_high_speed = definition.lateral_grip_at_high_speed
+	high_speed_grip_start = definition.high_speed_grip_start
+	high_speed_grip_end = definition.high_speed_grip_end
+
+	max_steer_angle = definition.max_steer_angle
+	steer_speed = definition.steer_speed
+	steer_return_speed = definition.steer_return_speed
+
+	steering_response_low_speed = definition.steering_response_low_speed
+	steering_response_high_speed = definition.steering_response_high_speed
+
+	steering_high_speed_start = definition.steering_high_speed_start
+	steering_high_speed_end = definition.steering_high_speed_end
+
+	wheel_base = definition.wheel_base
+	wheel_spacing = definition.wheel_spacing
+	min_speed_for_steer = definition.min_speed_for_steer
+
+	handbrake_grip_multiplier = definition.handbrake_grip_multiplier
+	handbrake_brake_multiplier = definition.handbrake_brake_multiplier
+
+	camera_zoom_min = definition.camera_zoom_min
+	camera_zoom_max = definition.camera_zoom_max
+	camera_zoom_speed = definition.camera_zoom_speed
+
+func _load_car_model() -> void:
+	if model == null:
+		push_error("Car : node Model manquant.")
+		return
+
+	for child in model.get_children():
+		child.queue_free()
+
+	if definition == null:
+		return
+
+	if definition.model_scene == null:
+		push_warning(
+			"CarDefinition '%s' n'a pas de model_scene."
+			% definition.id
+		)
+		return
+
+	var model_instance := definition.model_scene.instantiate()
+	model.add_child(model_instance)
+
+	_find_car_sprite(model_instance)
+
+func _apply_car_color(color: Color) -> void:
+	if model == null:
+		return
+
+	model.modulate = color
+
+func _find_car_sprite(root: Node) -> void:
+	car_sprite = root.find_child(
+		"AnimatedSprite2D",
+		true,
+		false
+	) as AnimatedSprite2D
+
+	if car_sprite == null:
+		push_warning(
+			"Le modèle '%s' ne contient pas d'AnimatedSprite2D."
+			% root.name
+		)
 
 func _ready() -> void:
 	if ground_ray == null:

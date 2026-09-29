@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CarDefinition" format=3 uid="uid://drqpt803n8fl7"]
+
+[ext_resource type="Script" uid="uid://de3h01guotde1" path="res://perso/car/definition/CarDefinition.gd" id="1_b4g6y"]
+
+[resource]
+script = ExtResource("1_b4g6y")
+id = "dacia"
+display_name = "Dacia Logan"
+description = "Faut pas l'emmerder. 50 ans, toujours sous le seuil de pauvreté ça forge un sale caractère."
+engine_force = 1739.0
+brake_force = 1303.0
+max_speed = 1862.0
+max_reverse_speed = 496.0
+metadata/_custom_type_script = "uid://de3h01guotde1"

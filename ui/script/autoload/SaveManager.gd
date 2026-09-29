@@ -118,6 +118,13 @@ func load_profile() -> void:
 
 	if data.has("profile") and data["profile"] is Dictionary:
 		profile = data["profile"].duplicate(true)
+	
+	# --------------------------------------------------------
+	# player_nicknames
+	# --------------------------------------------------------
+
+	if data.has("player_nicknames") and data["player_nicknames"] is Dictionary:
+		player_nicknames = data["player_nicknames"].duplicate(true)
 
 	# --------------------------------------------------------
 	# Audio
@@ -156,6 +163,7 @@ func save_profile() -> void:
 
 	var data := {
 		"profile": profile,
+		"player_nicknames": player_nicknames,
 		"audio": audio_settings,
 		"controls": control_settings,
 		"display": display_settings

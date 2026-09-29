@@ -49,14 +49,13 @@ const PARTICIPANT_SCENE := preload(
 	$MarginContainer/VBoxContainer/Footer/StartButton
 )
 
-
 var race_config: RaceConfig
 
 var selected_participant_index := -1
 var participant_buttons: Array[CarSelectionParticipant] = []
 var car_buttons: Array[Button] = []
 var color_buttons: Array[Button] = []
-
+var default_id_car: String = "clio"
 
 func _ready() -> void:
 
@@ -121,7 +120,7 @@ func _setup_participants() -> void:
 
 		# Première voiture par défaut.
 		if not participant.has("car_id"):
-			participant["car_id"] = "car_01"
+			participant["car_id"] = default_id_car
 
 
 		var button: CarSelectionParticipant = (
@@ -195,7 +194,7 @@ func _setup_car_grid() -> void:
 
 		var button := Button.new()
 
-		button.text = str(car.get("name", "Voiture"))
+		button.text = str(car.get("display_name"))
 
 		button.custom_minimum_size = Vector2(180, 70)
 		button.focus_mode = Control.FOCUS_ALL
@@ -204,7 +203,7 @@ func _setup_car_grid() -> void:
 
 		button.pressed.connect(
 			_on_car_selected.bind(
-				str(car.get("id", ""))
+				str(car.get("id"))
 			)
 		)
 
@@ -230,7 +229,7 @@ func _refresh_car_selection() -> void:
 		var car = CarCatalog.get_cars()[i]
 
 		var car_id := str(
-			car.get("id", "")
+			car.get("id")
 		)
 
 		car_buttons[i].button_pressed = (
@@ -265,12 +264,12 @@ func _setup_color_grid() -> void:
 	color_buttons.clear()
 
 
-	for color in CarCatalog.get_colors():
+	for color in ColorCatalog.get_colors():
 
 		var button := Button.new()
 
 		button.text = str(
-			color.get("name", "Couleur")
+			color.get("name", "color")
 		)
 
 		button.custom_minimum_size = Vector2(130, 50)
@@ -303,10 +302,10 @@ func _refresh_color_selection() -> void:
 
 	for i in range(color_buttons.size()):
 
-		var color = CarCatalog.get_colors()[i]
+		var color = ColorCatalog.get_colors()[i]
 
 		var color_id := str(
-			color.get("id", "")
+			color.get("id")
 		)
 
 		color_buttons[i].disabled = (
@@ -358,13 +357,13 @@ func _on_color_selected(color_id: String) -> void:
 
 func _get_default_color(index: int) -> String:
 
-	var colors := CarCatalog.get_colors()
+	var colors := ColorCatalog.get_colors()
 
 	if index >= colors.size():
 		return ""
 
 	return str(
-		colors[index].get("id", "")
+		colors[index].get("id")
 	)
 
 
@@ -392,16 +391,16 @@ func _refresh_preview() -> void:
 
 	var car := CarCatalog.get_car(car_id)
 
-	if car.is_empty():
+	if car == null:
 		car_name.text = "Aucune voiture"
 		car_description.text = ""
 	else:
 		car_name.text = str(
-			car.get("name", "")
+			car.get("display_name")
 		)
 
 		car_description.text = str(
-			car.get("description", "")
+			car.get("description")
 		)
 
 
@@ -411,7 +410,7 @@ func _refresh_preview() -> void:
 	preview_image.texture = null
 
 
-	var color := CarCatalog.get_color(color_id)
+	var color := ColorCatalog.get_color(color_id)
 
 	if not color.is_empty():
 		preview_image.modulate = color.color
@@ -479,5 +478,5 @@ func _on_start_pressed() -> void:
 		return
 
 	NavigationManager.go_to(
-		"res://ui/scene/Race.tscn"
+		"res://level/Race.tscn"
 	)

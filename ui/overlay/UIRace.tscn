@@ -1,15 +1,15 @@
 [gd_scene format=3 uid="uid://c6dhgndnkrsuw"]
 
-[ext_resource type="Script" uid="uid://dv82vjoead47d" path="res://ui/script/overlay/ui_course.gd" id="1_5b6bv"]
-[ext_resource type="Script" path="res://ui/script/margin_container.gd" id="2_5b6bv"]
-[ext_resource type="Texture2D" uid="uid://cjbm0ummbx3h7" path="res://level/sprite/Modern_Exteriors_Chaussée1_Tileset_32x32.png" id="3_gmdgo"]
+[ext_resource type="Script" uid="uid://dv82vjoead47d" path="res://ui/script/overlay/UIRace.gd" id="1_wfw3s"]
+[ext_resource type="Script" uid="uid://k6ui6ul1qwsf" path="res://ui/script/overlay/UIRaceMargin.gd" id="2_56n2d"]
+[ext_resource type="Texture2D" uid="uid://cjbm0ummbx3h7" path="res://level/sprite/Modern_Exteriors_Chaussée1_Tileset_32x32.png" id="3_curp5"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_7btll"]
-atlas = ExtResource("3_gmdgo")
+atlas = ExtResource("3_curp5")
 region = Rect2(160, 760, 32, 64)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_b3d4c"]
-atlas = ExtResource("3_gmdgo")
+atlas = ExtResource("3_curp5")
 region = Rect2(96, 760, 32, 64)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_jld8g"]
@@ -21,13 +21,13 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_b3d4c")
 }],
-"loop": false,
+"loop": 0,
 "name": &"default",
 "speed": 5.0
 }]
 
-[node name="UI Course" type="CanvasLayer" unique_id=632794021]
-script = ExtResource("1_5b6bv")
+[node name="UIRace" type="CanvasLayer" unique_id=632794021]
+script = ExtResource("1_wfw3s")
 
 [node name="MarginContainer" type="MarginContainer" parent="." unique_id=867136623]
 anchors_preset = 15
@@ -35,7 +35,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("2_5b6bv")
+script = ExtResource("2_56n2d")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer" unique_id=870468379]
 layout_mode = 2
