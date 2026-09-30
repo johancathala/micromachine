@@ -59,7 +59,7 @@ var high_speed_grip_end: float = 1600.0
 @export_category("Steering")
 
 @export_range(0.0, 1.5708, 0.01)
-var max_steer_angle: float = deg_to_rad(35.0)
+var max_steer_angle: float = 0.610865
 
 @export_range(0.0, 20.0, 0.1)
 var steer_speed: float = 4.0

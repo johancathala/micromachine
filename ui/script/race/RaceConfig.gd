@@ -108,31 +108,80 @@ func is_valid() -> bool:
 # ================================================================
 
 func build_participants() -> void:
+	var previous := participants.duplicate(true)
+
 	participants.clear()
 
-	# Joueurs humains.
-	for player in players:
-		var participant := player.duplicate(true)
+	for i in range(players.size()):
+		var player := players[i].duplicate(true)
 
+		var participant := player
+		participant["participant_id"] = i
 		participant["is_ai"] = false
+
+		var old := _find_previous_participant(
+			previous,
+			i,
+			false
+		)
+
+		if not old.is_empty():
+			if old.has("car_id"):
+				participant["car_id"] = old["car_id"]
+
+			if old.has("color_id"):
+				participant["color_id"] = old["color_id"]
 
 		participants.append(participant)
 
-
-	# IA.
-	var ai_count := get_ai_count()
+	var ai_count := TOTAL_RACE_SLOTS - players.size()
 
 	for i in range(ai_count):
+		var participant_id := players.size() + i
+
 		var participant := {
+			"participant_id": participant_id,
 			"player_id": -1,
-			"participant_id": i,
 			"device_type": "ai",
 			"device_id": -1,
 			"nickname": "IA %d" % (i + 1),
 			"is_ai": true
 		}
 
+		var old := _find_previous_participant(
+			previous,
+			participant_id,
+			true
+		)
+
+		if not old.is_empty():
+			if old.has("car_id"):
+				participant["car_id"] = old["car_id"]
+
+			if old.has("color_id"):
+				participant["color_id"] = old["color_id"]
+
 		participants.append(participant)
+
+
+func _find_previous_participant(
+	previous: Array,
+	participant_id: int,
+	ai: bool
+) -> Dictionary:
+
+	for participant in previous:
+		if int(
+			participant.get("participant_id", -1)
+		) != participant_id:
+			continue
+
+		if bool(
+			participant.get("is_ai", false)
+		) == ai:
+			return participant
+
+	return {}
 
 
 func get_participant_count() -> int:

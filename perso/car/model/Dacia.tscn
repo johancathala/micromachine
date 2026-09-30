@@ -3,3 +3,6 @@
 [ext_resource type="PackedScene" uid="uid://y33mux4t4ctc" path="res://perso/car/model/CarModel.tscn" id="1_hj4m8"]
 
 [node name="Clio" unique_id=1257048408 instance=ExtResource("1_hj4m8")]
+
+[node name="AnimatedSprite2D" parent="Body" parent_id_path=PackedInt32Array(1345352734) index="0" unique_id=1860953882]
+animation = &"vert_clair"

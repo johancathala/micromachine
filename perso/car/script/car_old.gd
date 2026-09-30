@@ -16,16 +16,16 @@ Option alternative (si vous ne voulez pas de groupes):
 """
 extends CharacterBody2D
 
-class_name Car
+class_name Car_old
 
 signal speed_changed(new_speed)
 # ---------------------------
 # NODES
 # ---------------------------
 @onready var ground_ray: RayCast2D = $GroundRay
-#@onready var camera: Camera2D = $"Camera2D" # Assurez-vous que la caméra est un enfant nommé "Camera2D"
-#@export var skid_node_path: NodePath
-#@onready var skid_node: Node2D = get_node("../SkidMarks")
+@onready var camera: Camera2D = $"Camera2D" # Assurez-vous que la caméra est un enfant nommé "Camera2D"
+@export var skid_node_path: NodePath
+@onready var skid_node: Node2D = get_node("../SkidMarks")
 #@onready var skid_node: Node2D = get_parent().get_node("SkidMarks")
 @onready var smoke_left: GPUParticles2D = $SmokeLeft
 @onready var smoke_right: GPUParticles2D = $SmokeRight
@@ -38,23 +38,10 @@ signal speed_changed(new_speed)
 #CUSTOM CAR MODEL
 @onready var model: Node2D = $Model
 
-@export var car_name : String = "Voiture"
-
+var car_sprite: AnimatedSprite2D
 var definition: CarDefinition
-var car_sprite: AnimatedSprite2D = null
 
-var skid_node: Node2D = null
-
-var participant_id: int = -1
-var is_ai: bool = false
-var input_device_type: String = ""
-var input_device_id: int = -1
-
-var _surface_grip_mul: float = 1.0
-var _surface_rolling_mul: float = 1.0
-var _surface_engine_mul: float = 1.0
-var _surface_brake_mul: float = 1.0
-
+@export var car_name : String = "Voiture"
 
 var car_can_move: bool = false
 # ---------------------------
@@ -170,10 +157,10 @@ class SurfaceProfile:
 	var smoke_color: Color
 	var sound_volume: float
 	var sound_scale: float
-#	var surface_grip_mul: float
-#	var surface_rolling_mul: float
-#	var surface_engine_mul: float
-#	var surface_brake_mul: float
+	var surface_grip_mul: float
+	var surface_rolling_mul: float
+	var surface_engine_mul: float
+	var surface_brake_mul: float
 	
 	func _init(_name: String, _grip_mul: float, _rolling_mul: float, _engine_mul: float, _brake_mul: float, _skid_color: Color, _smoke_color: Color, _sound_volume: float, _sound_scale: float) -> void:
 		name = _name
@@ -185,10 +172,10 @@ class SurfaceProfile:
 		smoke_color = _smoke_color
 		sound_volume = _sound_volume
 		sound_scale = _sound_scale
-#		surface_grip_mul = 1.0
-#		surface_rolling_mul = 1.0
-#		surface_engine_mul = 1.0
-#		surface_brake_mul = 1.0
+		surface_grip_mul = 1.0
+		surface_rolling_mul = 1.0
+		surface_engine_mul = 1.0
+		surface_brake_mul = 1.0
 
 # Profils par défaut (à adapter à votre jeu)
 """	- Chaque surface influence:
@@ -212,27 +199,12 @@ var _surface: SurfaceProfile = SURFACE_DEFAULT
 var _steer_angle: float = 0.0
 #var _surface_name: String = "default"
 
-func setup_car(
-	car_definition: CarDefinition,
-	color: Color,
-	p_id: int = -1,
-	ai: bool = false,
-	device_type: String = "",
-	device_id: int = -1,
-	skid_marks_root: Node2D = null
-) -> void:
-	if car_definition == null:
+func setup_car(car_def: CarDefinition, color: Color = Color.WHITE) -> void:
+	if car_def == null:
 		push_error("Car.setup_car() : CarDefinition invalide.")
 		return
 
-	definition = car_definition
-
-	participant_id = p_id
-	is_ai = ai
-	input_device_type = device_type
-	input_device_id = device_id
-
-	skid_node = skid_marks_root
+	definition = car_def
 
 	_apply_car_definition()
 	_load_car_model()
@@ -288,35 +260,26 @@ func _load_car_model() -> void:
 	for child in model.get_children():
 		child.queue_free()
 
-	if definition == null or definition.model_scene == null:
-		push_warning("Aucun modèle pour la voiture.")
+	if definition == null:
+		return
+
+	if definition.model_scene == null:
+		push_warning(
+			"CarDefinition '%s' n'a pas de model_scene."
+			% definition.id
+		)
 		return
 
 	var model_instance := definition.model_scene.instantiate()
 	model.add_child(model_instance)
 
-	car_sprite = model_instance.find_child(
-		"AnimatedSprite2D",
-		true,
-		false
-	) as AnimatedSprite2D
-
-	if car_sprite == null:
-		push_warning(
-			"Le modèle '%s' ne possède pas d'AnimatedSprite2D."
-			% definition.display_name
-		)
+	_find_car_sprite(model_instance)
 
 func _apply_car_color(color: Color) -> void:
 	if model == null:
 		return
 
-	var body := model.find_child("Body", true, false)
-
-	if body != null:
-		body.modulate = color
-	else:
-		model.modulate = color
+	model.modulate = color
 
 func _find_car_sprite(root: Node) -> void:
 	car_sprite = root.find_child(
@@ -403,7 +366,7 @@ func _physics_process(delta: float) -> void:
 		_on_Car_body_entered(delta, collider)
 
 	# Mise à jour du zoom caméra
-	#_update_camera_zoom(delta, speed)
+	_update_camera_zoom(delta, speed)
 	
 	# ======================
 	# FX SYSTEM
@@ -437,9 +400,6 @@ func _compute_slip_intensity(v_lat_scalar, _speed):
 # ---------------------------
 func _update_skidmarks(slip):
 	
-	if skid_node == null:
-		return
-
 	var fwd = Vector2.RIGHT.rotated(rotation)
 	var right = fwd.orthogonal()
 
@@ -643,34 +603,13 @@ func get_surface_profile() -> SurfaceProfile:
 
 # Mise à jour des variables influencées par la surface roulée
 func _update_surface(delta: float) -> void:
+	var old_surface: SurfaceProfile = _surface
 	var target_profile: SurfaceProfile = get_surface_profile()
-
-	_surface_grip_mul = move_toward(
-		_surface_grip_mul,
-		target_profile.grip_mul,
-		surface_blend_speed * delta
-	)
-
-	_surface_rolling_mul = move_toward(
-		_surface_rolling_mul,
-		target_profile.rolling_mul,
-		surface_blend_speed * delta
-	)
-
-	_surface_engine_mul = move_toward(
-		_surface_engine_mul,
-		target_profile.engine_mul,
-		surface_blend_speed * delta
-	)
-
-	_surface_brake_mul = move_toward(
-		_surface_brake_mul,
-		target_profile.brake_mul,
-		surface_blend_speed * delta
-	)
-
 	_surface = target_profile
-
+	_surface.surface_grip_mul = move_toward(old_surface.surface_grip_mul, target_profile.grip_mul, surface_blend_speed * delta)
+	_surface.surface_rolling_mul = move_toward(old_surface.surface_rolling_mul, target_profile.rolling_mul, surface_blend_speed * delta)
+	_surface.surface_engine_mul = move_toward(old_surface.surface_engine_mul, target_profile.engine_mul, surface_blend_speed * delta)
+	_surface.surface_brake_mul = move_toward(old_surface.surface_brake_mul, target_profile.brake_mul, surface_blend_speed * delta)
 
 func _smooth_steering(delta: float, steer_input: float) -> void:
 	var target_steer: float = steer_input * max_steer_angle
@@ -685,29 +624,29 @@ func _calculate_longitudinal_forces(_speed: float, throttle: float, brake: float
 	# Engine (forward)
 	if throttle > 0.001:
 		var engine_fade: float = 1.0 - clamp(_speed / max_speed, 0.0, 1.0) * 0.35
-		force_long += engine_force * _surface_engine_mul * throttle * engine_fade
+		force_long += engine_force * _surface.surface_engine_mul * throttle * engine_fade
 
 	# Brake or reverse
 	if brake > 0.001:
 		if v_long_scalar > 60.0:
-			force_long -= brake_force * _surface_brake_mul * brake
+			force_long -= brake_force * _surface.surface_brake_mul * brake
 		else:
 			if v_long_scalar < 10.0:
 				var rev_fade: float = 1.0 - clamp(_speed / max_reverse_speed, 0.0, 1.0) * 0.35
-				#force_long -= reverse_force * _surface_engine_mul * brake * rev_fade
-				force_long -= reverse_force * ((_surface_engine_mul + 1)/2) * brake * rev_fade
+				#force_long -= reverse_force * _surface.surface_engine_mul * brake * rev_fade
+				force_long -= reverse_force * ((_surface.surface_engine_mul + 1)/2) * brake * rev_fade
 
 	# Handbrake: extra brake
 	if handbrake:
 		if v_long_scalar > 10.0:
-			force_long -= brake_force * _surface_brake_mul * handbrake_brake_multiplier
+			force_long -= brake_force * _surface.surface_brake_mul * handbrake_brake_multiplier
 
 	return force_long
 
 func _apply_resistances(delta: float, right: Vector2, v_long: Vector2, v_lat_scalar: float, v_lat: Vector2) -> Array:
 	# Rolling resistance (surface-modulated)
 	if v_long.length() > 0.0:
-		var rr: float = rolling_resistance * _surface_rolling_mul * delta
+		var rr: float = rolling_resistance * _surface.surface_rolling_mul * delta
 		var new_len: float = max(v_long.length() - rr, 0.0)
 		v_long = v_long.normalized() * new_len
 
@@ -726,7 +665,7 @@ func _apply_lateral_grip(delta: float, _speed: float, grip_mult: float, v_lat: V
 	var grip_t: float = inverse_lerp(high_speed_grip_start, high_speed_grip_end, _speed)
 	var base_grip: float = lerp(lateral_grip, lateral_grip_at_high_speed, clamp(grip_t, 0.0, 1.0))
 
-	var grip: float = base_grip * _surface_grip_mul * grip_mult
+	var grip: float = base_grip * _surface.surface_grip_mul * grip_mult
 
 	# Stronger correction at low speed feels better; clamp for stability
 	var lat_k: float = clamp(grip * delta, 0.0, 1.0)
@@ -737,7 +676,7 @@ func _apply_lateral_grip(delta: float, _speed: float, grip_mult: float, v_lat: V
 func _apply_rotation(delta: float, v_long_after: float, steer_eff: float) -> void:
 	if abs(v_long_after) > min_speed_for_steer:
 		# slight understeer saturation at high speed + low grip surfaces
-		var surface_understeer: float = clamp(1.15 - _surface_grip_mul, 0.0, 0.55) # more understeer if low grip
+		var surface_understeer: float = clamp(1.15 - _surface.surface_grip_mul, 0.0, 0.55) # more understeer if low grip
 		var understeer_mul: float = 1.0 - surface_understeer
 		var effective_steer: float = _steer_angle * steer_eff * understeer_mul
 
@@ -763,12 +702,12 @@ func _clamp_velocity(fwd: Vector2, v_long: Vector2, v_lat: Vector2) -> void:
 	move_and_slide()
 
 # Mise à jour du zoom de la caméra, la caméra s'éloigne avec la vitesse
-#func _update_camera_zoom(delta: float, _speed: float) -> void:
-#	if camera != null:
-#		var target_zoom: float = lerp(camera_zoom_max, camera_zoom_min, clamp(_speed / max_speed, 0.0, 1.0))
-#		var current_zoom: float = camera.zoom.x # zoom.x == zoom.y for uniform zoom
-#		var new_zoom: float = move_toward(current_zoom, target_zoom, camera_zoom_speed * delta)
-#		camera.zoom = Vector2(new_zoom, new_zoom)
+func _update_camera_zoom(delta: float, _speed: float) -> void:
+	if camera != null:
+		var target_zoom: float = lerp(camera_zoom_max, camera_zoom_min, clamp(_speed / max_speed, 0.0, 1.0))
+		var current_zoom: float = camera.zoom.x # zoom.x == zoom.y for uniform zoom
+		var new_zoom: float = move_toward(current_zoom, target_zoom, camera_zoom_speed * delta)
+		camera.zoom = Vector2(new_zoom, new_zoom)
 
 # Info affichées si le débug est activé
 func _draw() -> void:
@@ -799,8 +738,5 @@ func _on_Car_body_entered(delta: float, body: Node) -> void:
 			velocity *= bounce_factor
 		_play_collision_sound()
 
-func set_can_move(can_move: bool) -> void:
-	car_can_move = can_move
-
 func _car_can_move(can_move: bool) -> void:
-	set_can_move(can_move)
+	car_can_move = can_move

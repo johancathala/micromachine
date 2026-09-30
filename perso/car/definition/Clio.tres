@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://de3h01guotde1" path="res://perso/car/definition/CarDefinition.gd" id="1_8toe7"]
 [ext_resource type="PackedScene" uid="uid://bsts4ufmrjpqn" path="res://perso/car/model/Clio.tscn" id="1_28tia"]
+[ext_resource type="Texture2D" uid="uid://cgv0t8dgai1mc" path="res://perso/car/model/ClioPreview.png" id="2_6m27u"]
 
 [resource]
 script = ExtResource("1_8toe7")
@@ -9,6 +10,7 @@ id = "clio"
 display_name = "Clio 3"
 description = "La voiture à ta daronne."
 model_scene = ExtResource("1_28tia")
+preview_texture = ExtResource("2_6m27u")
 engine_force = 672.0
 brake_force = 1240.0
 reverse_force = 808.0

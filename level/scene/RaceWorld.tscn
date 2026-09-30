@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://cj3xa47s74fn8"]
 
 [ext_resource type="Script" uid="uid://btj7chjtoaumi" path="res://level/script/RaceWorld.gd" id="1_fo27f"]
-[ext_resource type="PackedScene" uid="uid://jmiulko26v5p" path="res://perso/car/car.tscn" id="11_mmqb6"]
 
 [node name="RaceWorld" type="Node2D" unique_id=1725700049]
 y_sort_enabled = true
@@ -10,16 +9,30 @@ script = ExtResource("1_fo27f")
 [node name="Track" type="Node2D" parent="." unique_id=797463035]
 y_sort_enabled = true
 
-[node name="Car" parent="." unique_id=1639454759 instance=ExtResource("11_mmqb6")]
-unique_name_in_owner = true
-position = Vector2(702.99994, 2198.0002)
-rotation = -1.5623184
+[node name="SpawnPoints" type="Node2D" parent="." unique_id=1357893324]
 
-[node name="Camera2D" type="Camera2D" parent="Car" unique_id=1307607771]
-visible = false
+[node name="Sapwn01" type="Marker2D" parent="SpawnPoints" unique_id=978304492]
+
+[node name="Sapwn02" type="Marker2D" parent="SpawnPoints" unique_id=1910572687]
+
+[node name="Sapwn03" type="Marker2D" parent="SpawnPoints" unique_id=2141645809]
+
+[node name="Sapwn04" type="Marker2D" parent="SpawnPoints" unique_id=1247070775]
+
+[node name="Sapwn05" type="Marker2D" parent="SpawnPoints" unique_id=1729075660]
+
+[node name="Sapwn06" type="Marker2D" parent="SpawnPoints" unique_id=1562012351]
+
+[node name="Sapwn07" type="Marker2D" parent="SpawnPoints" unique_id=2020752226]
+
+[node name="Sapwn08" type="Marker2D" parent="SpawnPoints" unique_id=860786252]
+
+[node name="Cars" type="Node2D" parent="." unique_id=1619317226]
 
 [node name="SkidMarks" type="Node2D" parent="." unique_id=2130437793]
 position = Vector2(838, 1452.9998)
 rotation = -1.5623184
 
-[connection signal="move_car" from="." to="Car" method="_car_can_move"]
+[node name="RaceCamera" type="Camera2D" parent="." unique_id=1307607771]
+position = Vector2(702.99994, 2198.0002)
+rotation = -1.5623184

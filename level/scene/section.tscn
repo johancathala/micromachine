@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bxdbprsk6st55"]
 
-[ext_resource type="Script" uid="uid://jyuy34812vjy" path="res://level/script/section.gd" id="1_6qclo"]
+[ext_resource type="Script" uid="uid://jyuy34812vjy" path="res://level/script/Section.gd" id="1_6qclo"]
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_b3d4c"]
 a = Vector2(200, 0)

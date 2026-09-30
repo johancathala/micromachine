@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://nyx2qw6i6mgf"]
 
-[ext_resource type="Script" uid="uid://bqlckt5fc7aby" path="res://perso/car/script/car.gd" id="1_41ioq"]
+[ext_resource type="Script" uid="uid://bqlckt5fc7aby" path="res://perso/car/script/Car.gd" id="1_41ioq"]
 [ext_resource type="Texture2D" uid="uid://2csx3gd1l0rn" path="res://perso/car/sprite/Car_3_32x32_5.png" id="2_4k46t"]
 [ext_resource type="Texture2D" uid="uid://et1dfvtrhp4b" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval1.png" id="3_umy1w"]
 [ext_resource type="Texture2D" uid="uid://dy5cwt2h4lgpa" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval2.png" id="4_hypmm"]

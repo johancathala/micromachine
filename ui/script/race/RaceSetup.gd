@@ -56,21 +56,13 @@ var keyboard_player_joined := false
 )
 
 func _ready() -> void:
-
 	race_config = GameManager.get_pending_race_config()
 
 	if race_config == null:
 		race_config = RaceConfig.new()
 		race_config.mode = GameManager.GameMode.SINGLE_RACE
 
-		_setup_settings()
-	else:
-		# Les paramètres existent déjà.
-		# On reconstruit simplement les OptionButtons
-		# à partir de la configuration.
-		_setup_settings_from_config()
-
-
+	_setup_settings()
 	_connect_signals()
 	_refresh_ui()
 

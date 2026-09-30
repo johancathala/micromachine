@@ -1,12 +1,16 @@
 [gd_resource type="Resource" script_class="CarDefinition" format=3 uid="uid://dgpvucbfrplu7"]
 
 [ext_resource type="Script" uid="uid://de3h01guotde1" path="res://perso/car/definition/CarDefinition.gd" id="1_hss2r"]
+[ext_resource type="PackedScene" uid="uid://bih217f3gqgaw" path="res://perso/car/model/Ferrari.tscn" id="1_ib4y0"]
+[ext_resource type="Texture2D" uid="uid://cgv0t8dgai1mc" path="res://perso/car/model/ClioPreview.png" id="2_lkvhd"]
 
 [resource]
 script = ExtResource("1_hss2r")
 id = "ferrari"
 display_name = "Ferrari Mongolito"
 description = "Il va vite ce connard de bourgeois."
+model_scene = ExtResource("1_ib4y0")
+preview_texture = ExtResource("2_lkvhd")
 engine_force = 3058.0
 brake_force = 2306.0
 reverse_force = 1000.0

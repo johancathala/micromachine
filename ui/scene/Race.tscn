@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://ce5riveaq4hwj"]
 
-[ext_resource type="Script" uid="uid://dt6ed33qi6nf7" path="res://level/script/Race.gd" id="1_df1s8"]
+[ext_resource type="Script" uid="uid://dt6ed33qi6nf7" path="res://ui/script/race/Race.gd" id="1_df1s8"]
+[ext_resource type="PackedScene" uid="uid://cj3xa47s74fn8" path="res://level/scene/RaceWorld.tscn" id="2_2c3da"]
 
 [node name="Race" type="Control" unique_id=801995124]
 layout_mode = 3
@@ -11,7 +12,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_df1s8")
 
-[node name="RaceWorld" type="Node2D" parent="." unique_id=536270900]
+[node name="RaceWorld" parent="." unique_id=1725700049 instance=ExtResource("2_2c3da")]
 
 [node name="HUD" type="Control" parent="." unique_id=469927328]
 layout_mode = 1
@@ -37,9 +38,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=528290719]
+[node name="TransitionLayer" type="CanvasLayer" parent="." unique_id=528290719]
 
-[node name="ColorRect" type="ColorRect" parent="CanvasLayer" unique_id=785328050]
+[node name="Fade" type="ColorRect" parent="TransitionLayer" unique_id=785328050]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0

@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://jmiulko26v5p"]
 
-[ext_resource type="Script" uid="uid://bqlckt5fc7aby" path="res://perso/car/script/car.gd" id="1_8nu7u"]
+[ext_resource type="Script" uid="uid://bqlckt5fc7aby" path="res://perso/car/script/Car.gd" id="1_8nu7u"]
 [ext_resource type="Texture2D" uid="uid://et1dfvtrhp4b" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval1.png" id="3_h7dvk"]
 [ext_resource type="Texture2D" uid="uid://dy5cwt2h4lgpa" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval2.png" id="4_ndo73"]
 [ext_resource type="Texture2D" uid="uid://bd6fhhst03dyb" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval3.png" id="5_gissw"]
@@ -108,12 +108,38 @@ process_mode = 1
 collision_layer = 2
 collision_mask = 12
 script = ExtResource("1_8nu7u")
+car_name = null
+max_points_per_line = null
+collision_cooldown = null
+bounce_factor = null
 engine_force = 1200.0
+brake_force = null
+reverse_force = null
+max_speed = null
+max_reverse_speed = null
 rolling_resistance = 160.0
+air_drag = null
+lateral_grip = null
 lateral_grip_at_high_speed = 1.0
+high_speed_grip_start = null
+high_speed_grip_end = null
+max_steer_angle = null
+steer_speed = null
+steer_return_speed = null
+steering_response_low_speed = null
 steering_response_high_speed = 0.15
+steering_high_speed_start = null
+steering_high_speed_end = null
+wheel_base = null
+min_speed_for_steer = null
+wheel_spacing = null
+handbrake_grip_multiplier = null
+handbrake_brake_multiplier = null
 camera_zoom_min = 0.4
 camera_zoom_max = 1.6
+camera_zoom_speed = null
+surface_blend_speed = null
+debug_draw = null
 
 [node name="Model" type="Node2D" parent="." unique_id=590434381]
 

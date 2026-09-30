@@ -34,28 +34,20 @@ func has_pending_race_config() -> bool:
 func clear_pending_race_config() -> void:
 	pending_race_config = null
 
-
 # ================================================================
 # LANCEMENT DE LA COURSE
 # ================================================================
 
 func start_race() -> bool:
-
 	if pending_race_config == null:
-		push_error(
-			"GameManager: aucune configuration de course en attente."
-		)
+		push_error("GameManager : aucune course en attente.")
 		return false
 
-
-	if not pending_race_config.is_valid():
-		push_error(
-			"GameManager: configuration de course invalide."
-		)
+	if not pending_race_config.is_car_selection_valid():
+		push_error("GameManager : sélection des voitures invalide.")
 		return false
 
-
-	active_race_config = pending_race_config
+	active_race_config = pending_race_config.duplicate_config()
 	pending_race_config = null
 
 	return true
@@ -85,9 +77,17 @@ func has_active_race() -> bool:
 	return active_race_config != null
 
 
+func set_active_race_config(config: RaceConfig) -> void:
+	if config == null:
+		push_error("GameManager : configuration active invalide.")
+		return
+
+	active_race_config = config
+
+
 func get_active_race_config() -> RaceConfig:
 	return active_race_config
 
 
-func clear_active_race() -> void:
+func clear_active_race_config() -> void:
 	active_race_config = null
