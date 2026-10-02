@@ -1,7 +1,7 @@
 extends Control
 
 
-const RACE_SCENE := "res://ui/scene/Race.tscn"
+const RACE_SCENE := "res://level/scene/Race.tscn"
 
 
 var race_config: RaceConfig
@@ -82,6 +82,8 @@ func _setup_car_grid() -> void:
 		var button := Button.new()
 
 		button.text = car.display_name
+		button.set_meta("car_id", car.id)
+
 		button.custom_minimum_size = Vector2(150, 60)
 		button.focus_mode = Control.FOCUS_ALL
 
@@ -156,21 +158,65 @@ func _refresh_participant_list() -> void:
 	for i in range(race_config.participants.size()):
 		var participant := race_config.participants[i]
 
-		var button := Button.new()
+		var is_ai: bool = bool(
+			participant.get("is_ai", false)
+		)
 
-		button.text = _get_participant_display_text(
+		var enabled: bool = bool(
+			participant.get("enabled", true)
+		)
+
+		var hbox := HBoxContainer.new()
+
+		var select_button := Button.new()
+
+		select_button.text = _get_participant_display_text(
 			participant,
 			i
 		)
 
-		button.custom_minimum_size = Vector2(0, 60)
-		button.focus_mode = Control.FOCUS_ALL
+		select_button.custom_minimum_size = Vector2(0, 60)
+		select_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		select_button.focus_mode = Control.FOCUS_ALL
 
-		button.pressed.connect(
+		# Une IA désactivée reste visible mais ne peut pas
+		# être sélectionnée pour modifier sa voiture/couleur.
+		select_button.disabled = is_ai and not enabled
+
+		select_button.pressed.connect(
 			_select_participant.bind(i)
 		)
 
-		participant_list.add_child(button)
+		hbox.add_child(select_button)
+
+		if is_ai:
+			var toggle_button := Button.new()
+
+			toggle_button.text = (
+				"Désactiver"
+				if enabled
+				else "Activer"
+			)
+
+			toggle_button.custom_minimum_size = Vector2(110, 60)
+			toggle_button.focus_mode = Control.FOCUS_ALL
+
+			toggle_button.pressed.connect(
+				_on_toggle_pressed.bind(i)
+			)
+
+			hbox.add_child(toggle_button)
+
+			# Aspect visuel d'une IA désactivée.
+			if not enabled:
+				select_button.modulate = Color(
+					0.55,
+					0.55,
+					0.55,
+					1.0
+				)
+
+		participant_list.add_child(hbox)
 
 
 func _get_participant_display_text(
@@ -238,6 +284,29 @@ func _select_participant(index: int) -> void:
 	_refresh_preview()
 	_update_status()
 
+func _on_toggle_pressed(index: int) -> void:
+	if index < 0 or index >= race_config.participants.size():
+		return
+
+	var participant := race_config.participants[index]
+
+	if not bool(participant.get("is_ai", false)):
+		return
+
+	var enabled := bool(
+		participant.get("enabled", true)
+	)
+
+	participant["enabled"] = not enabled
+
+	race_config.participants[index] = participant
+
+	_refresh_participant_list()
+
+	_refresh_car_buttons()
+	_refresh_color_buttons()
+	_refresh_preview()
+	_update_status()
 
 func _refresh_car_buttons() -> void:
 	if selected_participant_index < 0:
@@ -257,8 +326,11 @@ func _refresh_car_buttons() -> void:
 		if button == null:
 			continue
 
-		var car_name := button.text
-		var car := _find_car_by_display_name(car_name)
+		var car_id := String(
+			button.get_meta("car_id", "")
+		)
+
+		var car := CarCatalog.get_car(car_id)
 
 		if car == null:
 			continue
@@ -329,6 +401,9 @@ func _is_color_used_by_other(
 			continue
 
 		var participant := race_config.participants[i]
+
+		if not bool(participant.get("enabled", true)):
+			continue
 
 		if String(
 			participant.get("color_id", "")

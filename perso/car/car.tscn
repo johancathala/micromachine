@@ -103,43 +103,15 @@ initial_velocity_max = 80.0
 gravity = Vector3(0, 98, 0)
 color_ramp = SubResource("GradientTexture1D_ndo73")
 
-[node name="Car" type="CharacterBody2D" unique_id=1639454759]
+[node name="Car" type="CharacterBody2D" unique_id=1639454759 groups=["obstacle"]]
 process_mode = 1
 collision_layer = 2
-collision_mask = 12
+collision_mask = 14
 script = ExtResource("1_8nu7u")
-car_name = null
-max_points_per_line = null
-collision_cooldown = null
-bounce_factor = null
 engine_force = 1200.0
-brake_force = null
-reverse_force = null
-max_speed = null
-max_reverse_speed = null
 rolling_resistance = 160.0
-air_drag = null
-lateral_grip = null
 lateral_grip_at_high_speed = 1.0
-high_speed_grip_start = null
-high_speed_grip_end = null
-max_steer_angle = null
-steer_speed = null
-steer_return_speed = null
-steering_response_low_speed = null
 steering_response_high_speed = 0.15
-steering_high_speed_start = null
-steering_high_speed_end = null
-wheel_base = null
-min_speed_for_steer = null
-wheel_spacing = null
-handbrake_grip_multiplier = null
-handbrake_brake_multiplier = null
-camera_zoom_min = 0.4
-camera_zoom_max = 1.6
-camera_zoom_speed = null
-surface_blend_speed = null
-debug_draw = null
 
 [node name="Model" type="Node2D" parent="." unique_id=590434381]
 

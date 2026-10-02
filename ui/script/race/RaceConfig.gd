@@ -118,6 +118,7 @@ func build_participants() -> void:
 		var participant := player
 		participant["participant_id"] = i
 		participant["is_ai"] = false
+		participant["enabled"] = true
 
 		var old := _find_previous_participant(
 			previous,
@@ -145,7 +146,8 @@ func build_participants() -> void:
 			"device_type": "ai",
 			"device_id": -1,
 			"nickname": "IA %d" % (i + 1),
-			"is_ai": true
+			"is_ai": true,
+			"enabled": false
 		}
 
 		var old := _find_previous_participant(
@@ -194,22 +196,84 @@ func get_participant(index: int) -> Dictionary:
 
 	return participants[index]
 
+func get_active_participants() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+
+	for participant in participants:
+		if bool(participant.get("enabled", true)):
+			result.append(participant)
+
+	return result
+
+
+func get_active_participant_count() -> int:
+
+	var count := 0
+
+	for participant in participants:
+
+		if bool(
+			participant.get(
+				"enabled",
+				true
+			)
+		):
+
+			count += 1
+
+	return count
+
+func get_enabled_ai_count() -> int:
+	var count := 0
+
+	for participant in participants:
+		if (
+			bool(participant.get("is_ai", false))
+			and bool(participant.get("enabled", true))
+		):
+			count += 1
+
+	return count
+
 
 func is_car_selection_valid() -> bool:
-	if participants.size() != TOTAL_RACE_SLOTS:
+	var active_count := 0
+
+	for participant in participants:
+		if not bool(participant.get("enabled", true)):
+			continue
+
+		active_count += 1
+
+		var car_id := String(
+			participant.get("car_id", "")
+		)
+
+		var color_id := String(
+			participant.get("color_id", "")
+		)
+
+		if not CarCatalog.has_car(car_id):
+			return false
+
+		if not ColorCatalog.has_color(color_id):
+			return false
+
+	# Au moins un participant doit courir.
+	if active_count == 0:
 		return false
 
+	# Les couleurs doivent rester uniques parmi
+	# les participants réellement présents.
 	var used_colors: Dictionary = {}
 
 	for participant in participants:
-		var car_id := str(participant.get("car_id", ""))
-		var color_id := str(participant.get("color_id", ""))
+		if not bool(participant.get("enabled", true)):
+			continue
 
-		if car_id.is_empty():
-			return false
-
-		if color_id.is_empty():
-			return false
+		var color_id := String(
+			participant.get("color_id", "")
+		)
 
 		if used_colors.has(color_id):
 			return false

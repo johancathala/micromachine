@@ -1,13 +1,12 @@
 extends Node2D
 class_name RaceWorld
 
-signal move_car(can_move: bool)
-
 @onready var track_root: Node2D = $Track
-@onready var spawn_points: Node2D = $SpawnPoints
 @onready var cars_root: Node2D = $Cars
 @onready var skid_marks: Node2D = $SkidMarks
 @onready var race_camera: Camera2D = $RaceCamera
+
+var current_track: Node2D = null
 
 var section: Node2D
 var light_start: Node2D
@@ -30,16 +29,38 @@ func load_track(track_scene: PackedScene) -> Node2D:
 	var track := track_scene.instantiate() as Node2D
 
 	if track == null:
-		push_error("RaceWorld : le circuit doit avoir un Node2D comme racine.")
+		push_error(
+			"RaceWorld : le circuit doit avoir un Node2D comme racine."
+		)
 		return null
 
 	track_root.add_child(track)
+	current_track = track
 
 	return track
 
 
 func get_spawn_point(index: int) -> Marker2D:
+	if current_track == null:
+		push_error("RaceWorld : aucun circuit chargé.")
+		return null
+
+	var spawn_points := current_track.get_node_or_null(
+		"SpawnPoints"
+	) as Node2D
+
+	if spawn_points == null:
+		push_error(
+			"RaceWorld : le circuit '%s' ne possède pas de SpawnPoints."
+			% current_track.name
+		)
+		return null
+
 	if index < 0 or index >= spawn_points.get_child_count():
+		push_error(
+			"RaceWorld : SpawnPoint %d inexistant."
+			% (index + 1)
+		)
 		return null
 
 	return spawn_points.get_child(index) as Marker2D

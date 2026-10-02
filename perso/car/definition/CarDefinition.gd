@@ -99,15 +99,3 @@ var handbrake_grip_multiplier: float = 0.05
 
 @export_range(0.0, 1.0, 0.01)
 var handbrake_brake_multiplier: float = 0.4
-
-
-@export_category("Camera")
-
-@export_range(0.1, 4.0, 0.1)
-var camera_zoom_min: float = 0.3
-
-@export_range(0.1, 4.0, 0.1)
-var camera_zoom_max: float = 1.8
-
-@export_range(0.1, 1.0, 0.01)
-var camera_zoom_speed: float = 0.3

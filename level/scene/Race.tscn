@@ -1,7 +1,9 @@
 [gd_scene format=3 uid="uid://ce5riveaq4hwj"]
 
-[ext_resource type="Script" uid="uid://dt6ed33qi6nf7" path="res://ui/script/race/Race.gd" id="1_df1s8"]
+[ext_resource type="Script" uid="uid://dt6ed33qi6nf7" path="res://level/script/Race.gd" id="1_df1s8"]
 [ext_resource type="PackedScene" uid="uid://cj3xa47s74fn8" path="res://level/scene/RaceWorld.tscn" id="2_2c3da"]
+[ext_resource type="PackedScene" uid="uid://ciqvtvdjj0od6" path="res://level/scene/RaceController.tscn" id="3_y4ydr"]
+[ext_resource type="PackedScene" uid="uid://c6dhgndnkrsuw" path="res://level/scene/RaceHUD.tscn" id="4_mv8ay"]
 
 [node name="Race" type="Control" unique_id=801995124]
 layout_mode = 3
@@ -14,21 +16,11 @@ script = ExtResource("1_df1s8")
 
 [node name="RaceWorld" parent="." unique_id=1725700049 instance=ExtResource("2_2c3da")]
 
-[node name="HUD" type="Control" parent="." unique_id=469927328]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="RaceController" parent="." unique_id=1487771011 instance=ExtResource("3_y4ydr")]
 
-[node name="Countdown" type="Control" parent="." unique_id=50559529]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="HUDLayer" type="CanvasLayer" parent="." unique_id=1786264823]
+
+[node name="HUD" parent="HUDLayer" unique_id=340661902 instance=ExtResource("4_mv8ay")]
 
 [node name="PauseOverlay" type="Control" parent="." unique_id=2068927766]
 layout_mode = 1

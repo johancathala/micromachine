@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://bp8cw2gqrqg1h"]
+
+[ext_resource type="Script" uid="uid://jyuy34812vjy" path="res://level/script/RaceSection.gd" id="1_1bw0r"]
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_p52qu"]
+b = Vector2(653, 0)
+
+[node name="Section00" type="Area2D" unique_id=818761778]
+collision_mask = 2
+script = ExtResource("1_1bw0r")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=137223370]
+shape = SubResource("SegmentShape2D_p52qu")

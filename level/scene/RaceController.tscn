@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://ciqvtvdjj0od6"]
+
+[ext_resource type="Script" uid="uid://pe0hc46dgmn8" path="res://level/script/RaceController.gd" id="1_hr7qv"]
+
+[node name="RaceController" type="Node" unique_id=1643388502]
+script = ExtResource("1_hr7qv")
+
+[node name="TimerStart" type="Timer" parent="." unique_id=558093687]
+wait_time = 4.0
+one_shot = true

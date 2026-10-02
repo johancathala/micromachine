@@ -18,15 +18,10 @@ extends CharacterBody2D
 
 class_name Car
 
-signal speed_changed(new_speed)
 # ---------------------------
 # NODES
 # ---------------------------
 @onready var ground_ray: RayCast2D = $GroundRay
-#@onready var camera: Camera2D = $"Camera2D" # Assurez-vous que la caméra est un enfant nommé "Camera2D"
-#@export var skid_node_path: NodePath
-#@onready var skid_node: Node2D = get_node("../SkidMarks")
-#@onready var skid_node: Node2D = get_parent().get_node("SkidMarks")
 @onready var smoke_left: GPUParticles2D = $SmokeLeft
 @onready var smoke_right: GPUParticles2D = $SmokeRight
 @onready var engine_idle_sound: AudioStreamPlayer2D = $EngineIdleSound
@@ -34,27 +29,26 @@ signal speed_changed(new_speed)
 @onready var engine_rupteur_sound: AudioStreamPlayer2D = $EngineRupeurSound
 @onready var skid_sound: AudioStreamPlayer2D = $SkidSound
 @onready var collision_sound: AudioStreamPlayer2D = $CollisionSound
-
-#CUSTOM CAR MODEL
 @onready var model: Node2D = $Model
 
-@export var car_name : String = "Voiture"
-
 var definition: CarDefinition
-var car_sprite: AnimatedSprite2D = null
-
 var skid_node: Node2D = null
 
+@export var car_name : String = "Voiture"
 var participant_id: int = -1
 var is_ai: bool = false
 var input_device_type: String = ""
 var input_device_id: int = -1
 
-var _surface_grip_mul: float = 1.0
-var _surface_rolling_mul: float = 1.0
-var _surface_engine_mul: float = 1.0
-var _surface_brake_mul: float = 1.0
+var throttle: float = 0.0
+var	brake: float = 0.0
+var	steer_input: float = 0.0
+var	handbrake: bool = false
 
+var _current_grip_mul: float = 1.0
+var _current_rolling_mul: float = 1.0
+var _current_engine_mul: float = 1.0
+var _current_brake_mul: float = 1.0
 
 var car_can_move: bool = false
 # ---------------------------
@@ -147,62 +141,7 @@ var last_collision_time: float = 0.0
 # Multiplicateur de force de frein avec frein à main
 @export_range(0.0, 1.0, 0.01) var handbrake_brake_multiplier: float = 0.4
 
-# ---------------------------
-# CAMERA ZOOM (ajout)
-# ---------------------------
-# Zoom minimal de la caméra (à haute vitesse)
-@export_range(0.1, 4.0, 0.1) var camera_zoom_min: float = 0.3
-# Zoom maximal de la caméra (à basse vitesse)
-@export_range(0.1, 4.0, 0.1) var camera_zoom_max: float = 1.8
-# Vitesse d'adaptation du zoom
-@export_range(0.1, 1.0, 0.01) var camera_zoom_speed: float = 0.3
-
-# ---------------------------
-# SURFACES
-# ---------------------------
-class SurfaceProfile:
-	var name: String
-	var grip_mul: float
-	var rolling_mul: float
-	var engine_mul: float
-	var brake_mul: float
-	var skid_color: Color
-	var smoke_color: Color
-	var sound_volume: float
-	var sound_scale: float
-#	var surface_grip_mul: float
-#	var surface_rolling_mul: float
-#	var surface_engine_mul: float
-#	var surface_brake_mul: float
-	
-	func _init(_name: String, _grip_mul: float, _rolling_mul: float, _engine_mul: float, _brake_mul: float, _skid_color: Color, _smoke_color: Color, _sound_volume: float, _sound_scale: float) -> void:
-		name = _name
-		grip_mul = _grip_mul
-		rolling_mul = _rolling_mul
-		engine_mul = _engine_mul
-		brake_mul = _brake_mul
-		skid_color = _skid_color
-		smoke_color = _smoke_color
-		sound_volume = _sound_volume
-		sound_scale = _sound_scale
-#		surface_grip_mul = 1.0
-#		surface_rolling_mul = 1.0
-#		surface_engine_mul = 1.0
-#		surface_brake_mul = 1.0
-
-# Profils par défaut (à adapter à votre jeu)
-"""	- Chaque surface influence:
-  	- grip latéral (tenue de route / drift)
-  	- résistance au roulement (perte de vitesse)
-  	- puissance moteur (optionnel, léger)
-  	- puissance de frein (optionnel, surtout sur glace)	"""
-var SURFACE_ASPHALT: SurfaceProfile = SurfaceProfile.new("asphalt", 1.00, 1.00, 1.00, 1.00, Color(0,0,0,0.8), Color(0.8,0.8,0.8), -5.0, 0.4)
-var SURFACE_GRAVEL: SurfaceProfile = SurfaceProfile.new("gravel", 0.05, 3.50, 0.60, 0.80, Color(0.4,0.3,0.2,0.6), Color(0.445, 0.317, 0.211, 1.0), -9.0, 0.1)
-var SURFACE_GRASS: SurfaceProfile = SurfaceProfile.new("grass", 0.10, 1.60, 0.85, 0.20, Color(0.2,0.5,0.2,0.5), Color(0.275, 0.431, 0.275, 1.0), -8.0, 0.15)
-var SURFACE_MUD: SurfaceProfile = SurfaceProfile.new("mud", 0.50, 1.75, 0.72, 0.82, Color(0.3,0.2,0.1,0.8), Color(0.8,0.8,0.8), 0.0, 1.0)
-var SURFACE_ICE: SurfaceProfile = SurfaceProfile.new("ice", 0.02, 0.85, 0.95, 0.55, Color(0.005, 0.186, 0.824, 0.502), Color(0.664, 0.642, 1.0, 1.0), -6.0, 0.3)
-var SURFACE_DEFAULT: SurfaceProfile = SurfaceProfile.new("default", 0.70, 1.20, 0.80, 0.80, Color(0,0,0,0.5), Color(0.721, 0.151, 0.467, 1.0), -6.0, 0.4)
-var _surface: SurfaceProfile = SURFACE_DEFAULT
+var _surface: SurfaceProfile = SurfaceCatalog.DEFAULT
 
 # Vitesse de transition des effets de surface
 @export var surface_blend_speed: float = 25.0
@@ -276,10 +215,6 @@ func _apply_car_definition() -> void:
 	handbrake_grip_multiplier = definition.handbrake_grip_multiplier
 	handbrake_brake_multiplier = definition.handbrake_brake_multiplier
 
-	camera_zoom_min = definition.camera_zoom_min
-	camera_zoom_max = definition.camera_zoom_max
-	camera_zoom_speed = definition.camera_zoom_speed
-
 func _load_car_model() -> void:
 	if model == null:
 		push_error("Car : node Model manquant.")
@@ -295,18 +230,6 @@ func _load_car_model() -> void:
 	var model_instance := definition.model_scene.instantiate()
 	model.add_child(model_instance)
 
-	car_sprite = model_instance.find_child(
-		"AnimatedSprite2D",
-		true,
-		false
-	) as AnimatedSprite2D
-
-	if car_sprite == null:
-		push_warning(
-			"Le modèle '%s' ne possède pas d'AnimatedSprite2D."
-			% definition.display_name
-		)
-
 func _apply_car_color(color: Color) -> void:
 	if model == null:
 		return
@@ -318,19 +241,6 @@ func _apply_car_color(color: Color) -> void:
 	else:
 		model.modulate = color
 
-func _find_car_sprite(root: Node) -> void:
-	car_sprite = root.find_child(
-		"AnimatedSprite2D",
-		true,
-		false
-	) as AnimatedSprite2D
-
-	if car_sprite == null:
-		push_warning(
-			"Le modèle '%s' ne contient pas d'AnimatedSprite2D."
-			% root.name
-		)
-
 func _ready() -> void:
 	if ground_ray == null:
 		push_warning("GroundRay manquant: ajoutez un RayCast2D nommé 'GroundRay' sous la voiture.")
@@ -338,30 +248,37 @@ func _ready() -> void:
 		ground_ray.enabled = true
 
 func _physics_process(delta: float) -> void:
+	
+	if not car_can_move:
+		return
+	
+	# Gestion des inputs
+	if is_ai:
+		_process_ai_input(delta)
+	else:
+		_process_human_input(delta)
+
 	# Mise à jour des effets de surface
 	_update_surface(delta)
 
+	_process_movement(delta)
+	
+	# Debug
+	if debug_draw:
+		queue_redraw()
+
+# Sous-fonctions pour la lisibilité
+func _process_movement(_delta: float) -> void:
 	# Calcul des directions, vitesse et accélerration
 	var fwd: Vector2 = Vector2.RIGHT.rotated(rotation)
 	var right: Vector2 = fwd.orthogonal()
 	var v: Vector2 = velocity
 	speed = v.length()
-	acceleration = (speed - previous_speed) / delta
+	acceleration = (speed - previous_speed) / _delta
 	previous_speed = speed
 
-	# Gestion des inputs
-	var throttle: float = 0
-	var brake: float = 0
-	var steer_input: float = 0
-	var handbrake: bool = false
-	if car_can_move:
-		throttle = Input.get_action_strength("up")
-		brake = Input.get_action_strength("down")
-		steer_input = Input.get_action_strength("right") - Input.get_action_strength("left")
-		handbrake = Input.is_action_pressed("handbrake") if InputMap.has_action("handbrake") else false
-
 	# Lissage de la direction
-	_smooth_steering(delta, steer_input)
+	_smooth_steering(_delta)
 
 	# Efficacité de la direction selon la vitesse
 	var steer_t: float = inverse_lerp(steering_high_speed_start, steering_high_speed_end, speed)
@@ -374,36 +291,30 @@ func _physics_process(delta: float) -> void:
 	var v_lat: Vector2 = right * v_lat_scalar
 
 	# Forces longitudinales
-	var force_long: float = _calculate_longitudinal_forces(speed, throttle, brake, handbrake, v_long_scalar)
+	var force_long: float = _calculate_longitudinal_forces(speed, v_long_scalar)
 	var grip_mult: float = 1.0 if not handbrake else handbrake_grip_multiplier
 
 	# Apply longitudinal acceleration
-	v_long += fwd * (force_long * delta)
+	v_long += fwd * (force_long * _delta)
 
 	# Résistances
-	var result = _apply_resistances(delta, right, v_long, v_lat_scalar, v_lat)
+	var result = _apply_resistances(_delta, right, v_long, v_lat_scalar, v_lat)
 	v_long = result[0]
 	v_lat = result[1]
 
 	# Adhérence latérale
-	v_lat = _apply_lateral_grip(delta, speed, grip_mult, v_lat)
+	v_lat = _apply_lateral_grip(_delta, speed, grip_mult, v_lat)
 
 	# Modèle de rotation
 	var v_long_after: float = v_long.dot(fwd)
-	_apply_rotation(delta, v_long_after, steer_eff)
+	_apply_rotation(_delta, v_long_after, steer_eff)
 
 	# Recombinaison et clamp de la vélocité
 	_clamp_velocity(fwd, v_long, v_lat)
+	speed = velocity.length()
 	
-	# Gestion des colisions
-	last_collision_time += delta
-	for i in range(get_slide_collision_count()):
-		var collision = get_slide_collision(i)
-		var collider = collision.get_collider()
-		_on_Car_body_entered(delta, collider)
-
-	# Mise à jour du zoom caméra
-	#_update_camera_zoom(delta, speed)
+	last_collision_time += _delta
+	_process_collisions()
 	
 	# ======================
 	# FX SYSTEM
@@ -415,14 +326,60 @@ func _physics_process(delta: float) -> void:
 	_update_smoke(slip)
 	_update_skid_sound(slip)
 	_update_engine_sound()
-	
-	speed_changed.emit(speed)
-	
-	# Debug
-	if debug_draw:
-		queue_redraw()
 
-# Sous-fonctions pour la lisibilité
+
+func _process_collisions() -> void:
+	for i in range(get_slide_collision_count()):
+		var collision := get_slide_collision(i)
+
+		if collision == null:
+			continue
+
+		var collider := collision.get_collider()
+
+		if collider == null:
+			continue
+
+		if not collider.is_in_group("obstacle"):
+			continue
+
+		_handle_obstacle_collision(collision)
+
+func _handle_obstacle_collision(collision: KinematicCollision2D) -> void:
+	if speed <= 100.0:
+		return
+
+	var normal: Vector2 = collision.get_normal()
+
+	# Composante de la vitesse dirigée vers l'obstacle.
+	var velocity_into_surface: float = velocity.dot(normal)
+
+	# Si la voiture s'éloigne déjà de l'obstacle,
+	# il n'y a pas de rebond à appliquer.
+	if velocity_into_surface >= 0.0:
+		return
+
+	# Réflexion de la vitesse par rapport à la normale.
+	velocity = velocity - 2.0 * velocity_into_surface * normal
+
+	# Amortissement du rebond.
+	velocity *= bounce_factor
+
+	_play_collision_sound()
+	
+func _process_human_input(_delta: float) -> void:
+	var input_state := InputManager.get_player_input(
+		input_device_type,
+		input_device_id
+		)
+	
+	throttle = input_state.throttle
+	brake = input_state.brake
+	steer_input = input_state.steering
+	handbrake = input_state.handbrake
+
+func _process_ai_input(_delta: float) -> void:
+	pass
 
 # ---------------------------
 # SLIP
@@ -588,8 +545,7 @@ func _update_engine_sound():
 				engine_idle_sound.stop()
 			if engine_running_sound.playing:
 				engine_running_sound.stop()
-			
-			
+
 
 func _update_skid_sound(slip: float):
 	if slip < threshold:
@@ -617,54 +573,55 @@ func _apply_surface_fx():
 
 #Mise à jour du type de surface en fonction du groupe du sol (TileMapLayer)
 func get_surface_profile() -> SurfaceProfile:
-	# Si pas de raycast ou pas de collision: profil par défaut
 	if ground_ray == null or not ground_ray.is_colliding():
-		return SURFACE_DEFAULT
+		return SurfaceCatalog.DEFAULT
 
 	var collider := ground_ray.get_collider()
-	if collider == null:
-		return SURFACE_DEFAULT
-	# IMPORTANT:
-	# - Si votre sol est un TileMap, le collider peut être le TileMap.
-	# - Si votre sol est un StaticBody2D/CharacterBody2D, ça peut être ce node.
-	# Dans les deux cas, les groupes fonctionnent bien.
-	if collider.is_in_group("asphalt"):
-		return SURFACE_ASPHALT
-	if collider.is_in_group("gravel"):
-		return SURFACE_GRAVEL
-	if collider.is_in_group("grass"):
-		return SURFACE_GRASS
-	if collider.is_in_group("mud"):
-		return SURFACE_MUD
-	if collider.is_in_group("ice"):
-		return SURFACE_ICE
 
-	return SURFACE_DEFAULT
+	if collider == null:
+		return SurfaceCatalog.DEFAULT
+
+	if collider.is_in_group("asphalt"):
+		return SurfaceCatalog.ASPHALT
+
+	if collider.is_in_group("gravel"):
+		return SurfaceCatalog.GRAVEL
+
+	if collider.is_in_group("grass"):
+		return SurfaceCatalog.GRASS
+
+	if collider.is_in_group("mud"):
+		return SurfaceCatalog.MUD
+
+	if collider.is_in_group("ice"):
+		return SurfaceCatalog.ICE
+
+	return SurfaceCatalog.DEFAULT
 
 # Mise à jour des variables influencées par la surface roulée
 func _update_surface(delta: float) -> void:
 	var target_profile: SurfaceProfile = get_surface_profile()
 
-	_surface_grip_mul = move_toward(
-		_surface_grip_mul,
+	_current_grip_mul = move_toward(
+		_current_grip_mul,
 		target_profile.grip_mul,
 		surface_blend_speed * delta
 	)
 
-	_surface_rolling_mul = move_toward(
-		_surface_rolling_mul,
+	_current_rolling_mul = move_toward(
+		_current_rolling_mul,
 		target_profile.rolling_mul,
 		surface_blend_speed * delta
 	)
 
-	_surface_engine_mul = move_toward(
-		_surface_engine_mul,
+	_current_engine_mul = move_toward(
+		_current_engine_mul,
 		target_profile.engine_mul,
 		surface_blend_speed * delta
 	)
 
-	_surface_brake_mul = move_toward(
-		_surface_brake_mul,
+	_current_brake_mul = move_toward(
+		_current_brake_mul,
 		target_profile.brake_mul,
 		surface_blend_speed * delta
 	)
@@ -672,42 +629,42 @@ func _update_surface(delta: float) -> void:
 	_surface = target_profile
 
 
-func _smooth_steering(delta: float, steer_input: float) -> void:
+func _smooth_steering(_delta: float) -> void:
 	var target_steer: float = steer_input * max_steer_angle
 	if abs(steer_input) > 0.001:
-		_steer_angle = move_toward(_steer_angle, target_steer, steer_speed * delta)
+		_steer_angle = move_toward(_steer_angle, target_steer, steer_speed * _delta)
 	else:
-		_steer_angle = move_toward(_steer_angle, 0.0, steer_return_speed * delta)
+		_steer_angle = move_toward(_steer_angle, 0.0, steer_return_speed * _delta)
 
-func _calculate_longitudinal_forces(_speed: float, throttle: float, brake: float, handbrake: bool, v_long_scalar: float) -> float:
+func _calculate_longitudinal_forces(_speed: float, v_long_scalar: float) -> float:
 	var force_long: float = 0.0
 
 	# Engine (forward)
 	if throttle > 0.001:
 		var engine_fade: float = 1.0 - clamp(_speed / max_speed, 0.0, 1.0) * 0.35
-		force_long += engine_force * _surface_engine_mul * throttle * engine_fade
+		force_long += engine_force * _current_engine_mul * throttle * engine_fade
 
 	# Brake or reverse
 	if brake > 0.001:
 		if v_long_scalar > 60.0:
-			force_long -= brake_force * _surface_brake_mul * brake
+			force_long -= brake_force * _current_brake_mul * brake
 		else:
 			if v_long_scalar < 10.0:
 				var rev_fade: float = 1.0 - clamp(_speed / max_reverse_speed, 0.0, 1.0) * 0.35
-				#force_long -= reverse_force * _surface_engine_mul * brake * rev_fade
-				force_long -= reverse_force * ((_surface_engine_mul + 1)/2) * brake * rev_fade
+				#force_long -= reverse_force * _current_engine_mul * brake * rev_fade
+				force_long -= reverse_force * ((_current_engine_mul + 1)/2) * brake * rev_fade
 
 	# Handbrake: extra brake
 	if handbrake:
 		if v_long_scalar > 10.0:
-			force_long -= brake_force * _surface_brake_mul * handbrake_brake_multiplier
+			force_long -= brake_force * _current_brake_mul * handbrake_brake_multiplier
 
 	return force_long
 
 func _apply_resistances(delta: float, right: Vector2, v_long: Vector2, v_lat_scalar: float, v_lat: Vector2) -> Array:
 	# Rolling resistance (surface-modulated)
 	if v_long.length() > 0.0:
-		var rr: float = rolling_resistance * _surface_rolling_mul * delta
+		var rr: float = rolling_resistance * _current_rolling_mul * delta
 		var new_len: float = max(v_long.length() - rr, 0.0)
 		v_long = v_long.normalized() * new_len
 
@@ -726,7 +683,7 @@ func _apply_lateral_grip(delta: float, _speed: float, grip_mult: float, v_lat: V
 	var grip_t: float = inverse_lerp(high_speed_grip_start, high_speed_grip_end, _speed)
 	var base_grip: float = lerp(lateral_grip, lateral_grip_at_high_speed, clamp(grip_t, 0.0, 1.0))
 
-	var grip: float = base_grip * _surface_grip_mul * grip_mult
+	var grip: float = base_grip * _current_grip_mul * grip_mult
 
 	# Stronger correction at low speed feels better; clamp for stability
 	var lat_k: float = clamp(grip * delta, 0.0, 1.0)
@@ -737,7 +694,7 @@ func _apply_lateral_grip(delta: float, _speed: float, grip_mult: float, v_lat: V
 func _apply_rotation(delta: float, v_long_after: float, steer_eff: float) -> void:
 	if abs(v_long_after) > min_speed_for_steer:
 		# slight understeer saturation at high speed + low grip surfaces
-		var surface_understeer: float = clamp(1.15 - _surface_grip_mul, 0.0, 0.55) # more understeer if low grip
+		var surface_understeer: float = clamp(1.15 - _current_grip_mul, 0.0, 0.55) # more understeer if low grip
 		var understeer_mul: float = 1.0 - surface_understeer
 		var effective_steer: float = _steer_angle * steer_eff * understeer_mul
 
@@ -747,28 +704,25 @@ func _apply_rotation(delta: float, v_long_after: float, steer_eff: float) -> voi
 func _clamp_velocity(fwd: Vector2, v_long: Vector2, v_lat: Vector2) -> void:
 	var v: Vector2 = v_long + v_lat
 
-	# Clamp speeds (forward/back along forward axis)
+	# Limitation de la vitesse longitudinale
 	var v_long_final: float = v.dot(fwd)
+
 	if v_long_final > max_speed:
 		v -= fwd * (v_long_final - max_speed)
 	elif v_long_final < -max_reverse_speed:
 		v -= fwd * (v_long_final + max_reverse_speed)
 
-	# Optional total clamp to avoid insane drift spikes
+	# Limitation globale de sécurité
 	var v_max_total: float = max_speed * 1.15
+
 	if v.length() > v_max_total:
 		v = v.normalized() * v_max_total
 
 	velocity = v
+
+	# Unique déplacement physique de la voiture.
 	move_and_slide()
 
-# Mise à jour du zoom de la caméra, la caméra s'éloigne avec la vitesse
-#func _update_camera_zoom(delta: float, _speed: float) -> void:
-#	if camera != null:
-#		var target_zoom: float = lerp(camera_zoom_max, camera_zoom_min, clamp(_speed / max_speed, 0.0, 1.0))
-#		var current_zoom: float = camera.zoom.x # zoom.x == zoom.y for uniform zoom
-#		var new_zoom: float = move_toward(current_zoom, target_zoom, camera_zoom_speed * delta)
-#		camera.zoom = Vector2(new_zoom, new_zoom)
 
 # Info affichées si le débug est activé
 func _draw() -> void:
@@ -786,21 +740,6 @@ func _draw() -> void:
 	# Petit label debug (sans dépendre d'un Label node)
 	draw_string(ThemeDB.fallback_font, p + Vector2(-70, -55), "surface: %s" % _surface.name, HORIZONTAL_ALIGNMENT_LEFT, 300, 14, Color(1,1,1,0.9))
 
-func _on_Car_body_entered(delta: float, body: Node) -> void:
-	#if collider.collision_layer & OBSTACLE_LAYER != 0:
-	if body.is_in_group("obstacle") && speed > 100:  # Assure-toi que tes obstacles sont dans ce groupe
-		var collision = move_and_collide(velocity * delta)
-		if collision:
-			var normal = collision.get_normal()
-			
-
-			# Calcul du rebond
-			velocity = velocity - 2 * velocity.dot(normal) * normal
-			velocity *= bounce_factor
-		_play_collision_sound()
 
 func set_can_move(can_move: bool) -> void:
 	car_can_move = can_move
-
-func _car_can_move(can_move: bool) -> void:
-	set_can_move(can_move)

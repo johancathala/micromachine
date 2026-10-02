@@ -110571,3 +110571,29 @@ scale = Vector2(3, 3)
 position = Vector2(1232.0001, 6056)
 rotation = 1.5707964
 scale = Vector2(3, 3)
+
+[node name="SpawnPoints" type="Node2D" parent="." unique_id=310910246]
+
+[node name="Sapwn01" type="Marker2D" parent="SpawnPoints" unique_id=296070209]
+position = Vector2(701, 2205)
+
+[node name="Sapwn02" type="Marker2D" parent="SpawnPoints" unique_id=1160974602]
+position = Vector2(926, 2390)
+
+[node name="Sapwn03" type="Marker2D" parent="SpawnPoints" unique_id=1867229111]
+position = Vector2(696, 2575)
+
+[node name="Sapwn04" type="Marker2D" parent="SpawnPoints" unique_id=131395855]
+position = Vector2(927, 2771)
+
+[node name="Sapwn05" type="Marker2D" parent="SpawnPoints" unique_id=2049574245]
+position = Vector2(706, 2956)
+
+[node name="Sapwn06" type="Marker2D" parent="SpawnPoints" unique_id=1114643496]
+position = Vector2(933, 3162)
+
+[node name="Sapwn07" type="Marker2D" parent="SpawnPoints" unique_id=322218792]
+position = Vector2(703, 3359)
+
+[node name="Sapwn08" type="Marker2D" parent="SpawnPoints" unique_id=1669528576]
+position = Vector2(928, 3553)

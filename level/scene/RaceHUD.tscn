@@ -1,0 +1,161 @@
+[gd_scene format=3 uid="uid://c6dhgndnkrsuw"]
+
+[ext_resource type="Script" uid="uid://dv82vjoead47d" path="res://level/script/overlay/RaceHUD.gd" id="1_jbulc"]
+[ext_resource type="Texture2D" uid="uid://cjbm0ummbx3h7" path="res://level/sprite/Modern_Exteriors_Chaussée1_Tileset_32x32.png" id="3_mtobo"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7btll"]
+atlas = ExtResource("3_mtobo")
+region = Rect2(160, 760, 32, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0dvwu"]
+atlas = ExtResource("3_mtobo")
+region = Rect2(128, 760, 32, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_b3d4c"]
+atlas = ExtResource("3_mtobo")
+region = Rect2(96, 760, 32, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_jld8g"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7btll")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0dvwu")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_b3d4c")
+}],
+"loop": 0,
+"name": &"default",
+"speed": 5.0
+}]
+
+[node name="HUD" type="Control" unique_id=340661902]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_jbulc")
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1846056360]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer" unique_id=1648667910]
+layout_mode = 2
+
+[node name="LeftPanel" type="VBoxContainer" parent="MarginContainer/HBoxContainer" unique_id=1111421404]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Lap" type="Label" parent="MarginContainer/HBoxContainer/LeftPanel" unique_id=697377001]
+layout_mode = 2
+text = "Tour 0/3"
+
+[node name="RaceTime" type="Label" parent="MarginContainer/HBoxContainer/LeftPanel" unique_id=78462254]
+layout_mode = 2
+text = "Temps de course : "
+
+[node name="LapTime" type="Label" parent="MarginContainer/HBoxContainer/LeftPanel" unique_id=813233539]
+layout_mode = 2
+text = "Position"
+horizontal_alignment = 2
+
+[node name="LastLapTime" type="Label" parent="MarginContainer/HBoxContainer/LeftPanel" unique_id=1293751907]
+layout_mode = 2
+text = "Position"
+horizontal_alignment = 2
+
+[node name="Delta" type="Label" parent="MarginContainer/HBoxContainer/LeftPanel" unique_id=1146184954]
+layout_mode = 2
+text = "Position"
+horizontal_alignment = 2
+
+[node name="CenterPanel" type="Control" parent="MarginContainer/HBoxContainer" unique_id=876874015]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="FeuDepart" type="Node2D" parent="MarginContainer/HBoxContainer/CenterPanel" unique_id=836940778]
+unique_name_in_owner = true
+position = Vector2(344, 337)
+scale = Vector2(3, 3)
+
+[node name="Feu1" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/CenterPanel/FeuDepart" unique_id=681123087]
+position = Vector2(-165, 12)
+sprite_frames = SubResource("SpriteFrames_jld8g")
+
+[node name="Feu2" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/CenterPanel/FeuDepart" unique_id=326857369]
+position = Vector2(-133, 12)
+sprite_frames = SubResource("SpriteFrames_jld8g")
+
+[node name="Feu3" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/CenterPanel/FeuDepart" unique_id=1257647852]
+position = Vector2(-101, 12)
+sprite_frames = SubResource("SpriteFrames_jld8g")
+
+[node name="Feu4" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/CenterPanel/FeuDepart" unique_id=1443147181]
+position = Vector2(-69, 12)
+sprite_frames = SubResource("SpriteFrames_jld8g")
+
+[node name="Feu5" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/CenterPanel/FeuDepart" unique_id=567225705]
+position = Vector2(-37, 12)
+sprite_frames = SubResource("SpriteFrames_jld8g")
+
+[node name="Feu6" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/CenterPanel/FeuDepart" unique_id=1348942857]
+position = Vector2(-5, 12)
+sprite_frames = SubResource("SpriteFrames_jld8g")
+
+[node name="Feu7" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/CenterPanel/FeuDepart" unique_id=1479270884]
+position = Vector2(27, 12)
+sprite_frames = SubResource("SpriteFrames_jld8g")
+
+[node name="Feu8" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/CenterPanel/FeuDepart" unique_id=1300758206]
+position = Vector2(59, 12)
+sprite_frames = SubResource("SpriteFrames_jld8g")
+
+[node name="Feu9" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/CenterPanel/FeuDepart" unique_id=1860093083]
+position = Vector2(91, 12)
+sprite_frames = SubResource("SpriteFrames_jld8g")
+
+[node name="Feu10" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/CenterPanel/FeuDepart" unique_id=947359633]
+position = Vector2(123, 12)
+sprite_frames = SubResource("SpriteFrames_jld8g")
+
+[node name="Feu11" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/CenterPanel/FeuDepart" unique_id=602942862]
+position = Vector2(155, 12)
+sprite_frames = SubResource("SpriteFrames_jld8g")
+
+[node name="RightPanel" type="VBoxContainer" parent="MarginContainer/HBoxContainer" unique_id=1692286713]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Speed" type="Label" parent="MarginContainer/HBoxContainer/RightPanel" unique_id=1498469920]
+layout_mode = 2
+text = "Position"
+horizontal_alignment = 2
+
+[node name="Position" type="Label" parent="MarginContainer/HBoxContainer/RightPanel" unique_id=1438069504]
+layout_mode = 2
+text = "BestLapEver"
+horizontal_alignment = 2
+
+[node name="BestLap" type="Label" parent="MarginContainer/HBoxContainer/RightPanel" unique_id=641201211]
+layout_mode = 2
+text = "Position"
+horizontal_alignment = 2
+
+[node name="RaceStatus" type="Label" parent="." unique_id=422873300]
+layout_mode = 0
+offset_left = 1824.0
+offset_top = 528.0
+offset_right = 1920.0
+offset_bottom = 551.0
+text = "BestLapEver"
+horizontal_alignment = 2
