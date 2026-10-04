@@ -380,6 +380,9 @@ func _reset_participant_state(
 
 	state.race_position = 0
 	state.last_progress_time = 0.0
+	state.last_section_time = 0.0
+	state.last_section_delta = 0.0
+	state.last_section_index = -1
 
 
 # ============================================================
@@ -523,6 +526,8 @@ func on_car_entered_section(
 	state.section_times.append(
 		current_time
 	)
+	
+	_update_last_section_delta(state)
 
 	state.last_progress_time = current_time
 
@@ -613,6 +618,8 @@ func _finish_lap(
 	state.section_times.append(
 		current_time
 	)
+	
+	_update_last_section_delta(state)
 	
 	var lap_time := (
 		current_time
@@ -751,6 +758,54 @@ func _update_best_section_times(
 				section_index
 			] = section_time
 
+func _update_last_section_delta(
+	state: RaceParticipantState
+) -> void:
+
+	if state.section_times.size() < 2:
+		state.last_section_time = 0.0
+		state.last_section_delta = 0.0
+		state.last_section_index = -1
+		return
+
+	var section_index := state.section_times.size() - 2
+
+	if (
+		section_index < 0
+		or section_index >= state.best_section_times.size()
+	):
+		state.last_section_time = 0.0
+		state.last_section_delta = 0.0
+		state.last_section_index = -1
+		return
+
+	var previous_time := (
+		state.section_times[
+			state.section_times.size() - 2
+		]
+	)
+
+	var current_time := (
+		state.section_times[
+			state.section_times.size() - 1
+		]
+	)
+
+	var section_time := current_time - previous_time
+
+	state.last_section_time = section_time
+	state.last_section_index = section_index
+
+	var best_section_time := (
+		state.best_section_times[section_index]
+	)
+
+	if best_section_time > 0.0:
+		state.last_section_delta = (
+			section_time - best_section_time
+		)
+	else:
+		state.last_section_delta = 0.0
 
 # ============================================================
 # FIN D'UN PARTICIPANT

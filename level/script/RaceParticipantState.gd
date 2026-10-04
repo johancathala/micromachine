@@ -71,6 +71,10 @@ var best_lap_time: float = 0.0
 # intermédiaires et les écarts.
 var section_times: Array[float] = []
 
+var last_section_time: float = 0.0
+var last_section_delta: float = 0.0
+var last_section_index: int = -1
+
 
 # Meilleur temps réalisé sur chaque section.
 #
@@ -136,3 +140,6 @@ func initialize(
 
 	race_position = 0
 	last_progress_time = 0.0
+	last_section_time = 0.0
+	last_section_delta = 0.0
+	last_section_index = -1

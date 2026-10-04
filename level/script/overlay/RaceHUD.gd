@@ -169,7 +169,7 @@ func _build_participant_rows() -> void:
 
 		participant_list.add_child(row)
 
-		row.setup(state)
+		row.setup(state,race_controller)
 
 		participant_rows[state.participant_id] = row
 
