@@ -27,6 +27,7 @@ func _ready() -> void:
 
 
 func _initialize_race() -> void:
+	print("Initialisation de la course")
 	if not _load_track():
 		return
 

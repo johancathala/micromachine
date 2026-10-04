@@ -8,3 +8,7 @@ script = ExtResource("1_hr7qv")
 [node name="TimerStart" type="Timer" parent="." unique_id=558093687]
 wait_time = 4.0
 one_shot = true
+
+[node name="TimerRaceEnd" type="Timer" parent="." unique_id=270888638]
+wait_time = 30.0
+one_shot = true

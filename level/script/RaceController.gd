@@ -22,7 +22,7 @@ signal participant_finished(
 	participant: RaceParticipantState
 )
 
-signal positions_changed()
+signal positions_changed(participant: RaceParticipantState)
 
 signal race_finished()
 
@@ -78,7 +78,9 @@ var race_start_usec: int = 0
 # ============================================================
 
 @onready var timer_start: Timer = $TimerStart
+@onready var timer_race_end: Timer = $TimerRaceEnd
 
+const RACE_END_DELAY := 30.0
 
 # ============================================================
 # INITIALISATION
@@ -87,9 +89,14 @@ var race_start_usec: int = 0
 func _ready() -> void:
 
 	timer_start.one_shot = true
+	timer_race_end.one_shot = true
 
 	timer_start.timeout.connect(
 		_on_timer_start_timeout
+	)
+
+	timer_race_end.timeout.connect(
+		_on_timer_race_end_timeout
 	)
 
 
@@ -98,6 +105,7 @@ func initialize(
 	p_race_world: RaceWorld
 ) -> bool:
 
+	print("Initialisation de RaceController")
 	if p_config == null:
 		push_error(
 			"RaceController : RaceConfig invalide."
@@ -113,9 +121,11 @@ func initialize(
 	race_config = p_config
 	race_world = p_race_world
 
+	print("Initialisation des sections")
 	if not _initialize_sections():
 		return false
 
+	print("Initialisation des participants")
 	if not _initialize_participants():
 		return false
 
@@ -288,6 +298,7 @@ func _initialize_participants() -> bool:
 
 func start_countdown() -> void:
 
+	print("Démarrage du compte à rebourd du départ")
 	if race_config == null:
 		push_error(
 			"RaceController : RaceConfig non initialisée."
@@ -385,7 +396,7 @@ func _on_timer_start_timeout() -> void:
 # ============================================================
 
 func _start_race() -> void:
-
+	print("Démarrage de la course")
 	if race_state != RaceState.COUNTDOWN:
 		return
 
@@ -758,7 +769,7 @@ func _finish_participant(
 	state.last_progress_time = current_time
 
 	state.finish_position = (
-		_get_finished_count() + 1
+		_get_finished_count()
 	)
 
 	if state.car != null:
@@ -773,18 +784,57 @@ func _finish_participant(
 
 	_update_positions()
 
+	print("{nickname} a fini la course en {position} position".format({"nickname": state.nickname, "position": state.race_position}))
+	print("{nb} participants ont fini la course".format({"nb": state.finish_position}))
 	# --------------------------------------------------------
-	# Vérification de la fin de course.
+	# Le premier arrivé déclenche le délai de fin de course.
 	# --------------------------------------------------------
+	if state.finish_position == 1:
+
+		_start_race_end_timer()
+
+		return
+
+
+func _all_participants_finished() -> bool:
 
 	for participant in participants:
 
 		if not participant.finished:
+			return false
 
-			return
+	return true
+
+
+	# --------------------------------------------------------
+	# Si tous les participants sont arrivés avant les 30 secondes,
+	# la course peut se terminer immédiatement.
+	# --------------------------------------------------------
+	if _all_participants_finished():
+
+		timer_race_end.stop()
+		_finish_race()
+
+# ============================================================
+# DÉLAI DE FIN DE COURSE
+# ============================================================
+
+func _start_race_end_timer() -> void:
+	print("Activation du timer de fin de course")
+	if race_state != RaceState.RUNNING:
+		return
+
+	if not timer_race_end.is_stopped():
+		return
+
+	timer_race_end.start(RACE_END_DELAY)
+
+func _on_timer_race_end_timeout() -> void:
+
+	if race_state != RaceState.RUNNING:
+		return
 
 	_finish_race()
-
 
 # ============================================================
 # NOMBRE DE PARTICIPANTS ARRIVÉS
@@ -822,7 +872,7 @@ func _update_positions() -> void:
 
 		ordered[i].race_position = i + 1
 
-	positions_changed.emit()
+	positions_changed.emit(ordered[0])
 
 
 func _compare_participants(
@@ -892,7 +942,8 @@ func _compare_participants(
 # ============================================================
 
 func _finish_race() -> void:
-
+	
+	print("Fin de la course")
 	if race_state == RaceState.FINISHED:
 		return
 

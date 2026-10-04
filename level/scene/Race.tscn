@@ -5,6 +5,13 @@
 [ext_resource type="PackedScene" uid="uid://ciqvtvdjj0od6" path="res://level/scene/RaceController.tscn" id="3_y4ydr"]
 [ext_resource type="PackedScene" uid="uid://c6dhgndnkrsuw" path="res://level/scene/RaceHUD.tscn" id="4_mv8ay"]
 
+[sub_resource type="SystemFont" id="SystemFont_bbojj"]
+font_names = PackedStringArray("Impact")
+
+[sub_resource type="Theme" id="Theme_lh37b"]
+default_font = SubResource("SystemFont_bbojj")
+default_font_size = 20
+
 [node name="Race" type="Control" unique_id=801995124]
 layout_mode = 3
 anchors_preset = 15
@@ -12,6 +19,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = SubResource("Theme_lh37b")
 script = ExtResource("1_df1s8")
 
 [node name="RaceWorld" parent="." unique_id=1725700049 instance=ExtResource("2_2c3da")]

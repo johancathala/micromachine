@@ -1,7 +1,7 @@
 extends MarginContainer
 
-var valeur_marge_x = 100
-var valeur_marge_y = 50
+var valeur_marge_x = 40
+var valeur_marge_y = 40
 
 func _ready() -> void:
 	add_theme_constant_override("margin_top", valeur_marge_y)

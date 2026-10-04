@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://fo0mu7isw1mm"]
+
+[ext_resource type="Script" uid="uid://c0v1uqt86g545" path="res://level/script/overlay/RaceParticipantHud.gd" id="1_lh37b"]
+
+[node name="RaceParticipantHud" type="HBoxContainer" unique_id=1061226283]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -297.0
+offset_bottom = 23.0
+grow_horizontal = 0
+script = ExtResource("1_lh37b")
+
+[node name="Position" type="Label" parent="." unique_id=870667847]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Position"
+horizontal_alignment = 2
+
+[node name="Name" type="Label" parent="." unique_id=1468475649]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Name"
+horizontal_alignment = 2
+
+[node name="Lap" type="Label" parent="." unique_id=1255453502]
+layout_mode = 2
+text = "Temps en cours"
+
+[node name="LapTime" type="Label" parent="." unique_id=2088310073]
+layout_mode = 2
+text = "Temps en cours"
+
+[node name="Delta" type="Label" parent="." unique_id=1569338217]
+layout_mode = 2
+text = "Delta"
+
+[node name="BestLap" type="Label" parent="." unique_id=1034448354]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Meilleur tour"
+horizontal_alignment = 2
+
+[node name="Speed" type="Label" parent="." unique_id=506395312]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Vitesse"
+horizontal_alignment = 2

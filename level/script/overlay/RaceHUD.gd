@@ -1,19 +1,20 @@
 extends Control
 class_name RaceHUD
 
-@onready var lap_label: Label = $MarginContainer/HBoxContainer/LeftPanel/Lap
-@onready var race_time_label: Label = $MarginContainer/HBoxContainer/LeftPanel/RaceTime
-@onready var lap_time_label: Label = $MarginContainer/HBoxContainer/LeftPanel/LapTime
-@onready var last_lap_label: Label = $MarginContainer/HBoxContainer/LeftPanel/LastLapTime
-@onready var delta_label: Label = $MarginContainer/HBoxContainer/LeftPanel/Delta
+const PARTICIPANT_ROW_SCENE := preload(
+    "res://level/scene/RaceParticipantHUD.tscn"
+)
 
-@onready var light_start: Node2D = $MarginContainer/HBoxContainer/CenterPanel/FeuDepart
+@onready var lap_label: Label = $MarginContainer/HBoxContainer/LeftPanel/Top/Lap
+@onready var first_participant_label: Label = $MarginContainer/HBoxContainer/LeftPanel/Top/FirstParticipant
+@onready var best_lap_label: Label = $MarginContainer/HBoxContainer/LeftPanel/Top/BestLap
+@onready var race_time_label: Label = $MarginContainer/HBoxContainer/LeftPanel/Top/RaceTime
 
-@onready var speed_label: Label = $MarginContainer/HBoxContainer/RightPanel/Speed
-@onready var position_label: Label = $MarginContainer/HBoxContainer/RightPanel/Position
-@onready var best_lap_label: Label = $MarginContainer/HBoxContainer/RightPanel/BestLap
+@onready var light_start: Node2D = $MarginContainer/HBoxContainer/CenterPanel/Center/FeuDepart
 
-@onready var race_status_label: Label = $RaceStatus
+@onready var participant_list: VBoxContainer = $MarginContainer/HBoxContainer/RightPanel
+
+var participant_rows: Dictionary = {}
 
 var race_controller: RaceController = null
 var race_world: RaceWorld = null
@@ -37,6 +38,8 @@ func initialize(
 
 	_prepare_countdown_display()
 	_update_static_values()
+	
+	_build_participant_rows()
 
 
 func _process(_delta: float) -> void:
@@ -45,8 +48,17 @@ func _process(_delta: float) -> void:
 
 	_update_race_time()
 	_update_displayed_car()
-	_update_speed()
-	_update_participant_values()
+	
+	for state in race_controller.get_participant_states():
+
+		var row = participant_rows.get(
+			state.participant_id
+		)
+
+		if row == null:
+			continue
+		
+		row.refresh()
 
 
 func _connect_controller_signals() -> void:
@@ -143,6 +155,23 @@ func _update_displayed_car() -> void:
 			displayed_car = car
 			return
 
+func _build_participant_rows() -> void:
+
+	# Nettoyage éventuel
+	for child in participant_list.get_children():
+		child.queue_free()
+
+	participant_rows.clear()
+
+	for state in race_controller.get_participant_states():
+
+		var row := PARTICIPANT_ROW_SCENE.instantiate()
+
+		participant_list.add_child(row)
+
+		row.setup(state)
+
+		participant_rows[state.participant_id] = row
 
 # ------------------------------------------------------------------
 # COUNTDOWN
@@ -150,8 +179,6 @@ func _update_displayed_car() -> void:
 
 func _prepare_countdown_display() -> void:
 	race_started = false
-
-	race_status_label.text = ""
 
 	_set_lights_red()
 	light_start.visible = true
@@ -163,15 +190,12 @@ func _on_countdown_started() -> void:
 	_set_lights_red()
 
 	light_start.visible = true
-	race_status_label.text = "PRÊT"
 
 
 func _on_race_started() -> void:
 	race_started = true
 
 	_set_lights_green()
-
-	race_status_label.text = "PARTEZ !"
 
 
 func _set_lights_red() -> void:
@@ -227,149 +251,57 @@ func _update_race_time() -> void:
 	)
 
 
-func _update_participant_values() -> void:
+func _update_first_participant_values(state: RaceParticipantState) -> void:
 	if race_controller == null:
 		return
-
-	var state : RaceParticipantState = race_controller.get_participant_state(
-		displayed_participant_id
-	)
-
-	if state == null:
-		return
+	
+	var current_lap = state.current_lap
 
 	var lap_count : int = race_controller.get_lap_count()
 
 	lap_label.text = (
 		"Tour %d/%d"
 		% [
-			state.current_lap,
+			current_lap,
 			lap_count
 		]
 	)
+	
+	first_participant_label.text = "Leader de la course : "+state.nickname
 
-	if state.has_started_lap and not state.finished:
-		var current_lap_time := (
-			race_controller.get_race_time()
-			- state.lap_start_time
-		)
-
-		lap_time_label.text = (
-			"Tour en cours : %s"
-			% _format_time(current_lap_time)
-		)
-
-	if state.last_lap_time > 0.0:
-		last_lap_label.text = (
-			"Dernier tour : %s"
-			% _format_time(state.last_lap_time)
-		)
-
-	if state.best_lap_time > 0.0:
-		best_lap_label.text = (
-			"Meilleur tour : %s"
-			% _format_time(state.best_lap_time)
-		)
-
-	if state.race_position > 0:
-		var total : int = race_controller.get_participant_count()
-
-		position_label.text = (
-			"Position : %d/%d"
-			% [
-				state.race_position,
-				total
-			]
-		)
-
-
-func _update_speed() -> void:
-	if displayed_car == null:
-		speed_label.text = "0 km/h"
+func _update_best_lap(state: RaceParticipantState) -> void:
+	if race_controller == null:
 		return
 
-	var speed := displayed_car.velocity.length()
+	var best_lap : float = state.best_lap_time
 
-	# Conversion adaptée à l'échelle actuelle du véhicule.
-	# À ajuster une seule fois lorsque l'échelle physique définitive
-	# du jeu sera figée.
-	var kmh := roundi(speed * 140.0 / 2000.0)
-
-	speed_label.text = "%d km/h" % kmh
-
+	best_lap_label.text = (
+		"Meilleur temps (à modif) : %s"
+		% _format_time(best_lap)
+	)
 
 # ------------------------------------------------------------------
 # ÉVÉNEMENTS DE COURSE
 # ------------------------------------------------------------------
 
-func _on_participant_lap_completed(
+
+func _on_participant_finished(
 	state: RaceParticipantState
 ) -> void:
 
-	if state == null:
-		return
-		
 	if state.participant_id != displayed_participant_id:
 		return
 
-	last_lap_label.text = (
-		"Dernier tour : %s"
-		% _format_time(state.last_lap_time)
-	)
 
-	if state.best_lap_time > 0.0:
-		best_lap_label.text = (
-			"Meilleur tour : %s"
-			% _format_time(state.best_lap_time)
-		)
+func _on_positions_changed(state: RaceParticipantState) -> void:
+	_update_first_participant_values(state)
 
-	_update_delta(state, state.last_lap_time)
-
-
-func _update_delta(
-	state: RaceParticipantState,
-	lap_time: float
-) -> void:
-
-	if state.best_lap_time <= 0.0:
-		delta_label.text = "Écart : --"
-		return
-
-	var delta := lap_time - state.best_lap_time
-
-	delta_label.text = (
-		"Écart : %s%s"
-		% [
-			"+" if delta >= 0.0 else "",
-			_format_time(delta)
-		]
-	)
-
-
-func _on_participant_finished(
-	participant_id: int,
-	finish_position: int
-) -> void:
-
-	if participant_id != displayed_participant_id:
-		return
-
-	race_status_label.text = (
-		"ARRIVÉ !  %dème"
-		% finish_position
-	)
-
-
-func _on_positions_changed() -> void:
-	_update_participant_values()
+func _on_participant_lap_completed(state: RaceParticipantState) -> void:
+	_update_best_lap(state)
 
 
 func _on_race_finished() -> void:
 	race_started = false
-
-	race_status_label.text = "COURSE TERMINÉE"
-
-	_update_participant_values()
 
 
 # ------------------------------------------------------------------
@@ -384,12 +316,6 @@ func _update_static_values() -> void:
 
 	lap_label.text = "Tour 0/%d" % lap_count
 	race_time_label.text = "Temps de course : 0.00"
-	lap_time_label.text = "Tour en cours : 0.00"
-	last_lap_label.text = "Dernier tour : --"
-	delta_label.text = "Écart : --"
-	speed_label.text = "0 km/h"
-	position_label.text = "Position : --/--"
-	best_lap_label.text = "Meilleur tour : --"
 
 
 func _format_time(time_seconds: float) -> String:
