@@ -30,8 +30,10 @@ script = ExtResource("1_df1s8")
 
 [node name="HUD" parent="HUDLayer" unique_id=340661902 instance=ExtResource("4_mv8ay")]
 
-[node name="PauseOverlay" type="Control" parent="." unique_id=2068927766]
-layout_mode = 1
+[node name="PauseLayer" type="CanvasLayer" parent="." unique_id=608932687]
+
+[node name="PauseOverlay" type="Control" parent="PauseLayer" unique_id=2068927766]
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0

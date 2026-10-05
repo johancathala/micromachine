@@ -24,6 +24,10 @@ signal participant_finished(
 
 signal positions_changed(participant: RaceParticipantState)
 
+signal race_end_countdown_started(
+	remaining_time: float
+)
+
 signal race_finished()
 
 
@@ -89,12 +93,12 @@ const RACE_END_DELAY := 30.0
 func _ready() -> void:
 
 	timer_start.one_shot = true
-	timer_race_end.one_shot = true
-
 	timer_start.timeout.connect(
 		_on_timer_start_timeout
 	)
 
+	timer_race_end.one_shot = true
+	timer_race_end.wait_time = RACE_END_DELAY
 	timer_race_end.timeout.connect(
 		_on_timer_race_end_timeout
 	)
@@ -371,15 +375,17 @@ func _reset_participant_state(
 	state.best_lap_time = 0.0
 
 	state.section_times.clear()
+	state.lap_records.clear()
 
 	for i in range(
 		state.best_section_times.size()
 	):
-
 		state.best_section_times[i] = 0.0
 
+	state.finish_time = 0.0
 	state.race_position = 0
 	state.last_progress_time = 0.0
+	
 	state.last_section_time = 0.0
 	state.last_section_delta = 0.0
 	state.last_section_index = -1
@@ -609,18 +615,19 @@ func _start_first_lap(
 # ============================================================
 # FIN D'UN TOUR
 # ============================================================
-
 func _finish_lap(
 	state: RaceParticipantState,
 	current_time: float
 ) -> void:
-
+	# --------------------------------------------------------
+	# Le passage sur la ligne termine le tour.
+	# --------------------------------------------------------
 	state.section_times.append(
 		current_time
 	)
 	
 	_update_last_section_delta(state)
-	
+
 	var lap_time := (
 		current_time
 		- state.lap_start_time
@@ -629,9 +636,24 @@ func _finish_lap(
 	state.last_lap_time = lap_time
 
 	# --------------------------------------------------------
-	# Meilleur tour
+	# Calcul des temps intermédiaires du tour.
 	# --------------------------------------------------------
+	var section_times := (
+		_calculate_section_times(state)
+	)
 
+	# --------------------------------------------------------
+	# Conservation définitive du tour.
+	# --------------------------------------------------------
+	state.lap_records.append({
+		"lap": state.current_lap,
+		"lap_time": lap_time,
+		"section_times": section_times.duplicate()
+	})
+
+	# --------------------------------------------------------
+	# Meilleur tour personnel.
+	# --------------------------------------------------------
 	if (
 		state.best_lap_time <= 0.0
 		or lap_time < state.best_lap_time
@@ -640,9 +662,8 @@ func _finish_lap(
 		state.best_lap_time = lap_time
 
 	# --------------------------------------------------------
-	# Meilleurs temps intermédiaires.
+	# Meilleurs temps intermédiaires personnels.
 	# --------------------------------------------------------
-
 	_update_best_section_times(
 		state
 	)
@@ -652,9 +673,8 @@ func _finish_lap(
 	)
 
 	# --------------------------------------------------------
-	# La voiture vient de terminer le tour courant.
+	# Dernier tour de la course.
 	# --------------------------------------------------------
-
 	if state.current_lap >= race_config.lap_count:
 
 		_finish_participant(
@@ -667,15 +687,12 @@ func _finish_lap(
 	# --------------------------------------------------------
 	# Nouveau tour.
 	# --------------------------------------------------------
-
 	state.current_lap += 1
 
 	state.next_section = 1
 
 	state.section_times.clear()
 
-	# Le passage sur la ligne de départ constitue déjà
-	# le premier point de chronométrage du nouveau tour.
 	state.section_times.append(
 		current_time
 	)
@@ -686,33 +703,45 @@ func _finish_lap(
 
 	_update_positions()
 
-
 # ============================================================
 # MEILLEURS TEMPS DE SECTIONS
 # ============================================================
-
 func _update_best_section_times(
 	state: RaceParticipantState
 ) -> void:
 
+	var section_times := _calculate_section_times(
+		state
+	)
+
+	for i in range(section_times.size()):
+
+		if i >= state.best_section_times.size():
+			continue
+
+		var section_time := section_times[i]
+
+		var best := (
+			state.best_section_times[i]
+		)
+
+		if (
+			best <= 0.0
+			or section_time < best
+		):
+
+			state.best_section_times[i] = section_time
+
+func _calculate_section_times(
+	state: RaceParticipantState
+) -> Array[float]:
+
+	var result: Array[float] = []
+
 	if state.section_times.size() < 2:
-		return
+		return result
 
 	var previous_time := state.lap_start_time
-
-	# Les temps sont des temps absolus depuis le départ.
-	#
-	# On transforme donc :
-	#
-	# 10.000
-	# 12.500
-	# 15.700
-	#
-	# en :
-	#
-	# 2.500
-	# 3.200
-	# etc.
 
 	for i in range(
 		state.section_times.size()
@@ -729,34 +758,12 @@ func _update_best_section_times(
 
 		previous_time = current_time
 
-		# Le premier élément correspond à la ligne
-		# de départ elle-même et ne constitue pas
-		# un temps de section.
 		if i == 0:
 			continue
 
-		var section_index := i - 1
+		result.append(section_time)
 
-		if (
-			section_index
-			>= state.best_section_times.size()
-		):
-			continue
-
-		var best := (
-			state.best_section_times[
-				section_index
-			]
-		)
-
-		if (
-			best <= 0.0
-			or section_time < best
-		):
-
-			state.best_section_times[
-				section_index
-			] = section_time
+	return result
 
 func _update_last_section_delta(
 	state: RaceParticipantState
@@ -820,6 +827,7 @@ func _finish_participant(
 		return
 
 	state.finished = true
+	state.finish_time = current_time
 
 	state.last_progress_time = current_time
 
@@ -828,14 +836,9 @@ func _finish_participant(
 	)
 
 	if state.car != null:
+		state.car.set_can_move(false)
 
-		state.car.set_can_move(
-			false
-		)
-
-	participant_finished.emit(
-		state
-	)
+	participant_finished.emit(state)
 
 	_update_positions()
 
@@ -844,36 +847,25 @@ func _finish_participant(
 	# --------------------------------------------------------
 	# Le premier arrivé déclenche le délai de fin de course.
 	# --------------------------------------------------------
-	if state.finish_position == 1:
+	if _get_finished_count() == 1:
 
 		_start_race_end_timer()
 
-		return
-
-
-func _all_participants_finished() -> bool:
-
-	for participant in participants:
-
-		if not participant.finished:
-			return false
-
-	return true
-
-
-	# --------------------------------------------------------
-	# Si tous les participants sont arrivés avant les 30 secondes,
-	# la course peut se terminer immédiatement.
-	# --------------------------------------------------------
-	if _all_participants_finished():
+		race_end_countdown_started.emit(
+			RACE_END_DELAY
+		)
+	
+	# Si tout le monde est arrivé avant les 30 secondes,
+	# on termine immédiatement.
+	if _get_finished_count() >= participants.size():
 
 		timer_race_end.stop()
+
 		_finish_race()
 
 # ============================================================
 # DÉLAI DE FIN DE COURSE
 # ============================================================
-
 func _start_race_end_timer() -> void:
 	print("Activation du timer de fin de course")
 	if race_state != RaceState.RUNNING:
@@ -1005,22 +997,69 @@ func _finish_race() -> void:
 	race_state = RaceState.FINISHED
 
 	timer_start.stop()
-
+	timer_race_end.stop()
+	
 	for state in participants:
 
 		if state.car != null:
+			state.car.set_can_move(false)
 
-			state.car.set_can_move(
-				false
-			)
+	# On fige le classement final.
+	_update_positions()
 
+	GameManager.store_race_results(
+		build_race_results()
+	)
+	
 	race_finished.emit()
 
+func build_race_results() -> Array[Dictionary]:
+
+	var results: Array[Dictionary] = []
+
+	for state in participants:
+
+		results.append({
+			"participant_id": state.participant_id,
+			"nickname": state.nickname,
+			"is_ai": state.is_ai,
+
+			"position": state.race_position,
+			"finish_position": state.finish_position,
+
+			"finished": state.finished,
+
+			"lap_records": state.lap_records.duplicate(true),
+
+			"best_lap_time": state.best_lap_time,
+
+			"best_section_times": (
+				state.best_section_times.duplicate()
+			),
+
+			"finish_time": state.finish_time,
+
+			"lap_count": state.lap_records.size()
+		})
+
+	results.sort_custom(
+		_compare_result_positions
+	)
+
+	return results
+
+func _compare_result_positions(
+	a: Dictionary,
+	b: Dictionary
+) -> bool:
+
+	return int(a.get("position", 999)) < int(
+		b.get("position", 999)
+	)
 
 # ============================================================
 # RECHERCHE D'UN PARTICIPANT
 # ============================================================
-
 func _get_participant_state(
 	car: Car
 ) -> RaceParticipantState:

@@ -9,7 +9,7 @@ enum GameMode {
 
 var pending_race_config: RaceConfig = null
 var active_race_config: RaceConfig = null
-
+var last_race_results: Array[Dictionary] = []
 
 # ================================================================
 # CONFIGURATION DE COURSE
@@ -68,11 +68,28 @@ func start_single_race(config: RaceConfig) -> bool:
 
 	return true
 
+func restart_active_race() -> bool:
 
+	if active_race_config == null:
+		return false
+
+	pending_race_config = (
+		active_race_config.duplicate_config()
+	)
+
+	return start_race()
+
+func prepare_race_setup() -> void:
+
+	if active_race_config == null:
+		return
+
+	pending_race_config = (
+		active_race_config.duplicate_config()
+	)
 # ================================================================
 # COURSE ACTIVE
 # ================================================================
-
 func has_active_race() -> bool:
 	return active_race_config != null
 
@@ -91,3 +108,20 @@ func get_active_race_config() -> RaceConfig:
 
 func clear_active_race_config() -> void:
 	active_race_config = null
+
+
+# ================================================================
+# FIN DE COURSE
+# ================================================================
+func store_race_results(
+	results: Array[Dictionary]
+) -> void:
+	last_race_results = results.duplicate(true)
+
+func clear_active_race() -> void:
+	pending_race_config = null
+	active_race_config = null
+	last_race_results.clear()
+
+func get_last_race_results() -> Array[Dictionary]:
+	return last_race_results

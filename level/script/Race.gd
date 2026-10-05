@@ -43,6 +43,10 @@ func _initialize_race() -> void:
 	# Les voitures restent bloquées tant que le compte à rebours
 	# n'est pas terminé.
 	race_controller.start_countdown()
+	
+	race_controller.race_finished.connect(
+		_on_race_finished
+	)
 
 
 func _load_track() -> bool:
@@ -179,3 +183,9 @@ func _initialize_camera() -> void:
 			"Race : RaceCamera n'utilise pas le script RaceCamera."
 		)
 		return
+
+func _on_race_finished() -> void:
+
+	NavigationManager.go_to(
+		"res://level/scene/RaceRecap.tscn"
+	)

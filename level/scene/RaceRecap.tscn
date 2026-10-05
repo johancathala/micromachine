@@ -1,0 +1,57 @@
+[gd_scene format=3 uid="uid://dyeklntwsjnvm"]
+
+[ext_resource type="Script" uid="uid://c8e650pfgppyt" path="res://level/script/RaceRecap.gd" id="1_ebtul"]
+
+[node name="RaceRecap" type="Control" unique_id=303024604]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_ebtul")
+
+[node name="Background" type="ColorRect" parent="." unique_id=1410816929]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1347901109]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=246438452]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MarginContainer/VBoxContainer" unique_id=145814989]
+layout_mode = 2
+
+[node name="TrackName" type="Label" parent="MarginContainer/VBoxContainer" unique_id=1697005923]
+layout_mode = 2
+
+[node name="ResultsPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer" unique_id=998499506]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/VBoxContainer/ResultsPanel" unique_id=1797198862]
+layout_mode = 2
+
+[node name="ResultsScroll" type="ScrollContainer" parent="MarginContainer/VBoxContainer/ResultsPanel/MarginContainer" unique_id=1533881737]
+layout_mode = 2
+
+[node name="ResultsList" type="VBoxContainer" parent="MarginContainer/VBoxContainer/ResultsPanel/MarginContainer/ResultsScroll" unique_id=1403437995]
+layout_mode = 2
+
+[node name="BestLapPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer" unique_id=529843979]
+layout_mode = 2
+
+[node name="BestLapLabel" type="Label" parent="MarginContainer/VBoxContainer/BestLapPanel" unique_id=260266284]
+layout_mode = 2
+
+[node name="Buttons" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=891306676]
+layout_mode = 2
+
+[node name="RestartButton" type="Button" parent="MarginContainer/VBoxContainer/Buttons" unique_id=1785055774]
+layout_mode = 2
+
+[node name="TrackSelectionButton" type="Button" parent="MarginContainer/VBoxContainer/Buttons" unique_id=1369528854]
+layout_mode = 2
+
+[node name="MainMenuButton" type="Button" parent="MarginContainer/VBoxContainer/Buttons" unique_id=1899325]
+layout_mode = 2

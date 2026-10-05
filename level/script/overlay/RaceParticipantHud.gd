@@ -164,7 +164,7 @@ func get_delta() -> String:
 
 func _update_delta_color() -> void:
 
-	var delta := participant.last_section_delta
+	var delta: float = participant.last_section_delta
 
 	if participant.last_section_index < 0:
 		delta_label.modulate = Color.WHITE

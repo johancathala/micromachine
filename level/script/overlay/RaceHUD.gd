@@ -122,7 +122,7 @@ func _select_displayed_participant() -> void:
 
 	# 1. Priorité au clavier.
 	for state in states:
-		if state.device_type == "keyboard":
+		if state.input_device_type == "keyboard":
 			displayed_participant_id = state.participant_id
 			return
 
