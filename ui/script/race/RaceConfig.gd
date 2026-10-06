@@ -8,7 +8,7 @@ const MAX_HUMAN_PLAYERS := 8
 var mode: GameManager.GameMode = GameManager.GameMode.SINGLE_RACE
 
 var ai_difficulty: int = 0
-var track_id: String = ""
+var track: Dictionary = {}
 var lap_count: int = 3
 
 # Joueurs humains ayant rejoint le lobby.
@@ -94,7 +94,7 @@ func is_valid() -> bool:
 	if players.size() > MAX_HUMAN_PLAYERS:
 		return false
 
-	if track_id.is_empty():
+	if track.is_empty():
 		return false
 
 	if lap_count <= 0:
@@ -292,7 +292,7 @@ func duplicate_config() -> RaceConfig:
 
 	copy.mode = mode
 	copy.ai_difficulty = ai_difficulty
-	copy.track_id = track_id
+	copy.track = track
 	copy.lap_count = lap_count
 
 	copy.players = players.duplicate(true)

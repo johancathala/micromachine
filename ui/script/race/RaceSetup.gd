@@ -18,6 +18,7 @@ enum AIDifficulty {
 
 
 var race_config: RaceConfig
+var track_catalog: Array
 
 # Une seule personne peut utiliser le clavier.
 var keyboard_player_joined := false
@@ -57,6 +58,7 @@ var keyboard_player_joined := false
 
 func _ready() -> void:
 	race_config = GameManager.get_pending_race_config()
+	track_catalog = GameManager.get_tracks()
 
 	if race_config == null:
 		race_config = RaceConfig.new()
@@ -81,7 +83,6 @@ func _exit_tree() -> void:
 # ================================================================
 # Configuration
 # ================================================================
-
 func _setup_settings() -> void:
 	_setup_ai_difficulty()
 	_setup_laps()
@@ -103,13 +104,7 @@ func _setup_settings_from_config() -> void:
 	if lap_index >= 0:
 		lap_selector.select(lap_index)
 
-
-	var track_index := _get_track_index(
-		race_config.track_id
-	)
-
-	if track_index >= 0:
-		track_selector.select(track_index)
+	track_selector.select(race_config.track.id)
 
 func _setup_ai_difficulty() -> void:
 	ai_difficulty.clear()
@@ -149,36 +144,18 @@ func _setup_laps() -> void:
 
 func _setup_tracks() -> void:
 	track_selector.clear()
+	
+	for track: Dictionary in track_catalog:
+		track_selector.add_item(track.name, track.id)
+	
+	var first_track: Dictionary = track_catalog.get(0)
+	track_selector.select(first_track.id)
 
-	track_selector.add_item("Classique", 0)
-	track_selector.add_item("Padock 1", 1)
-	track_selector.add_item("Padock 2", 2)
-	track_selector.add_item("Reverse", 3)
-
-	track_selector.select(0)
-
-	race_config.track_id = "track_01"
-
-func _get_track_index(track_id: String) -> int:
-	match track_id:
-		"track_01":
-			return 0
-
-		"track_02":
-			return 1
-
-		"track_03":
-			return 2
-
-		"track_reverse":
-			return 3
-
-	return -1
+	race_config.track = first_track
 
 # ================================================================
 # Signaux
 # ================================================================
-
 func _connect_signals() -> void:
 	back_button.pressed.connect(_on_back_pressed)
 	start_button.pressed.connect(_on_start_pressed)
@@ -209,13 +186,11 @@ func _connect_signals() -> void:
 # ================================================================
 # JOIN
 # ================================================================
-
 func _unhandled_input(event: InputEvent) -> void:
 
 	# ------------------------------------------------------------
 	# Clavier
 	# ------------------------------------------------------------
-
 	if event is InputEventKey:
 		if not event.pressed:
 			return
@@ -232,7 +207,6 @@ func _unhandled_input(event: InputEvent) -> void:
 	# ------------------------------------------------------------
 	# Manette
 	# ------------------------------------------------------------
-
 	if event is InputEventJoypadButton:
 		if not event.pressed:
 			return
@@ -246,7 +220,6 @@ func _unhandled_input(event: InputEvent) -> void:
 # ================================================================
 # JOIN CLAVIER
 # ================================================================
-
 func _try_join_keyboard() -> void:
 
 	if keyboard_player_joined:
@@ -259,14 +232,12 @@ func _try_join_keyboard() -> void:
 		keyboard_player_joined = true
 		return
 
-
 	var player_id := race_config.get_next_player_id()
 
 	var nickname : String = SaveManager.get_nickname()
 
 	if nickname.is_empty():
 		nickname = "Joueur 1"
-
 
 	var player := {
 		"player_id": player_id,
@@ -285,7 +256,6 @@ func _try_join_keyboard() -> void:
 # ================================================================
 # JOIN MANETTE
 # ================================================================
-
 func _try_join_gamepad(device_id: int) -> void:
 
 	if race_config.is_full():
@@ -308,7 +278,6 @@ func _try_join_gamepad(device_id: int) -> void:
 	if nickname.is_empty():
 		nickname = "Joueur %d" % player_number
 
-
 	var player := {
 		"player_id": player_id,
 		"device_type": "gamepad",
@@ -324,7 +293,6 @@ func _try_join_gamepad(device_id: int) -> void:
 # ================================================================
 # REFRESH INTERFACE
 # ================================================================
-
 func _refresh_ui() -> void:
 	_refresh_players()
 	_refresh_start_button()
@@ -389,7 +357,6 @@ func _refresh_join_hint() -> void:
 # ================================================================
 # PARAMÈTRES
 # ================================================================
-
 func _on_ai_difficulty_changed(index: int) -> void:
 	race_config.ai_difficulty = ai_difficulty.get_item_id(index)
 
@@ -397,7 +364,7 @@ func _on_ai_difficulty_changed(index: int) -> void:
 
 
 func _on_track_changed(index: int) -> void:
-	race_config.track_id = _get_track_id(index)
+	race_config.track = track_catalog.get(index)
 
 	_refresh_start_button()
 
@@ -407,22 +374,6 @@ func _on_laps_changed(index: int) -> void:
 
 	_refresh_start_button()
 
-
-func _get_track_id(index: int) -> String:
-	match index:
-		0:
-			return "track_01"
-
-		1:
-			return "track_02"
-
-		2:
-			return "track_03"
-
-		3:
-			return "track_reverse"
-
-	return ""
 
 func _on_player_nickname_changed(
 	player_id: int,
@@ -458,7 +409,6 @@ func _on_player_nickname_changed(
 # ================================================================
 # SUPPRESSION JOUEUR
 # ================================================================
-
 func _on_player_remove_requested(player_id: int) -> void:
 
 	var player := race_config.get_player_by_id(player_id)
@@ -466,10 +416,8 @@ func _on_player_remove_requested(player_id: int) -> void:
 	if player.is_empty():
 		return
 
-
 	if str(player.get("device_type", "")) == "keyboard":
 		keyboard_player_joined = false
-
 
 	race_config.remove_player(player_id)
 
@@ -479,7 +427,6 @@ func _on_player_remove_requested(player_id: int) -> void:
 # ================================================================
 # DÉCONNEXION MANETTE
 # ================================================================
-
 func _on_gamepad_disconnected(device_id: int) -> void:
 
 	var player_id := -1
@@ -493,10 +440,8 @@ func _on_gamepad_disconnected(device_id: int) -> void:
 			player_id = int(player.get("player_id", -1))
 			break
 
-
 	if player_id < 0:
 		return
-
 
 	race_config.remove_player(player_id)
 
@@ -506,9 +451,8 @@ func _on_gamepad_disconnected(device_id: int) -> void:
 # ================================================================
 # NAVIGATION
 # ================================================================
-
 func _on_back_pressed() -> void:
-	NavigationManager.go_back()
+	NavigationManager.go_back_menu()
 
 
 func _on_start_pressed() -> void:

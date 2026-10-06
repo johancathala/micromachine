@@ -34,6 +34,12 @@ func has_pending_race_config() -> bool:
 func clear_pending_race_config() -> void:
 	pending_race_config = null
 
+func get_tracks() -> Array:
+	return TrackCatalog.get_tracks()
+	
+func get_track(id: int) -> Dictionary:
+	return TrackCatalog.get_track(id)
+
 # ================================================================
 # LANCEMENT DE LA COURSE
 # ================================================================

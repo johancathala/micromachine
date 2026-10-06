@@ -1,0 +1,129 @@
+[gd_scene format=3 uid="uid://dyeklntwsjnvm"]
+
+[ext_resource type="Script" uid="uid://c8e650pfgppyt" path="res://ui/script/race/RaceRecap.gd" id="1_6teyk"]
+
+[sub_resource type="SystemFont" id="SystemFont_anga4"]
+font_names = PackedStringArray("Impact")
+
+[sub_resource type="Theme" id="Theme_p52qu"]
+default_font = SubResource("SystemFont_anga4")
+default_font_size = 40
+
+[node name="RaceRecap" type="Control" unique_id=303024604]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_p52qu")
+script = ExtResource("1_6teyk")
+
+[node name="Background" type="ColorRect" parent="." unique_id=944779594]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.36862746, 0.5058824, 1, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=412509691]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 45.0
+offset_top = 45.0
+offset_right = -45.0
+offset_bottom = -50.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=246438452]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MarginContainer/VBoxContainer" unique_id=145814989]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.84705883, 0.3019608, 1)
+theme_override_font_sizes/font_size = 60
+text = "CLASSEMENT DE LA COURSE"
+horizontal_alignment = 1
+
+[node name="TrackName" type="Label" parent="MarginContainer/VBoxContainer" unique_id=1697005923]
+layout_mode = 2
+text = "Track name"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="MarginContainer/VBoxContainer" unique_id=1694820430]
+custom_minimum_size = Vector2(0, 15)
+layout_mode = 2
+
+[node name="BestLapPanel" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=473424648]
+layout_mode = 2
+
+[node name="Titre" type="Label" parent="MarginContainer/VBoxContainer/BestLapPanel" unique_id=2075872641]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.84705883, 0.3019608, 1)
+text = "Meilleur tour :"
+horizontal_alignment = 2
+
+[node name="BestLapNameLabel" type="Label" parent="MarginContainer/VBoxContainer/BestLapPanel" unique_id=1086817977]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.84705883, 0.3019608, 1)
+text = "JOJO"
+horizontal_alignment = 1
+
+[node name="BestLapLabel" type="Label" parent="MarginContainer/VBoxContainer/BestLapPanel" unique_id=260266284]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.84705883, 0.3019608, 1)
+text = "50.356"
+
+[node name="Spacer2" type="Control" parent="MarginContainer/VBoxContainer" unique_id=1004160105]
+custom_minimum_size = Vector2(0, 15)
+layout_mode = 2
+
+[node name="ResultsPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer" unique_id=998499506]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/VBoxContainer/ResultsPanel" unique_id=1797198862]
+layout_mode = 2
+
+[node name="ResultsScroll" type="ScrollContainer" parent="MarginContainer/VBoxContainer/ResultsPanel/MarginContainer" unique_id=1533881737]
+layout_mode = 2
+
+[node name="ResultsList" type="VBoxContainer" parent="MarginContainer/VBoxContainer/ResultsPanel/MarginContainer/ResultsScroll" unique_id=1403437995]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Spacer3" type="Control" parent="MarginContainer/VBoxContainer" unique_id=1300766989]
+custom_minimum_size = Vector2(0, 15)
+layout_mode = 2
+
+[node name="Buttons" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=891306676]
+layout_mode = 2
+alignment = 1
+
+[node name="MainMenuButton" type="Button" parent="MarginContainer/VBoxContainer/Buttons" unique_id=1899325]
+layout_mode = 2
+text = "RETOUR AU MENU PRINCIPAL"
+
+[node name="Spacer" type="Control" parent="MarginContainer/VBoxContainer/Buttons" unique_id=715497135]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TrackSelectionButton" type="Button" parent="MarginContainer/VBoxContainer/Buttons" unique_id=1369528854]
+layout_mode = 2
+text = "RETOUR A LA SELECTION DU CIRCUIT"
+
+[node name="Spacer2" type="Control" parent="MarginContainer/VBoxContainer/Buttons" unique_id=86678794]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RestartButton" type="Button" parent="MarginContainer/VBoxContainer/Buttons" unique_id=1785055774]
+layout_mode = 2
+text = "REDEMARRER LA COURSE"

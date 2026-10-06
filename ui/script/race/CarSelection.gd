@@ -39,8 +39,9 @@ func _ready() -> void:
 		push_error("CarSelection : aucune RaceConfig en attente.")
 		return
 
-	if race_config.participants.is_empty():
-		race_config.build_participants()
+	#if race_config.participants.is_empty():
+	#	race_config.build_participants()
+	race_config.build_participants()
 
 	cars = CarCatalog.get_cars()
 	colors = ColorCatalog.get_colors()
@@ -88,7 +89,7 @@ func _setup_car_grid() -> void:
 		button.focus_mode = Control.FOCUS_ALL
 
 		button.pressed.connect(
-			_on_car_selected.bind(car.id)
+			_on_car_selected.bind(car.id, car.display_name)
 		)
 
 		car_grid.add_child(button)
@@ -413,13 +414,17 @@ func _is_color_used_by_other(
 	return false
 
 
-func _on_car_selected(car_id: String) -> void:
+func _on_car_selected(car_id: String, car_name: String) -> void:
 	if selected_participant_index < 0:
 		return
 
 	race_config.participants[
 		selected_participant_index
 	]["car_id"] = car_id
+	
+	race_config.participants[
+		selected_participant_index
+	]["car_name"] = car_name
 
 	_refresh_participant_list()
 	_refresh_car_buttons()

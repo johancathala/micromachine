@@ -2,13 +2,6 @@ extends Control
 
 const CAR_SCENE := preload("res://perso/car/car.tscn")
 
-const TRACK_SCENES := {
-	"track_01": "res://level/track/Track01.tscn",
-	"track_02": "res://level/track/Track02.tscn",
-	"track_03": "res://level/track/Track03.tscn",
-	"track_reverse": "res://level/track/TrackReverse.tscn",
-}
-
 @onready var race_world: RaceWorld = $RaceWorld
 @onready var race_controller: RaceController = $RaceController
 @onready var race_hud: RaceHUD = $HUDLayer/HUD
@@ -50,16 +43,8 @@ func _initialize_race() -> void:
 
 
 func _load_track() -> bool:
-	var track_id := race_config.track_id
 
-	if not TRACK_SCENES.has(track_id):
-		push_error(
-			"Race : aucun circuit associé à l'identifiant '%s'."
-			% track_id
-		)
-		return false
-
-	var track_path: String = TRACK_SCENES[track_id]
+	var track_path: String = race_config.track.scene
 	var track_scene := load(track_path) as PackedScene
 
 	if track_scene == null:
@@ -187,5 +172,5 @@ func _initialize_camera() -> void:
 func _on_race_finished() -> void:
 
 	NavigationManager.go_to(
-		"res://level/scene/RaceRecap.tscn"
+		"res://ui/scene/RaceRecap.tscn"
 	)

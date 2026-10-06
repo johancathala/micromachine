@@ -1,11 +1,9 @@
 extends Node
 class_name RaceController
 
-
 # ============================================================
 # SIGNAUX
 # ============================================================
-
 signal countdown_started()
 signal race_started()
 
@@ -34,7 +32,6 @@ signal race_finished()
 # ============================================================
 # ÉTAT DE LA COURSE
 # ============================================================
-
 enum RaceState {
 	COUNTDOWN,
 	RUNNING,
@@ -47,7 +44,6 @@ var race_state: RaceState = RaceState.COUNTDOWN
 # ============================================================
 # RÉFÉRENCES
 # ============================================================
-
 var race_config: RaceConfig = null
 var race_world: RaceWorld = null
 
@@ -55,14 +51,12 @@ var race_world: RaceWorld = null
 # ============================================================
 # PARTICIPANTS
 # ============================================================
-
 var participants: Array[RaceParticipantState] = []
 
 
 # ============================================================
 # CIRCUIT
 # ============================================================
-
 var section_count: int = 0
 
 
@@ -80,22 +74,17 @@ var race_start_usec: int = 0
 # ============================================================
 # DÉPART
 # ============================================================
-
-@onready var timer_start: Timer = $TimerStart
 @onready var timer_race_end: Timer = $TimerRaceEnd
 
+var start_lights: RaceStartLights = null
+
 const RACE_END_DELAY := 30.0
+
 
 # ============================================================
 # INITIALISATION
 # ============================================================
-
 func _ready() -> void:
-
-	timer_start.one_shot = true
-	timer_start.timeout.connect(
-		_on_timer_start_timeout
-	)
 
 	timer_race_end.one_shot = true
 	timer_race_end.wait_time = RACE_END_DELAY
@@ -245,7 +234,6 @@ func _initialize_sections() -> bool:
 # ============================================================
 # INITIALISATION DES PARTICIPANTS
 # ============================================================
-
 func _initialize_participants() -> bool:
 
 	participants.clear()
@@ -299,6 +287,13 @@ func _initialize_participants() -> bool:
 # ============================================================
 # COMPTE À REBOURS
 # ============================================================
+func _get_start_lights() -> RaceStartLights:
+
+	var node := get_tree().get_first_node_in_group(
+		"race_start_lights"
+	)
+
+	return node as RaceStartLights
 
 func start_countdown() -> void:
 
@@ -342,17 +337,38 @@ func start_countdown() -> void:
 		)
 
 	# --------------------------------------------------------
-	# Signal destiné au HUD.
-	# Le HUD affiche alors les feux rouges.
+	# Récupération du système de feux.
 	# --------------------------------------------------------
+	start_lights = _get_start_lights()
 
+	if start_lights == null:
+
+		push_error(
+			"RaceController : RaceStartLights introuvable."
+		)
+
+		return
+
+
+	# --------------------------------------------------------
+	# Signal destiné au HUD.
+	# --------------------------------------------------------
 	countdown_started.emit()
 
-	# --------------------------------------------------------
-	# Démarrage du timer.
-	# --------------------------------------------------------
 
-	timer_start.start()
+	# --------------------------------------------------------
+	# Lancement de la séquence réelle de départ.
+	# --------------------------------------------------------
+	if not start_lights.start_sequence_finished.is_connected(
+		_on_start_sequence_finished
+	):
+
+		start_lights.start_sequence_finished.connect(
+			_on_start_sequence_finished
+		)
+
+	start_lights.start_sequence()
+
 
 
 # ============================================================
@@ -394,9 +410,7 @@ func _reset_participant_state(
 # ============================================================
 # FIN DU TIMER DE DÉPART
 # ============================================================
-
-func _on_timer_start_timeout() -> void:
-
+func _on_start_sequence_finished() -> void:
 	_start_race()
 
 
@@ -412,30 +426,24 @@ func _start_race() -> void:
 	# --------------------------------------------------------
 	# Etat logique de la course.
 	# --------------------------------------------------------
-
 	race_state = RaceState.RUNNING
 
 	# --------------------------------------------------------
 	# Origine du chronométrage.
 	# --------------------------------------------------------
-
 	race_start_usec = Time.get_ticks_usec()
 
 	# --------------------------------------------------------
 	# Le HUD reçoit d'abord l'ordre de passer les feux au vert.
 	# --------------------------------------------------------
-
 	race_started.emit()
 
 	# --------------------------------------------------------
 	# SEULEMENT APRÈS LE SIGNAL DE DÉPART,
 	# on débloque les voitures.
 	# --------------------------------------------------------
-
 	for state in participants:
-
 		if state.car != null:
-
 			state.car.set_can_move(
 				true
 			)
@@ -444,7 +452,6 @@ func _start_race() -> void:
 # ============================================================
 # TEMPS DE COURSE
 # ============================================================
-
 func get_race_time() -> float:
 
 	if race_start_usec <= 0:
@@ -996,7 +1003,6 @@ func _finish_race() -> void:
 
 	race_state = RaceState.FINISHED
 
-	timer_start.stop()
 	timer_race_end.stop()
 	
 	for state in participants:
@@ -1022,6 +1028,7 @@ func build_race_results() -> Array[Dictionary]:
 		results.append({
 			"participant_id": state.participant_id,
 			"nickname": state.nickname,
+			"car_name": state.car.car_name,
 			"is_ai": state.is_ai,
 
 			"position": state.race_position,

@@ -40,7 +40,7 @@ func _ready() -> void:
 
 
 func _on_back_pressed() -> void:
-	NavigationManager.go_back()
+	NavigationManager.go_back_menu()
 
 
 func _on_profile_pressed() -> void:

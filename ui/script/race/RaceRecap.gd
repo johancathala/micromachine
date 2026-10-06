@@ -3,9 +3,13 @@ class_name RaceRecap
 
 
 const RESULT_ROW_SCENE := preload(
-	"res://level/scene/RaceResultRow.tscn"
+	"res://ui/scene/RaceResultRow.tscn"
 )
 
+
+@onready var title_label: Label = (
+	$MarginContainer/VBoxContainer/Title
+)
 
 @onready var track_name_label: Label = (
 	$MarginContainer/VBoxContainer/TrackName
@@ -13,6 +17,10 @@ const RESULT_ROW_SCENE := preload(
 
 @onready var results_list: VBoxContainer = (
 	$MarginContainer/VBoxContainer/ResultsPanel/MarginContainer/ResultsScroll/ResultsList
+)
+
+@onready var best_lap_name_label: Label = (
+	$MarginContainer/VBoxContainer/BestLapPanel/BestLapNameLabel
 )
 
 @onready var best_lap_label: Label = (
@@ -55,6 +63,8 @@ func _ready() -> void:
 	)
 
 	results = GameManager.get_last_race_results()
+	var race_config: RaceConfig = GameManager.get_active_race_config()
+	track_name_label.text = "Circuit : " + race_config.track.name
 
 	_build_results()
 
@@ -69,12 +79,22 @@ func _build_results() -> void:
 
 		return
 
+	_build_title()
+	
 	_find_global_bests()
 
 	_build_result_rows()
 
 	_update_global_best_label()
 
+
+func _build_title() -> void:
+	
+	var nickname : String = results.get(0).get(
+				"nickname",
+				"?"
+			)
+	title_label.text = nickname + " GAGNE LA COURSE !"
 
 func _find_global_bests() -> void:
 
@@ -88,7 +108,6 @@ func _find_global_bests() -> void:
 	# --------------------------------------------------------
 	# Déterminer le nombre de secteurs
 	# --------------------------------------------------------
-
 	for result in results:
 
 		var best_sections: Array = (
@@ -110,11 +129,9 @@ func _find_global_bests() -> void:
 			0.0
 		)
 
-
 	# --------------------------------------------------------
 	# Meilleur tour + meilleurs secteurs
 	# --------------------------------------------------------
-
 	for result in results:
 
 		var nickname := String(
@@ -198,17 +215,21 @@ func _build_result_rows() -> void:
 func _update_global_best_label() -> void:
 
 	if global_best_lap <= 0.0:
-
-		best_lap_label.text = (
-			"Meilleur tour : --:--.---"
+		best_lap_name_label.text = (
+			"DNF"
 		)
-
+		best_lap_label.text = (
+			"--:--.---"
+		)
 		return
-
+	
+	best_lap_name_label.text = (
+			global_best_lap_participant
+		)
+	
 	best_lap_label.text = (
-		"Meilleur tour : %s — %s"
+		"%s"
 		% [
-			global_best_lap_participant,
 			_format_time(global_best_lap)
 		]
 	)
@@ -229,7 +250,7 @@ func _on_track_selection_pressed() -> void:
 	GameManager.prepare_race_setup()
 
 	NavigationManager.go_to(
-		"res://scenes/screens/race/RaceSetup.tscn"
+		"res://ui/scene/RaceSetup.tscn"
 	)
 
 
@@ -238,7 +259,7 @@ func _on_main_menu_pressed() -> void:
 	GameManager.clear_active_race()
 
 	NavigationManager.go_to(
-		"res://scenes/screens/startup/StartupScreen.tscn"
+		"res://ui/scene/MainMenu.tscn"
 	)
 
 
@@ -249,7 +270,7 @@ func _format_time(time_seconds: float) -> String:
 
 	var minutes := int(
 		time_seconds
-	) / 60
+	 / 60)
 
 	var seconds := int(
 		time_seconds
@@ -259,6 +280,12 @@ func _format_time(time_seconds: float) -> String:
 		(time_seconds - floor(time_seconds))
 		* 1000.0
 	)
+
+	if minutes == 0:
+		return "%02d.%03d" % [
+		seconds,
+		milliseconds
+	]
 
 	return "%02d:%02d.%03d" % [
 		minutes,

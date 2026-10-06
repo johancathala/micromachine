@@ -9,14 +9,14 @@ var follow_smoothing_speed: float = 12.0
 
 @export_category("Zoom")
 
-@export_range(0.1, 2.0, 0.01)
-var min_zoom: float = 0.05
+@export_range(0.05, 2.0, 0.01)
+var min_zoom: float = 0.07
 
 @export_range(0.1, 3.0, 0.01)
 var max_zoom: float = 1.1
 
 @export_range(1.0, 2.0, 0.01)
-var zoom_margin: float = 1.60
+var zoom_margin: float = 1.50
 
 @export_range(0.1, 20.0, 0.1)
 var zoom_smoothing_speed: float = 12.0

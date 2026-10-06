@@ -40,9 +40,3 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Meilleur tour"
 horizontal_alignment = 2
-
-[node name="Speed" type="Label" parent="." unique_id=506395312]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Vitesse"
-horizontal_alignment = 2

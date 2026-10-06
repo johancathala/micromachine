@@ -43,6 +43,7 @@ ice="ice"
 gravel=""
 vibreur=""
 obstacle=""
+race_start_lights=""
 
 [input]
 

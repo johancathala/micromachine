@@ -175,6 +175,9 @@ func setup_car(
 
 	_apply_car_definition()
 	_load_car_model()
+	
+	_update_engine_sound()
+	
 	_apply_car_color(color)
 
 func _apply_car_definition() -> void:

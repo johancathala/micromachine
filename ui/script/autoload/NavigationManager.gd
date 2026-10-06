@@ -4,6 +4,9 @@ var navigation_layer: Control
 var current_screen: Control
 var history: Array[String] = []
 
+const MAIN_MENU_SCENE := \
+    "res://ui/scene/MainMenu.tscn"
+
 func setup(layer: Control) -> void:
 	navigation_layer = layer
 
@@ -32,6 +35,9 @@ func go_to(scene_path: String, add_to_history: bool = true) -> void:
 		return
 
 	navigation_layer.add_child(current_screen)
+
+func go_back_menu() -> void:
+	go_to(MAIN_MENU_SCENE, false)
 
 func go_back() -> void:
 	if history.is_empty():

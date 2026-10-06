@@ -2,36 +2,7 @@
 
 [ext_resource type="Script" uid="uid://dv82vjoead47d" path="res://level/script/overlay/RaceHUD.gd" id="1_jbulc"]
 [ext_resource type="Script" uid="uid://k6ui6ul1qwsf" path="res://level/script/overlay/RaceHUDMargin.gd" id="2_jbulc"]
-[ext_resource type="Texture2D" uid="uid://cjbm0ummbx3h7" path="res://level/sprite/Modern_Exteriors_Chaussée1_Tileset_32x32.png" id="3_mtobo"]
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_7btll"]
-atlas = ExtResource("3_mtobo")
-region = Rect2(160, 760, 32, 64)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_0dvwu"]
-atlas = ExtResource("3_mtobo")
-region = Rect2(128, 760, 32, 64)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_b3d4c"]
-atlas = ExtResource("3_mtobo")
-region = Rect2(96, 760, 32, 64)
-
-[sub_resource type="SpriteFrames" id="SpriteFrames_jld8g"]
-animations = [{
-"frames": [{
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7btll")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_0dvwu")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_b3d4c")
-}],
-"loop": 0,
-"name": &"default",
-"speed": 5.0
-}]
+[ext_resource type="PackedScene" uid="uid://d0kgo4qahco3c" path="res://level/scene/RaceStartLights.tscn" id="3_jbulc"]
 
 [node name="HUD" type="Control" unique_id=340661902]
 layout_mode = 3
@@ -98,54 +69,9 @@ size_flags_vertical = 3
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="FeuDepart" type="Node2D" parent="MarginContainer/HBoxContainer/CenterPanel/Center" unique_id=836940778]
-unique_name_in_owner = true
-position = Vector2(359, -153)
+[node name="FeuDepart" parent="MarginContainer/HBoxContainer/CenterPanel/Center" unique_id=438047380 instance=ExtResource("3_jbulc")]
+position = Vector2(-147, -361)
 scale = Vector2(3, 3)
-
-[node name="Feu1" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/CenterPanel/Center/FeuDepart" unique_id=681123087]
-position = Vector2(-165, 12)
-sprite_frames = SubResource("SpriteFrames_jld8g")
-
-[node name="Feu2" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/CenterPanel/Center/FeuDepart" unique_id=326857369]
-position = Vector2(-133, 12)
-sprite_frames = SubResource("SpriteFrames_jld8g")
-
-[node name="Feu3" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/CenterPanel/Center/FeuDepart" unique_id=1257647852]
-position = Vector2(-101, 12)
-sprite_frames = SubResource("SpriteFrames_jld8g")
-
-[node name="Feu4" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/CenterPanel/Center/FeuDepart" unique_id=1443147181]
-position = Vector2(-69, 12)
-sprite_frames = SubResource("SpriteFrames_jld8g")
-
-[node name="Feu5" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/CenterPanel/Center/FeuDepart" unique_id=567225705]
-position = Vector2(-37, 12)
-sprite_frames = SubResource("SpriteFrames_jld8g")
-
-[node name="Feu6" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/CenterPanel/Center/FeuDepart" unique_id=1348942857]
-position = Vector2(-5, 12)
-sprite_frames = SubResource("SpriteFrames_jld8g")
-
-[node name="Feu7" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/CenterPanel/Center/FeuDepart" unique_id=1479270884]
-position = Vector2(27, 12)
-sprite_frames = SubResource("SpriteFrames_jld8g")
-
-[node name="Feu8" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/CenterPanel/Center/FeuDepart" unique_id=1300758206]
-position = Vector2(59, 12)
-sprite_frames = SubResource("SpriteFrames_jld8g")
-
-[node name="Feu9" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/CenterPanel/Center/FeuDepart" unique_id=1860093083]
-position = Vector2(91, 12)
-sprite_frames = SubResource("SpriteFrames_jld8g")
-
-[node name="Feu10" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/CenterPanel/Center/FeuDepart" unique_id=947359633]
-position = Vector2(123, 12)
-sprite_frames = SubResource("SpriteFrames_jld8g")
-
-[node name="Feu11" type="AnimatedSprite2D" parent="MarginContainer/HBoxContainer/CenterPanel/Center/FeuDepart" unique_id=602942862]
-position = Vector2(155, 12)
-sprite_frames = SubResource("SpriteFrames_jld8g")
 
 [node name="Bottom" type="VBoxContainer" parent="MarginContainer/HBoxContainer/CenterPanel" unique_id=913421037]
 layout_mode = 2

@@ -8,7 +8,6 @@ class_name RaceParticipantHUD
 @onready var lap_time_label: Label = $LapTime
 @onready var delta_label: Label = $Delta
 @onready var best_lap_label: Label = $BestLap
-@onready var speed_label: Label = $Speed
 
 
 var participant: RaceParticipantState = null
@@ -44,7 +43,6 @@ func setup(
 	race_controller = p_race_controller
 
 	name_label.text = " | " + participant.nickname
-	speed_label.text = ""
 
 	refresh()
 
@@ -57,26 +55,9 @@ func refresh() -> void:
 	if race_controller == null:
 		return
 
-
-	# ============================================================
-	# VITESSE
-	# ============================================================
-
-	if participant.car != null:
-
-		speed_label.text = "%d km/h" % (
-			int(
-				_speed_to_kmh(
-					participant.car.speed
-				)
-			)
-		)
-
-
 	# ============================================================
 	# POSITION
 	# ============================================================
-
 	position_label.text = PLACE.get(
 		participant.race_position,
 		"--"
@@ -88,7 +69,6 @@ func refresh() -> void:
 	# ============================================================
 	# TOUR
 	# ============================================================
-
 	lap_label.text = (
 		" | TOUR %d"
 		% participant.current_lap
@@ -98,7 +78,6 @@ func refresh() -> void:
 	# ============================================================
 	# TEMPS DU TOUR EN COURS
 	# ============================================================
-
 	if participant.has_started_lap:
 
 		var current_lap_time := (
@@ -119,7 +98,6 @@ func refresh() -> void:
 	# ============================================================
 	# DELTA DERNIER SECTEUR
 	# ============================================================
-
 	delta_label.text = (
 		" | "
 		+ get_delta()
@@ -130,7 +108,6 @@ func refresh() -> void:
 	# ============================================================
 	# MEILLEUR TOUR
 	# ============================================================
-
 	best_lap_label.text = (
 		" | Meilleur : %s"
 		% _format_time(participant.best_lap_time)
@@ -200,7 +177,7 @@ func _format_time(time_seconds: float) -> String:
 	if time_seconds <= 0.0:
 		return "--:--.---"
 
-	var minutes := int(time_seconds) / 60
+	var minutes := int(time_seconds / 60)
 	var seconds := int(time_seconds) % 60
 
 	var milliseconds := int(

@@ -1,0 +1,44 @@
+[gd_scene format=3 uid="uid://cvqktvri30jtg"]
+
+[ext_resource type="Texture2D" uid="uid://cjbm0ummbx3h7" path="res://level/sprite/Modern_Exteriors_Chaussée1_Tileset_32x32.png" id="1_2yqhp"]
+[ext_resource type="Script" uid="uid://ccclx7vanncl1" path="res://level/script/RaceStartLight.gd" id="1_b4d64"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0dvwu"]
+atlas = ExtResource("1_2yqhp")
+region = Rect2(128, 760, 32, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7btll"]
+atlas = ExtResource("1_2yqhp")
+region = Rect2(160, 760, 32, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_b3d4c"]
+atlas = ExtResource("1_2yqhp")
+region = Rect2(96, 760, 32, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_b4d64"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0dvwu")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7btll")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_b3d4c")
+}],
+"loop": 0,
+"name": &"default",
+"speed": 5.0
+}]
+
+[node name="Feu01" type="Control" unique_id=589795955]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 32.0
+offset_bottom = 48.0
+script = ExtResource("1_b4d64")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=2087697677]
+position = Vector2(16, 25)
+sprite_frames = SubResource("SpriteFrames_b4d64")
