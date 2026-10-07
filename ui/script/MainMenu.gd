@@ -1,11 +1,5 @@
 extends Control
 
-const RACE_SETUP_SCENE := "res://ui/scene/RaceSetup.tscn"
-const CHAMPIONSHIP_SETUP_SCENE := "res://ui/scene/ChampionshipSetup.tscn"
-const TIME_TRIAL_SETUP_SCENE := "res://ui/scene/TimeTrialSetup.tscn"
-const LEADERBOARDS_SCENE := "res://ui/scene/LeaderboardsMenu.tscn"
-const OPTIONS_SCENE := "res://ui/scene/Options.tscn"
-
 @onready var single_race_button: Button = $MarginContainer/VBoxContainer/MenuContainer/SingleRaceButton
 @onready var championship_button: Button = $MarginContainer/VBoxContainer/MenuContainer/ChampionshipButton
 @onready var time_trial_button: Button = $MarginContainer/VBoxContainer/MenuContainer/TimeTrialButton
@@ -31,19 +25,19 @@ func _connect_signals() -> void:
 	quit_button.pressed.connect(_on_quit_pressed)
 
 func _on_single_race_pressed() -> void:
-	NavigationManager.go_to(RACE_SETUP_SCENE)
+	NavigationManager.go("RaceSetup")
 
 func _on_championship_pressed() -> void:
-	NavigationManager.go_to(CHAMPIONSHIP_SETUP_SCENE)
+	NavigationManager.go("ChampionshipSetup")
 
 func _on_time_trial_pressed() -> void:
-	NavigationManager.go_to(TIME_TRIAL_SETUP_SCENE)
+	NavigationManager.go("TimeTrialSetup")
 
 func _on_leaderboards_pressed() -> void:
-	NavigationManager.go_to(LEADERBOARDS_SCENE)
+	NavigationManager.go("LeaderboardsMenu")
 
 func _on_options_pressed() -> void:
-	NavigationManager.go_to(OPTIONS_SCENE)
+	NavigationManager.go("Options")
 
 func _on_quit_pressed() -> void:
 	get_tree().quit()

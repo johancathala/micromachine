@@ -9,45 +9,45 @@
 script = ExtResource("1_gogr4")
 metadata/_edit_group_ = true
 
-[node name="Feu01" parent="." unique_id=589795955 instance=ExtResource("1_3ypl3")]
+[node name="Feu01" parent="." unique_id=589795955 groups=["race_start_lights"] instance=ExtResource("1_3ypl3")]
 
-[node name="Feu02" parent="." unique_id=1255919356 instance=ExtResource("1_3ypl3")]
+[node name="Feu02" parent="." unique_id=1255919356 groups=["race_start_lights"] instance=ExtResource("1_3ypl3")]
 offset_left = 30.0
 offset_right = 62.0
 
-[node name="Feu03" parent="." unique_id=1225340422 instance=ExtResource("1_3ypl3")]
+[node name="Feu03" parent="." unique_id=1225340422 groups=["race_start_lights"] instance=ExtResource("1_3ypl3")]
 offset_left = 60.0
 offset_right = 92.0
 
-[node name="Feu04" parent="." unique_id=1669604972 instance=ExtResource("1_3ypl3")]
+[node name="Feu04" parent="." unique_id=1669604972 groups=["race_start_lights"] instance=ExtResource("1_3ypl3")]
 offset_left = 90.0
 offset_right = 122.0
 
-[node name="Feu05" parent="." unique_id=1022827611 instance=ExtResource("1_3ypl3")]
+[node name="Feu05" parent="." unique_id=1022827611 groups=["race_start_lights"] instance=ExtResource("1_3ypl3")]
 offset_left = 120.0
 offset_right = 152.0
 
-[node name="Feu06" parent="." unique_id=573068053 instance=ExtResource("1_3ypl3")]
+[node name="Feu06" parent="." unique_id=573068053 groups=["race_start_lights"] instance=ExtResource("1_3ypl3")]
 offset_left = 150.0
 offset_right = 182.0
 
-[node name="Feu07" parent="." unique_id=342955328 instance=ExtResource("1_3ypl3")]
+[node name="Feu07" parent="." unique_id=342955328 groups=["race_start_lights"] instance=ExtResource("1_3ypl3")]
 offset_left = 180.0
 offset_right = 212.0
 
-[node name="Feu08" parent="." unique_id=1171686613 instance=ExtResource("1_3ypl3")]
+[node name="Feu08" parent="." unique_id=1171686613 groups=["race_start_lights"] instance=ExtResource("1_3ypl3")]
 offset_left = 210.0
 offset_right = 242.0
 
-[node name="Feu09" parent="." unique_id=1911082640 instance=ExtResource("1_3ypl3")]
+[node name="Feu09" parent="." unique_id=1911082640 groups=["race_start_lights"] instance=ExtResource("1_3ypl3")]
 offset_left = 240.0
 offset_right = 272.0
 
-[node name="Feu10" parent="." unique_id=1061166158 instance=ExtResource("1_3ypl3")]
+[node name="Feu10" parent="." unique_id=1061166158 groups=["race_start_lights"] instance=ExtResource("1_3ypl3")]
 offset_left = 270.0
 offset_right = 302.0
 
-[node name="Feu11" parent="." unique_id=1271623119 instance=ExtResource("1_3ypl3")]
+[node name="Feu11" parent="." unique_id=1271623119 groups=["race_start_lights"] instance=ExtResource("1_3ypl3")]
 offset_left = 300.0
 offset_right = 332.0
 

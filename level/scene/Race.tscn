@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://cj3xa47s74fn8" path="res://level/scene/RaceWorld.tscn" id="2_2c3da"]
 [ext_resource type="PackedScene" uid="uid://ciqvtvdjj0od6" path="res://level/scene/RaceController.tscn" id="3_y4ydr"]
 [ext_resource type="PackedScene" uid="uid://c6dhgndnkrsuw" path="res://level/scene/RaceHUD.tscn" id="4_mv8ay"]
+[ext_resource type="PackedScene" uid="uid://v1nojd8pxyna" path="res://ui/overlay/PauseOverlay.tscn" id="5_whg2e"]
 
 [sub_resource type="SystemFont" id="SystemFont_bbojj"]
 font_names = PackedStringArray("Impact")
@@ -25,20 +26,16 @@ script = ExtResource("1_df1s8")
 [node name="RaceWorld" parent="." unique_id=1725700049 instance=ExtResource("2_2c3da")]
 
 [node name="RaceController" parent="." unique_id=1487771011 instance=ExtResource("3_y4ydr")]
+process_mode = 3
 
 [node name="HUDLayer" type="CanvasLayer" parent="." unique_id=1786264823]
 
 [node name="HUD" parent="HUDLayer" unique_id=340661902 instance=ExtResource("4_mv8ay")]
 
 [node name="PauseLayer" type="CanvasLayer" parent="." unique_id=608932687]
+process_mode = 3
 
-[node name="PauseOverlay" type="Control" parent="PauseLayer" unique_id=2068927766]
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="PauseOverlay" parent="PauseLayer" unique_id=1991827483 instance=ExtResource("5_whg2e")]
 
 [node name="TransitionLayer" type="CanvasLayer" parent="." unique_id=528290719]
 

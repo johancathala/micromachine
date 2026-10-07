@@ -17,6 +17,7 @@ font = SubResource("SystemFont_v3gh2")
 font_size = 80
 
 [node name="Controls" type="Control" unique_id=1321216319]
+process_mode = 3
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -125,7 +126,7 @@ layout_mode = 2
 [node name="BackButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" unique_id=2082323202]
 layout_mode = 2
 size_flags_horizontal = 4
-text = "RETOUR AU MENU OPTIONS"
+text = "RETOUR"
 
 [node name="Control" type="Control" parent="MarginContainer/VBoxContainer/Footer" unique_id=1205067019]
 layout_mode = 2

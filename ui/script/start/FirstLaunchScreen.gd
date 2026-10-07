@@ -1,10 +1,6 @@
 extends Control
 
 
-const MAIN_MENU_SCENE := \
-    "res://ui/scene/MainMenu.tscn"
-
-
 @onready var nickname_edit: LineEdit = \
 	$MarginContainer/VBoxContainer/NicknameEdit
 
@@ -60,7 +56,7 @@ func _validate_and_continue() -> void:
 	SaveManager.set_nickname(nickname)
 
 	NavigationManager.go_to(
-		MAIN_MENU_SCENE,
+		"MainMenu",
 		false
 	)
 	

@@ -70,7 +70,7 @@ layout_mode = 2
 size_flags_vertical = 3
 
 [node name="FeuDepart" parent="MarginContainer/HBoxContainer/CenterPanel/Center" unique_id=438047380 instance=ExtResource("3_jbulc")]
-position = Vector2(-147, -361)
+position = Vector2(-185, -368)
 scale = Vector2(3, 3)
 
 [node name="Bottom" type="VBoxContainer" parent="MarginContainer/HBoxContainer/CenterPanel" unique_id=913421037]

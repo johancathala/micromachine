@@ -1,7 +1,6 @@
 extends Control
 
 const PLAYER_SLOT_SCENE := preload("res://ui/scene/PlayerSlot.tscn")
-const CAR_SELECTION_SCENE := "res://ui/scene/CarSelection.tscn"
 
 const MAX_HUMAN_PLAYERS := 8
 
@@ -468,6 +467,6 @@ func _on_start_pressed() -> void:
 		race_config.duplicate_config()
 	)
 
-	NavigationManager.go_to(
-		CAR_SELECTION_SCENE
+	NavigationManager.go(
+		"CarSelection"
 	)

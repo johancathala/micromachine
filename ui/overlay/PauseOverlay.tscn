@@ -1,0 +1,67 @@
+[gd_scene format=3 uid="uid://v1nojd8pxyna"]
+
+[ext_resource type="Script" uid="uid://hy47ln8oq2i6" path="res://ui/script/overlay/PauseOverlay.gd" id="1_u8fjy"]
+
+[node name="PauseOverlay" type="Control" unique_id=1991827483]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_u8fjy")
+
+[node name="Background" type="ColorRect" parent="." unique_id=83259487]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.2627451)
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1058805081]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 480.0
+offset_top = 270.0
+offset_right = -480.0
+offset_bottom = -270.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="MarginContainer" unique_id=951913980]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/PanelContainer" unique_id=2060540102]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MarginContainer/PanelContainer/VBoxContainer" unique_id=1361524508]
+layout_mode = 2
+size_flags_vertical = 6
+theme_override_font_sizes/font_size = 50
+text = "PAUSE"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ResumeButton" type="Button" parent="MarginContainer/PanelContainer/VBoxContainer" unique_id=494496926]
+layout_mode = 2
+size_flags_vertical = 3
+text = "REPRENDRE"
+
+[node name="RestartButton" type="Button" parent="MarginContainer/PanelContainer/VBoxContainer" unique_id=1293045839]
+layout_mode = 2
+size_flags_vertical = 3
+text = "RECOMMENCER LA COURSE"
+
+[node name="ControlsButton" type="Button" parent="MarginContainer/PanelContainer/VBoxContainer" unique_id=1797283261]
+layout_mode = 2
+size_flags_vertical = 3
+text = "CONTROLES"
+
+[node name="MainMenuButton" type="Button" parent="MarginContainer/PanelContainer/VBoxContainer" unique_id=568469698]
+layout_mode = 2
+size_flags_vertical = 3
+text = "RETOUR AU MENU PRINCIPAL"

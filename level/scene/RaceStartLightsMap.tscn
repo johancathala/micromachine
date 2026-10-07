@@ -1,0 +1,60 @@
+[gd_scene format=3 uid="uid://d2perx6hj7kx8"]
+
+[ext_resource type="PackedScene" uid="uid://cvqktvri30jtg" path="res://level/scene/RaceStartLight.tscn" id="1_46wlq"]
+[ext_resource type="Texture2D" uid="uid://b5nmgycwj1v5s" path="res://level/sprite/T_VFX_Glow_1_1.PNG" id="2_dw6db"]
+
+[node name="RaceStartLightsMap" type="Node2D" unique_id=901997129 groups=["race_start_lights_map"]]
+
+[node name="Feu01" parent="." unique_id=589795955 instance=ExtResource("1_46wlq")]
+
+[node name="Feu02" parent="." unique_id=2068602452 instance=ExtResource("1_46wlq")]
+offset_left = 30.0
+offset_right = 62.0
+
+[node name="Feu03" parent="." unique_id=89182852 instance=ExtResource("1_46wlq")]
+offset_left = 60.0
+offset_right = 92.0
+
+[node name="Feu04" parent="." unique_id=1882591557 instance=ExtResource("1_46wlq")]
+offset_left = 90.0
+offset_right = 122.0
+
+[node name="Feu05" parent="." unique_id=945102151 instance=ExtResource("1_46wlq")]
+offset_left = 120.0
+offset_right = 152.0
+
+[node name="Feu06" parent="." unique_id=2005309047 instance=ExtResource("1_46wlq")]
+offset_left = 150.0
+offset_right = 182.0
+
+[node name="Feu07" parent="." unique_id=473835635 instance=ExtResource("1_46wlq")]
+offset_left = 180.0
+offset_right = 212.0
+
+[node name="Feu08" parent="." unique_id=1736159466 instance=ExtResource("1_46wlq")]
+offset_left = 210.0
+offset_right = 242.0
+
+[node name="Feu09" parent="." unique_id=1311738803 instance=ExtResource("1_46wlq")]
+offset_left = 240.0
+offset_right = 272.0
+
+[node name="Feu12" parent="." unique_id=100110795 instance=ExtResource("1_46wlq")]
+offset_left = 270.0
+offset_right = 302.0
+
+[node name="Feu13" parent="." unique_id=1077226862 instance=ExtResource("1_46wlq")]
+offset_left = 300.0
+offset_right = 332.0
+
+[node name="LightTorch" type="PointLight2D" parent="." unique_id=643355235]
+position = Vector2(40, 42)
+color = Color(0.7607843, 0.5254902, 0.23529412, 1)
+energy = 3.48
+texture = ExtResource("2_dw6db")
+
+[node name="LightTorch2" type="PointLight2D" parent="." unique_id=390700291]
+position = Vector2(288, 49)
+color = Color(0.7607843, 0.5254902, 0.23529412, 1)
+energy = 3.48
+texture = ExtResource("2_dw6db")

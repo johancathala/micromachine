@@ -1,10 +1,13 @@
 extends Node
 class_name RaceController
 
+const CONTROLS_SCENE := preload(
+	"res://ui/scene/Controls.tscn"
+)
+
 # ============================================================
 # SIGNAUX
 # ============================================================
-signal countdown_started()
 signal race_started()
 
 signal participant_section_completed(
@@ -28,6 +31,10 @@ signal race_end_countdown_started(
 
 signal race_finished()
 
+signal restart_race()
+
+signal return_to_main_menu()
+
 
 # ============================================================
 # ÉTAT DE LA COURSE
@@ -40,6 +47,7 @@ enum RaceState {
 
 var race_state: RaceState = RaceState.COUNTDOWN
 
+var race_is_paused := false
 
 # ============================================================
 # RÉFÉRENCES
@@ -47,18 +55,21 @@ var race_state: RaceState = RaceState.COUNTDOWN
 var race_config: RaceConfig = null
 var race_world: RaceWorld = null
 
+# ============================================================
+# MENU PAUSE
+# ============================================================
+var pause_overlay: PauseOverlay = null
+var can_pause := true
 
 # ============================================================
 # PARTICIPANTS
 # ============================================================
 var participants: Array[RaceParticipantState] = []
 
-
 # ============================================================
 # CIRCUIT
 # ============================================================
 var section_count: int = 0
-
 
 # ============================================================
 # CHRONOMÉTRAGE
@@ -95,7 +106,8 @@ func _ready() -> void:
 
 func initialize(
 	p_config: RaceConfig,
-	p_race_world: RaceWorld
+	p_race_world: RaceWorld,
+	p_pause_overlay: PauseOverlay
 ) -> bool:
 
 	print("Initialisation de RaceController")
@@ -113,6 +125,15 @@ func initialize(
 
 	race_config = p_config
 	race_world = p_race_world
+	
+	pause_overlay = p_pause_overlay
+	
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	
+	pause_overlay.resume_pressed.connect(_on_pause_resume_pressed)
+	pause_overlay.restart_pressed.connect(_on_pause_restart_pressed)
+	pause_overlay.controls_pressed.connect(_on_pause_controls_pressed)
+	pause_overlay.main_menu_pressed.connect(_on_pause_main_menu_pressed)
 
 	print("Initialisation des sections")
 	if not _initialize_sections():
@@ -128,7 +149,6 @@ func initialize(
 # ============================================================
 # INITIALISATION DES SECTIONS
 # ============================================================
-
 func _initialize_sections() -> bool:
 
 	section_count = 0
@@ -349,13 +369,6 @@ func start_countdown() -> void:
 
 		return
 
-
-	# --------------------------------------------------------
-	# Signal destiné au HUD.
-	# --------------------------------------------------------
-	countdown_started.emit()
-
-
 	# --------------------------------------------------------
 	# Lancement de la séquence réelle de départ.
 	# --------------------------------------------------------
@@ -370,11 +383,79 @@ func start_countdown() -> void:
 	start_lights.start_sequence()
 
 
+# ============================================================
+# GESTION DU MENU PAUSE
+# ==========================================================
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("pause"):
+		if race_is_paused:
+			resume_race()
+		else:
+			pause_race()
+
+
+func pause_race() -> void:
+	if race_is_paused:
+		return
+
+	race_is_paused = true
+
+	pause_overlay.open()
+
+	get_tree().paused = true
+
+
+func resume_race() -> void:
+	if not race_is_paused:
+		return
+
+	race_is_paused = false
+
+	get_tree().paused = false
+
+	pause_overlay.close()
+
+
+func _on_pause_resume_pressed() -> void:
+	resume_race()
+
+
+func _on_pause_restart_pressed() -> void:
+	_on_restart_race()
+
+
+func _on_pause_controls_pressed() -> void:
+	open_controls()
+
+
+func _on_pause_main_menu_pressed() -> void:
+	_on_return_to_main_menu()
+
+func open_controls() -> void:
+	#NavigationManager.go("Controls")
+	CONTROLS_SCENE.instantiate()
+
+
+func _on_restart_race() -> void:
+	race_is_paused = false
+	get_tree().paused = false
+	start_lights.cancel_sequence()
+	start_lights.reset()
+	await get_tree().create_timer(6).timeout
+	restart_race.emit()
+	#get_parent().reload_current_scene()
+
+
+func _on_return_to_main_menu() -> void:
+	race_is_paused = false
+	get_tree().paused = false
+	return_to_main_menu.emit()
+
+
 
 # ============================================================
 # RESET D'UN PARTICIPANT
 # ============================================================
-
 func _reset_participant_state(
 	state: RaceParticipantState
 ) -> void:

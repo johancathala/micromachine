@@ -11,7 +11,6 @@ enum LightState {
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
-
 var current_state: LightState = LightState.ORANGE
 
 

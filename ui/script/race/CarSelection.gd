@@ -1,9 +1,6 @@
 extends Control
 
 
-const RACE_SCENE := "res://level/scene/Race.tscn"
-
-
 var race_config: RaceConfig
 var selected_participant_index: int = -1
 
@@ -502,7 +499,7 @@ func _on_start_pressed() -> void:
 	if not GameManager.start_race():
 		return
 
-	NavigationManager.go_to(RACE_SCENE)
+	NavigationManager.go("Race")
 
 
 func _on_back_pressed() -> void:

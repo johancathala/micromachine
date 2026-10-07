@@ -1,10 +1,11 @@
 extends Control
 
-const CAR_SCENE := preload("res://perso/car/car.tscn")
+const CAR_SCENE := preload("res://perso/car/Car.tscn")
 
 @onready var race_world: RaceWorld = $RaceWorld
 @onready var race_controller: RaceController = $RaceController
 @onready var race_hud: RaceHUD = $HUDLayer/HUD
+@onready var pause_overlay: PauseOverlay = $PauseLayer/PauseOverlay
 
 var race_config: RaceConfig = null
 
@@ -29,7 +30,7 @@ func _initialize_race() -> void:
 
 	_initialize_camera()
 
-	race_controller.initialize(race_config, race_world)
+	race_controller.initialize(race_config, race_world, pause_overlay)
 
 	race_hud.initialize(race_controller, race_world)
 
@@ -37,9 +38,11 @@ func _initialize_race() -> void:
 	# n'est pas terminé.
 	race_controller.start_countdown()
 	
-	race_controller.race_finished.connect(
-		_on_race_finished
-	)
+	race_controller.race_finished.connect(_on_race_finished)
+	
+	race_controller.restart_race.connect(_on_restart_race)
+	
+	race_controller.return_to_main_menu.connect(_on_return_to_main_menu)
 
 
 func _load_track() -> bool:
@@ -170,7 +173,16 @@ func _initialize_camera() -> void:
 		return
 
 func _on_race_finished() -> void:
+	NavigationManager.go("RaceRecap")
 
-	NavigationManager.go_to(
-		"res://ui/scene/RaceRecap.tscn"
-	)
+func _on_restart_race() -> void:
+
+	if not GameManager.restart_active_race():
+		return
+
+	NavigationManager.go("Race")
+
+
+func _on_return_to_main_menu() -> void:
+	GameManager.clear_active_race()
+	NavigationManager.go("MainMenu")

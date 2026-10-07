@@ -36,7 +36,6 @@ func initialize(
 	_select_displayed_participant()
 	_connect_controller_signals()
 
-	_prepare_countdown_display()
 	_update_static_values()
 	
 	_build_participant_rows()
@@ -62,19 +61,6 @@ func _process(_delta: float) -> void:
 
 
 func _connect_controller_signals() -> void:
-	if not race_controller.countdown_started.is_connected(
-		_on_countdown_started
-	):
-		race_controller.countdown_started.connect(
-			_on_countdown_started
-		)
-
-	if not race_controller.race_started.is_connected(
-		_on_race_started
-	):
-		race_controller.race_started.connect(
-			_on_race_started
-		)
 
 	if not race_controller.participant_lap_completed.is_connected(
 		_on_participant_lap_completed
@@ -172,65 +158,6 @@ func _build_participant_rows() -> void:
 		row.setup(state,race_controller)
 
 		participant_rows[state.participant_id] = row
-
-# ------------------------------------------------------------------
-# COUNTDOWN
-# ------------------------------------------------------------------
-
-func _prepare_countdown_display() -> void:
-	race_started = false
-
-	_set_lights_red()
-	light_start.visible = true
-
-
-func _on_countdown_started() -> void:
-	race_started = false
-
-	_set_lights_red()
-
-	light_start.visible = true
-
-
-func _on_race_started() -> void:
-	race_started = true
-
-	_set_lights_green()
-
-
-func _set_lights_red() -> void:
-	if light_start == null:
-		return
-
-	for child in light_start.get_children():
-		var light := child as AnimatedSprite2D
-
-		if light == null:
-			continue
-
-		light.visible = true
-		light.set_frame(0)
-
-
-func _set_lights_green() -> void:
-	if light_start == null:
-		return
-
-	for child in light_start.get_children():
-		var light := child as AnimatedSprite2D
-
-		if light == null:
-			continue
-
-		light.visible = true
-		light.set_frame(1)
-
-	# Les feux restent visibles brièvement après le départ.
-	await get_tree().create_timer(2.0).timeout
-
-	if race_started:
-		light_start.visible = false
-
 
 # ------------------------------------------------------------------
 # COURSE

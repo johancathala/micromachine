@@ -5,6 +5,4 @@ extends Control
 func _ready() -> void:
 	NavigationManager.setup(navigation_layer)
 	
-	NavigationManager.go_to("res://ui/scene/StartupScreen.tscn",
-	false
-	)
+	NavigationManager.go("StartupScreen",false)

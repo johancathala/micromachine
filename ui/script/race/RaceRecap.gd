@@ -240,27 +240,21 @@ func _on_restart_pressed() -> void:
 	if not GameManager.restart_active_race():
 		return
 
-	NavigationManager.go_to(
-		"res://level/scene/Race.tscn"
-	)
+	NavigationManager.go("Race")
 
 
 func _on_track_selection_pressed() -> void:
 
 	GameManager.prepare_race_setup()
 
-	NavigationManager.go_to(
-		"res://ui/scene/RaceSetup.tscn"
-	)
+	NavigationManager.go("RaceSetup")
 
 
 func _on_main_menu_pressed() -> void:
 
 	GameManager.clear_active_race()
 
-	NavigationManager.go_to(
-		"res://ui/scene/MainMenu.tscn"
-	)
+	NavigationManager.go("MainMenu")
 
 
 func _format_time(time_seconds: float) -> String:

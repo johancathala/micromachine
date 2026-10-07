@@ -1,18 +1,5 @@
 extends Control
 
-const PROFILE_SCENE := \
-    "res://ui/scene/Profile.tscn"
-
-const CONTROLS_SCENE := \
-    "res://ui/scene/Controls.tscn"
-
-const AUDIO_SCENE := \
-    "res://ui/scene/Audio.tscn"
-
-const DISPLAY_SCENE := \
-    "res://ui/scene/Display.tscn"
-
-
 @onready var back_button: Button = \
 	$MarginContainer/VBoxContainer/OptionsContainer/BackButton
 
@@ -44,16 +31,16 @@ func _on_back_pressed() -> void:
 
 
 func _on_profile_pressed() -> void:
-	NavigationManager.go_to(PROFILE_SCENE)
+	NavigationManager.go("Profile")
 
 
 func _on_controls_pressed() -> void:
-	NavigationManager.go_to(CONTROLS_SCENE)
+	NavigationManager.go("Controls")
 
 
 func _on_audio_pressed() -> void:
-	NavigationManager.go_to(AUDIO_SCENE)
+	NavigationManager.go("Audio")
 
 
 func _on_display_pressed() -> void:
-	NavigationManager.go_to(DISPLAY_SCENE)
+	NavigationManager.go("Display")

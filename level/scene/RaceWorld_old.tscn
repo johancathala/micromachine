@@ -10,7 +10,7 @@
 [ext_resource type="Texture2D" uid="uid://c8167bt084c70" path="res://level/sprite/Modern_Exteriors_PneuMilitaire_Tileset_32x32.png" id="8_s2dxm"]
 [ext_resource type="Texture2D" uid="uid://b5nmgycwj1v5s" path="res://level/sprite/T_VFX_Glow_1_1.PNG" id="9_2qwda"]
 [ext_resource type="PackedScene" uid="uid://c6dhgndnkrsuw" path="res://level/scene/RaceHUD.tscn" id="10_phpr8"]
-[ext_resource type="PackedScene" uid="uid://jmiulko26v5p" path="res://perso/car/car.tscn" id="11_y0vrx"]
+[ext_resource type="PackedScene" uid="uid://jmiulko26v5p" path="res://perso/car/Car.tscn" id="11_y0vrx"]
 [ext_resource type="PackedScene" path="res://level/scene/section.tscn" id="12_nt8ba"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_1u18f"]

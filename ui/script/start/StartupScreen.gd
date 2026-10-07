@@ -1,13 +1,5 @@
 extends Control
 
-
-const FIRST_LAUNCH_SCENE := \
-    "res://ui/scene/FirstLaunchScreen.tscn"
-
-const MAIN_MENU_SCENE := \
-    "res://ui/scene/MainMenu.tscn"
-
-
 @onready var loading_label: Label = $MarginContainer/VBoxContainer/VBoxContainer/LoadingLabel
 @onready var loading_progress: ProgressBar = $MarginContainer/VBoxContainer/VBoxContainer/LoadingProgress
 
@@ -61,12 +53,12 @@ func _initialize_game() -> void:
 
 func _continue_to_next_screen() -> void:
 	if SaveManager.is_first_launch():
-		NavigationManager.go_to(
-			FIRST_LAUNCH_SCENE,
+		NavigationManager.go(
+			"FirstLaunchScreen",
 			false
 		)
 	else:
-		NavigationManager.go_to(
-			MAIN_MENU_SCENE,
+		NavigationManager.go(
+			"MainMenu",
 			false
 		)
