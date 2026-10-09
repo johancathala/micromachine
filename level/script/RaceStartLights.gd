@@ -7,7 +7,6 @@ class_name RaceStartLights
 # SIGNAUX
 # ============================================================
 
-signal start_sequence_started()
 signal start_sequence_finished()
 
 
@@ -42,6 +41,9 @@ var sequence_running: bool = false
 # ============================================================
 # INITIALISATION
 # ============================================================
+func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_PAUSABLE
+	sequence_running = false
 
 func _collect_lights() -> void:
 
@@ -124,7 +126,7 @@ func start_sequence() -> void:
 	
 	sequence_running = true
 
-	start_sequence_started.emit()
+	#start_sequence_started.emit()
 
 	await _run_red_sequence()
 
@@ -148,6 +150,8 @@ func start_sequence() -> void:
 # ============================================================
 func _run_red_sequence() -> void:
 
+	if not sequence_running:
+			return
 	await get_tree().create_timer(
 			LIGHT_INTERVAL,
 			false

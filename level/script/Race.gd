@@ -176,11 +176,7 @@ func _on_race_finished() -> void:
 	NavigationManager.go("RaceRecap")
 
 func _on_restart_race() -> void:
-
-	if not GameManager.restart_active_race():
-		return
-
-	NavigationManager.go("Race")
+	NavigationManager.go("RaceRestart")
 
 
 func _on_return_to_main_menu() -> void:

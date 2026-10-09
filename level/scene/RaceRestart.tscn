@@ -1,0 +1,51 @@
+[gd_scene format=3 uid="uid://byx1elkcktxw6"]
+
+[ext_resource type="Script" uid="uid://tckubchci0je" path="res://level/script/RaceRestart.gd" id="1_grvuc"]
+
+[sub_resource type="SystemFont" id="SystemFont_anga4"]
+font_names = PackedStringArray("Impact")
+
+[sub_resource type="Theme" id="Theme_p52qu"]
+default_font = SubResource("SystemFont_anga4")
+default_font_size = 40
+
+[node name="RaceRestart" type="Control" unique_id=303024604]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_p52qu")
+script = ExtResource("1_grvuc")
+
+[node name="Background" type="ColorRect" parent="." unique_id=944779594]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.36862746, 0.5058824, 1, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=412509691]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 45.0
+offset_top = 45.0
+offset_right = -45.0
+offset_bottom = -50.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=246438452]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MarginContainer/VBoxContainer" unique_id=145814989]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.84705883, 0.3019608, 1)
+theme_override_font_sizes/font_size = 60
+text = "REDEMARRAGE DE LA COURSE"
+horizontal_alignment = 1

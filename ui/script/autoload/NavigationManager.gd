@@ -23,6 +23,7 @@ const SCENES: Dictionary = {
 	"PauseOverlay" : "res://ui/overlay/PauseOverlay.tscn",
 	"PlayerJoinOverlay" : "res://ui/overlay/PlayerJoinOverlay.tscn",
 	"Race" : "res://level/scene/Race.tscn",
+	"RaceRestart" : "res://level/scene/RaceRestart.tscn",
 	"RaceController" : "res://level/scene/RaceController.tscn",
 	"RaceHUD" : "res://level/scene/RaceHUD.tscn",
 	"RaceWorld" : "res://level/scene/RaceWorld.tscn",

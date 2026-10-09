@@ -312,18 +312,19 @@ func _fill_keyboard_input(
 	)
 
 
+
 func _get_keyboard_action_strength(
 	action_name: String
 ) -> float:
 
-	var keycode := get_keyboard_binding(
+	var physical_keycode := get_keyboard_binding(
 		action_name
 	)
 
-	if keycode == KEY_NONE:
+	if physical_keycode == KEY_NONE:
 		return 0.0
 
-	if Input.is_key_pressed(keycode):
+	if Input.is_physical_key_pressed(physical_keycode):
 		return 1.0
 
 	return 0.0
@@ -614,20 +615,23 @@ func get_binding_display_name(
 	return "Non configuré"
 
 
+
 func _get_keyboard_display_name(
 	action_name: String
 ) -> String:
 
-	var keycode := get_keyboard_binding(
+	var physical_keycode := get_keyboard_binding(
 		action_name
 	)
 
-	if keycode == KEY_NONE:
+	if physical_keycode == KEY_NONE:
 		return "Non configuré"
 
-	return OS.get_keycode_string(
-		keycode
+	var key_label := DisplayServer.keyboard_get_label_from_physical(
+		physical_keycode
 	)
+
+	return OS.get_keycode_string(key_label)
 
 
 func _get_gamepad_display_name(

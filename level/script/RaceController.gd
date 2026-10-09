@@ -439,9 +439,19 @@ func open_controls() -> void:
 func _on_restart_race() -> void:
 	race_is_paused = false
 	get_tree().paused = false
-	start_lights.cancel_sequence()
-	start_lights.reset()
-	await get_tree().create_timer(6).timeout
+	
+	race_state = RaceState.FINISHED
+
+	timer_race_end.stop()
+	
+	for state in participants:
+
+		if state.car != null:
+			state.car.set_can_move(false)
+
+	# On fige le classement final.
+	_update_positions()
+	
 	restart_race.emit()
 	#get_parent().reload_current_scene()
 
