@@ -6,14 +6,12 @@ class_name RaceStartLights
 # ============================================================
 # SIGNAUX
 # ============================================================
-
 signal start_sequence_finished()
 
 
 # ============================================================
 # CONFIGURATION
 # ============================================================
-
 const LIGHT_INTERVAL := 1.3
 
 const GREEN_DELAY_MIN := 0.5
@@ -23,9 +21,9 @@ const GREEN_DELAY_MAX := 4.0
 # ============================================================
 # NŒUDS
 # ============================================================
-
 @onready var sound_light: AudioStreamPlayer = $SoundLight
 @onready var sound_green: AudioStreamPlayer = $SoundGreen
+@onready var sequence_timer: Timer = $SequenceTimer
 
 
 # ============================================================
@@ -42,7 +40,7 @@ var sequence_running: bool = false
 # INITIALISATION
 # ============================================================
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_PAUSABLE
+	#process_mode = Node.PROCESS_MODE_PAUSABLE
 	sequence_running = false
 
 func _collect_lights() -> void:
@@ -60,7 +58,8 @@ func _collect_lights() -> void:
 		"RaceStartLights : %d feu(x) trouvé(s)."
 		% lights.size()
 	)
-	
+
+
 func _collect_lights_map() -> void:
 
 	var race_start_light_map := _get_start_lights_map()
@@ -92,6 +91,9 @@ func _get_start_lights_map() -> Node2D:
 # ============================================================
 func reset() -> void:
 
+	print("RaceStartLights : reset des lights")
+	
+	sequence_timer.stop()
 	sequence_running = false
 
 	for light in lights:
@@ -101,6 +103,8 @@ func reset() -> void:
 	for light in lights_map:
 
 		light.set_orange()
+	
+	show()
 
 
 # ============================================================
@@ -131,11 +135,13 @@ func start_sequence() -> void:
 	await _run_red_sequence()
 
 	if not sequence_running:
+		push_error("RaceStartLights_map : la séquence a été coupée")
 		return
 
 	await _wait_before_green()
 
 	if not sequence_running:
+		push_error("RaceStartLights_map : la séquence a été coupée")
 		return
 
 	_set_all_green()
@@ -148,30 +154,28 @@ func start_sequence() -> void:
 # ============================================================
 # SÉQUENCE ORANGE → ROUGE
 # ============================================================
+
 func _run_red_sequence() -> void:
+	print("RED SEQUENCE : début")
 
 	if not sequence_running:
-			return
-	await get_tree().create_timer(
-			LIGHT_INTERVAL,
-			false
-		).timeout
+		push_error("Séquence annulée")
+		return
 
-	var id_light = 0
+	print("RED SEQUENCE : avant attente")
+	await _wait_seconds(LIGHT_INTERVAL)
+	print("RED SEQUENCE : après attente")
+
+	var id_light := 0
 	for light in lights:
 		if not sequence_running:
 			return
-		
+
 		_play_light_sound()
 		light.set_red()
-		lights_map.get(id_light).set_red()
+		lights_map[id_light].set_red()
 
-
-		await get_tree().create_timer(
-			LIGHT_INTERVAL,
-			false
-		).timeout
-		
+		await _wait_seconds(LIGHT_INTERVAL)
 		id_light += 1
 
 
@@ -180,6 +184,7 @@ func _run_red_sequence() -> void:
 # ============================================================
 func _wait_before_green() -> void:
 
+	print("RaceStartLights : démarrage attente green sequence")
 	var delay := randf_range(
 		GREEN_DELAY_MIN,
 		GREEN_DELAY_MAX
@@ -190,10 +195,7 @@ func _wait_before_green() -> void:
 		% delay
 	)
 
-	await get_tree().create_timer(
-		delay,
-		false
-	).timeout
+	await _wait_seconds(delay)
 
 
 # ============================================================
@@ -201,6 +203,7 @@ func _wait_before_green() -> void:
 # ============================================================
 func _set_all_green() -> void:
 
+	print("RaceStartLights : passage au vert")
 	var id_light = 0
 	for light in lights:
 
@@ -210,12 +213,37 @@ func _set_all_green() -> void:
 
 	_play_green_sound()
 	
-	await get_tree().create_timer(
-		2,
-		false
-	).timeout
+	await _wait_seconds(2.0)
 	
 	hide()
+
+
+# ============================================================
+# Gestion du Timer
+# ============================================================
+func _wait_seconds(duration: float) -> void:
+	print("TIMER : demande de démarrage, durée = ", duration)
+
+	sequence_timer.stop()
+	sequence_timer.wait_time = duration
+	sequence_timer.one_shot = true
+	#sequence_timer.process_mode = Node.PROCESS_MODE_ALWAYS
+
+	if not sequence_timer.timeout.is_connected(_on_sequence_timer_timeout):
+		sequence_timer.timeout.connect(_on_sequence_timer_timeout)
+
+	sequence_timer.start()
+
+	print("TIMER : en cours = ", sequence_timer.time_left > 0.0)
+	print("TIMER : time_left = ", sequence_timer.time_left)
+
+	await sequence_timer.timeout
+
+	print("TIMER : coroutine reprise")
+	
+
+func _on_sequence_timer_timeout() -> void:
+	print("TIMER : signal timeout reçu")
 
 
 # ============================================================

@@ -104,7 +104,6 @@ gravity = Vector3(0, 98, 0)
 color_ramp = SubResource("GradientTexture1D_ndo73")
 
 [node name="Car" type="CharacterBody2D" unique_id=1639454759 groups=["obstacle"]]
-process_mode = 1
 collision_layer = 2
 collision_mask = 14
 script = ExtResource("1_8nu7u")

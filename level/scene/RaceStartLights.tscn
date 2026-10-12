@@ -58,3 +58,6 @@ pitch_scale = 1.34
 [node name="SoundGreen" type="AudioStreamPlayer" parent="." unique_id=1571078516]
 stream = ExtResource("3_iy600")
 pitch_scale = 0.55
+
+[node name="SequenceTimer" type="Timer" parent="." unique_id=2002294398]
+one_shot = true

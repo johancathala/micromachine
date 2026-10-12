@@ -31,7 +31,7 @@ signal race_end_countdown_started(
 
 signal race_finished()
 
-signal restart_race()
+signal quit_race()
 
 signal return_to_main_menu()
 
@@ -80,6 +80,8 @@ var section_count: int = 0
 # Time.get_ticks_usec() est préférable à un cumul de delta
 # pour un chronométrage précis.
 var race_start_usec: int = 0
+var pause_start_usec: int = 0
+var pause_end_usec: int = 0
 
 
 # ============================================================
@@ -131,7 +133,7 @@ func initialize(
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	
 	pause_overlay.resume_pressed.connect(_on_pause_resume_pressed)
-	pause_overlay.restart_pressed.connect(_on_pause_restart_pressed)
+	pause_overlay.quit_pressed.connect(_on_pause_quit_pressed)
 	pause_overlay.controls_pressed.connect(_on_pause_controls_pressed)
 	pause_overlay.main_menu_pressed.connect(_on_pause_main_menu_pressed)
 
@@ -401,7 +403,8 @@ func pause_race() -> void:
 	race_is_paused = true
 
 	pause_overlay.open()
-
+	
+	pause_start_usec = Time.get_ticks_usec()
 	get_tree().paused = true
 
 
@@ -411,6 +414,8 @@ func resume_race() -> void:
 
 	race_is_paused = false
 
+	pause_end_usec = Time.get_ticks_usec()
+	race_start_usec += pause_end_usec - pause_start_usec
 	get_tree().paused = false
 
 	pause_overlay.close()
@@ -420,8 +425,8 @@ func _on_pause_resume_pressed() -> void:
 	resume_race()
 
 
-func _on_pause_restart_pressed() -> void:
-	_on_restart_race()
+func _on_pause_quit_pressed() -> void:
+	_on_quit_race()
 
 
 func _on_pause_controls_pressed() -> void:
@@ -436,12 +441,10 @@ func open_controls() -> void:
 	CONTROLS_SCENE.instantiate()
 
 
-func _on_restart_race() -> void:
+func _on_quit_race() -> void:
 	race_is_paused = false
 	get_tree().paused = false
 	
-	race_state = RaceState.FINISHED
-
 	timer_race_end.stop()
 	
 	for state in participants:
@@ -452,8 +455,9 @@ func _on_restart_race() -> void:
 	# On fige le classement final.
 	_update_positions()
 	
-	restart_race.emit()
-	#get_parent().reload_current_scene()
+	pause_overlay.close()
+	
+	quit_race.emit()
 
 
 func _on_return_to_main_menu() -> void:
@@ -674,7 +678,6 @@ func on_car_entered_section(
 # ============================================================
 # PREMIER DÉPART D'UN PARTICIPANT
 # ============================================================
-
 func _start_first_lap(
 	state: RaceParticipantState,
 	current_time: float

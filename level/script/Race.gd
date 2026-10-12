@@ -40,7 +40,7 @@ func _initialize_race() -> void:
 	
 	race_controller.race_finished.connect(_on_race_finished)
 	
-	race_controller.restart_race.connect(_on_restart_race)
+	race_controller.quit_race.connect(_on_quit_race)
 	
 	race_controller.return_to_main_menu.connect(_on_return_to_main_menu)
 
@@ -175,8 +175,8 @@ func _initialize_camera() -> void:
 func _on_race_finished() -> void:
 	NavigationManager.go("RaceRecap")
 
-func _on_restart_race() -> void:
-	NavigationManager.go("RaceRestart")
+func _on_quit_race() -> void:
+	NavigationManager.go("RaceRecap")
 
 
 func _on_return_to_main_menu() -> void:

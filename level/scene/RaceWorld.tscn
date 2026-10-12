@@ -3,8 +3,10 @@
 [ext_resource type="Script" uid="uid://btj7chjtoaumi" path="res://level/script/RaceWorld.gd" id="1_fo27f"]
 [ext_resource type="Script" uid="uid://dxb5yt3xf7p31" path="res://level/script/RaceCamera.gd" id="2_jqeoa"]
 
-[node name="RaceWorld" type="Node2D" unique_id=1725700049]
+[node name="RaceWorld" type="Control" unique_id=1653867223]
 y_sort_enabled = true
+layout_mode = 3
+anchors_preset = 0
 script = ExtResource("1_fo27f")
 
 [node name="Track" type="Node2D" parent="." unique_id=797463035]

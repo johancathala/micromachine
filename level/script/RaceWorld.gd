@@ -1,4 +1,4 @@
-extends Node2D
+extends Control
 class_name RaceWorld
 
 @onready var track_root: Node2D = $Track

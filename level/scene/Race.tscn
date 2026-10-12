@@ -24,6 +24,8 @@ theme = SubResource("Theme_lh37b")
 script = ExtResource("1_df1s8")
 
 [node name="RaceWorld" parent="." unique_id=1725700049 instance=ExtResource("2_2c3da")]
+process_mode = 1
+layout_mode = 0
 
 [node name="RaceController" parent="." unique_id=1487771011 instance=ExtResource("3_y4ydr")]
 process_mode = 3

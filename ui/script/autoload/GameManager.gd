@@ -76,12 +76,7 @@ func start_single_race(config: RaceConfig) -> bool:
 
 func restart_active_race() -> bool:
 
-	if active_race_config == null:
-		return false
-
-	pending_race_config = (
-		active_race_config.duplicate_config()
-	)
+	prepare_race_setup()
 
 	return start_race()
 
@@ -127,6 +122,9 @@ func store_race_results(
 func clear_active_race() -> void:
 	pending_race_config = null
 	active_race_config = null
+	clear_result_race()
+	
+func clear_result_race() -> void:
 	last_race_results.clear()
 
 func get_last_race_results() -> Array[Dictionary]:

@@ -66,21 +66,19 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.84705883, 0.3019608, 1)
-text = "Meilleur tour :"
+text = "MEILLEUR TOUR :"
 horizontal_alignment = 2
 
 [node name="BestLapNameLabel" type="Label" parent="MarginContainer/VBoxContainer/BestLapPanel" unique_id=1086817977]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.84705883, 0.3019608, 1)
-text = "JOJO"
 horizontal_alignment = 1
 
 [node name="BestLapLabel" type="Label" parent="MarginContainer/VBoxContainer/BestLapPanel" unique_id=260266284]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.84705883, 0.3019608, 1)
-text = "50.356"
 
 [node name="Spacer2" type="Control" parent="MarginContainer/VBoxContainer" unique_id=1004160105]
 custom_minimum_size = Vector2(0, 15)
