@@ -68,19 +68,19 @@ layout_mode = 2
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="SingleRaceButton" type="Button" parent="MarginContainer/VBoxContainer/MenuContainer" unique_id=2026838359]
+[node name="SingleRaceButton" type="Button" parent="MarginContainer/VBoxContainer/MenuContainer" unique_id=2026838359 groups=["audio_confirm"]]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_font_sizes/font_size = 60
 text = "COURSE SIMPLE"
 
-[node name="ChampionshipButton" type="Button" parent="MarginContainer/VBoxContainer/MenuContainer" unique_id=1153963906]
+[node name="ChampionshipButton" type="Button" parent="MarginContainer/VBoxContainer/MenuContainer" unique_id=1153963906 groups=["audio_confirm"]]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_font_sizes/font_size = 60
 text = "CHAMPIONNAT"
 
-[node name="TimeTrialButton" type="Button" parent="MarginContainer/VBoxContainer/MenuContainer" unique_id=1234123889]
+[node name="TimeTrialButton" type="Button" parent="MarginContainer/VBoxContainer/MenuContainer" unique_id=1234123889 groups=["audio_confirm"]]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_font_sizes/font_size = 60
@@ -98,7 +98,7 @@ size_flags_vertical = 3
 theme_override_font_sizes/font_size = 60
 text = "OPTIONS"
 
-[node name="QuitButton" type="Button" parent="MarginContainer/VBoxContainer/MenuContainer" unique_id=80170902]
+[node name="QuitButton" type="Button" parent="MarginContainer/VBoxContainer/MenuContainer" unique_id=80170902 groups=["audio_back"]]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_font_sizes/font_size = 60

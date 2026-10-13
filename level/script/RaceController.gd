@@ -54,6 +54,7 @@ var race_is_paused := false
 # ============================================================
 var race_config: RaceConfig = null
 var race_world: RaceWorld = null
+var controls_instance: Control = null
 
 # ============================================================
 # MENU PAUSE
@@ -236,7 +237,6 @@ func _initialize_sections() -> bool:
 	#
 	# 0, 1, 2, 3, ...
 	# --------------------------------------------------------
-
 	section_count = sections_root.get_child_count()
 
 	for i in range(section_count):
@@ -411,6 +411,8 @@ func pause_race() -> void:
 func resume_race() -> void:
 	if not race_is_paused:
 		return
+	if is_instance_valid(controls_instance):
+		controls_instance.queue_free()
 
 	race_is_paused = false
 
@@ -418,7 +420,7 @@ func resume_race() -> void:
 	race_start_usec += pause_end_usec - pause_start_usec
 	get_tree().paused = false
 
-	pause_overlay.close()
+	#pause_overlay.close()
 
 
 func _on_pause_resume_pressed() -> void:
@@ -437,8 +439,22 @@ func _on_pause_main_menu_pressed() -> void:
 	_on_return_to_main_menu()
 
 func open_controls() -> void:
-	#NavigationManager.go("Controls")
-	CONTROLS_SCENE.instantiate()
+	if is_instance_valid(controls_instance):
+		return
+
+	controls_instance = CONTROLS_SCENE.instantiate()
+	controls_instance.name = "Controls"
+
+	# Afficher Controls au-dessus du menu de pause.
+	pause_overlay.get_parent().add_child(controls_instance)
+
+	# Facultatif : mémoriser l'origine pour gérer le retour.
+	controls_instance.set_meta("opened_from_pause", true)
+	#controls_scene.opened_from_pause = true
+	controls_instance.quit_control.connect(_on_quit_controlt)
+
+func _on_quit_controlt() -> void:
+	pause_overlay.get_focus()
 
 
 func _on_quit_race() -> void:
@@ -455,7 +471,7 @@ func _on_quit_race() -> void:
 	# On fige le classement final.
 	_update_positions()
 	
-	pause_overlay.close()
+	#pause_overlay.close()
 	
 	quit_race.emit()
 

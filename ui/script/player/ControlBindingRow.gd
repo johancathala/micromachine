@@ -24,6 +24,7 @@ func setup(
 
 
 func _ready() -> void:
+	AudioManager.bind_sound_btt()
 	binding_button.pressed.connect(
 		_on_binding_pressed
 	)

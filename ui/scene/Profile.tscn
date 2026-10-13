@@ -114,7 +114,7 @@ size_flags_vertical = 3
 layout_mode = 2
 alignment = 1
 
-[node name="BackButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" unique_id=1519948370]
+[node name="BackButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" unique_id=1519948370 groups=["audio_back"]]
 layout_mode = 2
 size_flags_horizontal = 4
 text = "RETOUR AU MENU OPTIONS"
@@ -123,7 +123,7 @@ text = "RETOUR AU MENU OPTIONS"
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="SaveButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" unique_id=1801738773]
+[node name="SaveButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" unique_id=1801738773 groups=["audio_confirm"]]
 layout_mode = 2
 size_flags_horizontal = 4
 text = "Sauvegarder"

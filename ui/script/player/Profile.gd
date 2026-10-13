@@ -15,6 +15,7 @@ extends Control
 
 
 func _ready() -> void:
+	
 	nickname_edit.text = SaveManager.get_nickname()
 
 	error_label.text = ""
@@ -27,6 +28,7 @@ func _ready() -> void:
 	)
 
 	nickname_edit.grab_focus()
+	AudioManager.bind_sound_btt()
 
 
 func _on_back_pressed() -> void:

@@ -16,6 +16,8 @@ const ACTIONS := [
 	{"id": "confirm", "name": "Confirmer"}
 ]
 
+signal quit_control()
+
 @onready var back_button: Button = \
 	$MarginContainer/VBoxContainer/Footer/BackButton
 
@@ -28,6 +30,7 @@ const ACTIONS := [
 @onready var reset_button: Button = \
 	$MarginContainer/VBoxContainer/Footer/ResetButton
 
+#var opened_from_pause := false
 
 var selected_device_type := "keyboard"
 var selected_device_id := -1
@@ -60,6 +63,7 @@ func _ready() -> void:
 	)
 
 	device_option.grab_focus()
+	AudioManager.bind_sound_btt()
 
 
 func _setup_devices() -> void:
@@ -131,7 +135,7 @@ func _on_binding_requested(action_name: String) -> void:
 	waiting_action = action_name
 
 func _on_gamepad_connected(
-	device_id: int
+	_device_id: int
 ) -> void:
 
 	_setup_devices()
@@ -194,4 +198,8 @@ func _on_reset_pressed() -> void:
 
 
 func _on_back_pressed() -> void:
-	NavigationManager.go_back()
+	if get_meta("opened_from_pause", false):
+		quit_control.emit()
+		queue_free()
+	else:
+		NavigationManager.go_back()

@@ -17,15 +17,17 @@ config/icon="res://icon.svg"
 
 [audio]
 
+buses/default_bus_layout="uid://c0mkn7bmnlif5"
 general/ios/session_category.quissac_racer=0
 buses/default_bus_layout.music=""
 
 [autoload]
 
 NavigationManager="*uid://6lvm8hgk4wsf"
-GameManager="*uid://bnso3mr2hovhw"
-InputManager="*uid://d002bfc060a5r"
 SaveManager="*uid://b2cvaofvwiwwg"
+InputManager="*uid://d002bfc060a5r"
+GameManager="*uid://bnso3mr2hovhw"
+AudioManager="*uid://50nw51p3xet2"
 
 [display]
 
@@ -43,6 +45,8 @@ ice="ice"
 gravel=""
 vibreur=""
 obstacle=""
+audio_back=""
+audio_confirm=""
 
 [input]
 

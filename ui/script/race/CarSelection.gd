@@ -54,6 +54,7 @@ func _ready() -> void:
 	start_button.pressed.connect(_on_start_pressed)
 	back_button.pressed.connect(_on_back_pressed)
 
+	AudioManager.bind_sound_btt()
 	back_button.grab_focus()
 
 

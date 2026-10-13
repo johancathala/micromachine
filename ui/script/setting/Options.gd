@@ -17,6 +17,7 @@ extends Control
 
 
 func _ready() -> void:
+	AudioManager.bind_sound_btt()
 	back_button.pressed.connect(_on_back_pressed)
 	profile_button.pressed.connect(_on_profile_pressed)
 	controls_button.pressed.connect(_on_controls_pressed)

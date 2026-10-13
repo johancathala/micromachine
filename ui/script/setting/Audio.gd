@@ -18,6 +18,7 @@ extends Control
 
 
 func _ready() -> void:
+	AudioManager.bind_sound_btt()
 	_load_values()
 	_connect_signals()
 

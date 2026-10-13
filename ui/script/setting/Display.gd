@@ -51,6 +51,7 @@ func _ready() -> void:
 	_connect_signals()
 
 	back_button.grab_focus()
+	AudioManager.bind_sound_btt()
 
 
 # ============================================================

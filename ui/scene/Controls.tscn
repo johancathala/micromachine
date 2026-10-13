@@ -4,6 +4,7 @@
 
 [sub_resource type="SystemFont" id="SystemFont_re1gs"]
 font_names = PackedStringArray("Impact")
+subpixel_positioning = 0
 
 [sub_resource type="Theme" id="Theme_jt108"]
 default_font = SubResource("SystemFont_re1gs")
@@ -11,6 +12,7 @@ default_font_size = 40
 
 [sub_resource type="SystemFont" id="SystemFont_v3gh2"]
 font_names = PackedStringArray("Impact")
+subpixel_positioning = 0
 
 [sub_resource type="LabelSettings" id="LabelSettings_p52qu"]
 font = SubResource("SystemFont_v3gh2")
@@ -73,7 +75,7 @@ label_settings = SubResource("LabelSettings_p52qu")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="DeviceOption" type="OptionButton" parent="MarginContainer/VBoxContainer/DeviceSelector" unique_id=311530937]
+[node name="DeviceOption" type="OptionButton" parent="MarginContainer/VBoxContainer/DeviceSelector" unique_id=311530937 groups=["audio_confirm"]]
 layout_mode = 2
 size_flags_horizontal = 4
 selected = 0
@@ -123,7 +125,7 @@ size_flags_vertical = 3
 [node name="Footer" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=1297238458]
 layout_mode = 2
 
-[node name="BackButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" unique_id=2082323202]
+[node name="BackButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" unique_id=2082323202 groups=["audio_back"]]
 layout_mode = 2
 size_flags_horizontal = 4
 text = "RETOUR"
@@ -132,7 +134,7 @@ text = "RETOUR"
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="ResetButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" unique_id=621959034]
+[node name="ResetButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" unique_id=621959034 groups=["audio_confirm"]]
 layout_mode = 2
 text = "REINISTIALISER"
 

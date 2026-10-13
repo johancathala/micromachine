@@ -12,6 +12,7 @@ extends Control
 
 
 func _ready() -> void:
+	AudioManager.bind_sound_btt()
 	error_label.text = ""
 
 	continue_button.pressed.connect(

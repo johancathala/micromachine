@@ -150,7 +150,7 @@ layout_mode = 2
 [node name="Footer" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=991888966]
 layout_mode = 2
 
-[node name="BackButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" unique_id=466855097]
+[node name="BackButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" unique_id=466855097 groups=["audio_back"]]
 layout_mode = 2
 theme_override_font_sizes/font_size = 40
 text = "RETOUR"
@@ -160,6 +160,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 horizontal_alignment = 1
 
-[node name="StartButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" unique_id=184580182]
+[node name="StartButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" unique_id=184580182 groups=["audio_confirm"]]
 layout_mode = 2
 text = "COMMENCER LA COURSE"

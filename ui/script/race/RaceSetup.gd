@@ -56,6 +56,7 @@ var keyboard_player_joined := false
 )
 
 func _ready() -> void:
+	AudioManager.bind_sound_btt()
 	race_config = GameManager.get_pending_race_config()
 	track_catalog = GameManager.get_tracks()
 

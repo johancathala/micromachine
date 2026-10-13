@@ -11,6 +11,8 @@ var race_config: RaceConfig = null
 
 
 func _ready() -> void:
+	AudioManager.bind_sound_btt()
+	AudioManager.play_race_music()
 	race_config = GameManager.get_active_race_config()
 
 	if race_config == null:

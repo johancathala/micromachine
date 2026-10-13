@@ -49,7 +49,8 @@ var global_best_sections: Array[float] = []
 
 
 func _ready() -> void:
-
+	AudioManager.bind_sound_btt()
+	AudioManager.play_results_music()
 	restart_button.pressed.connect(
 		_on_restart_pressed
 	)

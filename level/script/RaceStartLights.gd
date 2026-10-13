@@ -40,7 +40,6 @@ var sequence_running: bool = false
 # INITIALISATION
 # ============================================================
 func _ready() -> void:
-	#process_mode = Node.PROCESS_MODE_PAUSABLE
 	sequence_running = false
 
 func _collect_lights() -> void:
@@ -129,8 +128,6 @@ func start_sequence() -> void:
 	reset()
 	
 	sequence_running = true
-
-	#start_sequence_started.emit()
 
 	await _run_red_sequence()
 
@@ -227,7 +224,6 @@ func _wait_seconds(duration: float) -> void:
 	sequence_timer.stop()
 	sequence_timer.wait_time = duration
 	sequence_timer.one_shot = true
-	#sequence_timer.process_mode = Node.PROCESS_MODE_ALWAYS
 
 	if not sequence_timer.timeout.is_connected(_on_sequence_timer_timeout):
 		sequence_timer.timeout.connect(_on_sequence_timer_timeout)

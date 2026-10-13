@@ -91,7 +91,7 @@ size_flags_vertical = 3
 theme_override_font_sizes/font_size = 80
 text = "AFFICHAGE"
 
-[node name="BackButton" type="Button" parent="MarginContainer/VBoxContainer/OptionsContainer" unique_id=1725822448]
+[node name="BackButton" type="Button" parent="MarginContainer/VBoxContainer/OptionsContainer" unique_id=1725822448 groups=["audio_back"]]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 3

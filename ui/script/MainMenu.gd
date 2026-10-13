@@ -9,6 +9,8 @@ extends Control
 @onready var profile_label: Label = $MarginContainer/VBoxContainer/VBoxContainer/ProfileLabel
 
 func _ready() -> void:
+	AudioManager.bind_sound_btt()
+	AudioManager.play_menu_music()
 	_connect_signals()
 	_update_profile_label()
 	single_race_button.grab_focus()

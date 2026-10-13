@@ -28,6 +28,7 @@ var nickname: String = ""
 
 
 func _ready() -> void:
+	AudioManager.bind_sound_btt()
 	remove_button.pressed.connect(_on_remove_pressed)
 	nickname_edit.text_submitted.connect(_on_nickname_submitted)
 	nickname_edit.focus_exited.connect(_on_nickname_focus_exited)
