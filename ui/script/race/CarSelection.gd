@@ -89,6 +89,7 @@ func _setup_car_grid() -> void:
 		button.pressed.connect(
 			_on_car_selected.bind(car.id, car.display_name)
 		)
+	
 
 		car_grid.add_child(button)
 
@@ -203,6 +204,8 @@ func _refresh_participant_list() -> void:
 			toggle_button.pressed.connect(
 				_on_toggle_pressed.bind(i)
 			)
+			
+			toggle_button.add_to_group("audio_back")
 
 			hbox.add_child(toggle_button)
 

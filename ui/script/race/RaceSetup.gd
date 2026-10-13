@@ -232,6 +232,7 @@ func _try_join_keyboard() -> void:
 		keyboard_player_joined = true
 		return
 
+	AudioManager.play_click()
 	var player_id := race_config.get_next_player_id()
 
 	var nickname : String = SaveManager.get_nickname()
@@ -265,7 +266,7 @@ func _try_join_gamepad(device_id: int) -> void:
 	if race_config.has_gamepad_player(device_id):
 		return
 
-
+	AudioManager.play_click()
 	var player_id := race_config.get_next_player_id()
 
 	var player_number := race_config.get_human_player_count() + 1

@@ -208,7 +208,7 @@ layout_mode = 2
 [node name="Footer" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=283951951]
 layout_mode = 2
 
-[node name="BackButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" unique_id=803956299]
+[node name="BackButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" unique_id=803956299 groups=["audio_back"]]
 layout_mode = 2
 theme_override_font_sizes/font_size = 40
 text = "RETOUR"
@@ -219,7 +219,7 @@ size_flags_horizontal = 3
 text = "Cofiguration : 2 joueurs + 6 IA"
 horizontal_alignment = 1
 
-[node name="StartButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" unique_id=678058027]
+[node name="StartButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" unique_id=678058027 groups=["audio_confirm"]]
 layout_mode = 2
 theme_override_font_sizes/font_size = 40
 text = "CHOIX DES VOITURES"

@@ -87,7 +87,8 @@ func _ready() -> void:
 func bind_sound_btt() -> void:
 	# Connexion automatique des boutons existants et futurs.
 	_bind_buttons_in_tree(get_tree().root)
-	get_tree().node_added.connect(_on_node_added)
+	if not get_tree().node_added.is_connected(_on_node_added):
+		get_tree().node_added.connect(_on_node_added)
 
 func _get_audio_bus(bus_name: String) -> StringName:
 	if AudioServer.get_bus_index(bus_name) >= 0:

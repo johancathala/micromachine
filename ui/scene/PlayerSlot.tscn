@@ -46,7 +46,7 @@ text = "Johan"
 placeholder_text = "Pseudo"
 max_length = 20
 
-[node name="RemoveButton" type="Button" parent="PanelContainer/MarginContainer/HBoxContainer" unique_id=688065502]
+[node name="RemoveButton" type="Button" parent="PanelContainer/MarginContainer/HBoxContainer" unique_id=688065502 groups=["audio_back"]]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 text = "Supprimer"
