@@ -952,8 +952,12 @@ func _finish_participant(
 		_get_finished_count()
 	)
 
-	if state.car != null:
+	if is_instance_valid(state.car):
 		state.car.set_can_move(false)
+
+		# Laisse le contrôleur enregistrer le résultat et le classement
+		# avant de déclencher la destruction visuelle.
+		state.car.finish_with_explosion()
 
 	participant_finished.emit(state)
 

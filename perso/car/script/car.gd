@@ -18,6 +18,9 @@ extends CharacterBody2D
 
 class_name Car
 
+
+
+
 # ---------------------------
 # NODES
 # ---------------------------
@@ -72,6 +75,12 @@ var last_collision_time: float = 0.0
 # ---------------------------
 # Coefficient de rebond (0 = pas de rebond, 1 = rebond parfait)
 @export_range(0.0, 3.0, 0.01) var bounce_factor: float = 0.8
+
+# ---------------------------
+# ANIMATIONS
+# ---------------------------
+const EXPLOSION_SCENE: PackedScene = preload("res://effects/scene/CarExplosion.tscn")
+var _destruction_started := false
 
 # ---------------------------
 # TUNING (moteur / vitesses)
@@ -746,3 +755,56 @@ func _draw() -> void:
 
 func set_can_move(can_move: bool) -> void:
 	car_can_move = can_move
+
+
+
+
+
+
+func finish_with_explosion() -> void:
+	if _destruction_started:
+		return
+
+	_destruction_started = true
+
+	# Crée l'effet avant de masquer la voiture.
+	var explosion := EXPLOSION_SCENE.instantiate() as Node2D
+
+	if explosion != null:
+		var parent := get_parent()
+
+		if parent != null:
+			parent.add_child(explosion)
+			explosion.global_position = global_position
+		else:
+			explosion.free()
+
+	# Arrête immédiatement les déplacements et les traitements
+	# de la voiture.
+	set_physics_process(false)
+	set_process(false)
+	set_process_input(false)
+	set_process_unhandled_input(false)
+
+	# Retire la voiture des interactions physiques.
+	if self is CollisionObject2D:
+		var collision_object := self as CollisionObject2D
+		collision_object.collision_layer = 0
+		collision_object.collision_mask = 0
+
+	# Désactive également les formes de collision enfants.
+	for node in find_children("*", "CollisionShape2D", true, false):
+		var shape := node as CollisionShape2D
+		shape.set_deferred("disabled", true)
+
+	for node in find_children("*", "CollisionPolygon2D", true, false):
+		var polygon := node as CollisionPolygon2D
+		polygon.set_deferred("disabled", true)
+
+	# Arrête le déplacement résiduel si la voiture utilise
+	# CharacterBody2D.
+	var character_body := self as CharacterBody2D
+	character_body.velocity = Vector2.ZERO
+
+	# La voiture disparaît, mais l'effet reste visible.
+	hide()
