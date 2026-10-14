@@ -71,7 +71,7 @@ func _ready() -> void:
 
 	active_music_player = music_player
 	secondary_music_player = music_player_secondary
-	active_music_player.set
+#	active_music_player.set
 
 	for player in sfx_players:
 		player.process_mode = Node.PROCESS_MODE_ALWAYS

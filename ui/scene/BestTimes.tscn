@@ -1,0 +1,104 @@
+[gd_scene format=3 uid="uid://c3j3krew7mnge"]
+
+[ext_resource type="Script" uid="uid://heg12k62qdpq" path="res://ui/script/race/BestTimes.gd" id="1_dnk5q"]
+
+[sub_resource type="SystemFont" id="SystemFont_up7vf"]
+font_names = PackedStringArray("Impact")
+
+[sub_resource type="Theme" id="Theme_dnk5q"]
+default_font = SubResource("SystemFont_up7vf")
+default_font_size = 20
+
+[node name="BestTimes" type="Control" unique_id=203264844]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_dnk5q")
+script = ExtResource("1_dnk5q")
+
+[node name="Background" type="ColorRect" parent="." unique_id=178447343]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.36862746, 0.5058824, 1, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1274605394]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 45.0
+offset_top = 45.0
+offset_right = -45.0
+offset_bottom = -50.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=310340702]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MarginContainer/VBoxContainer" unique_id=1888590601]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.84705883, 0.3019608, 1)
+theme_override_font_sizes/font_size = 60
+text = "MEILLEURS TEMPS"
+horizontal_alignment = 1
+
+[node name="TrackTabs" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=1477411725]
+layout_mode = 2
+
+[node name="CarTabs" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=1932291688]
+layout_mode = 2
+
+[node name="ColumnHeaders" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=1423033135]
+layout_mode = 2
+
+[node name="RankHeader" type="Label" parent="MarginContainer/VBoxContainer/ColumnHeaders" unique_id=1605270144]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.84705883, 0.3019608, 1)
+
+[node name="NicknameHeader" type="Label" parent="MarginContainer/VBoxContainer/ColumnHeaders" unique_id=1287135217]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.84705883, 0.3019608, 1)
+
+[node name="CarHeader" type="Label" parent="MarginContainer/VBoxContainer/ColumnHeaders" unique_id=97567561]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.84705883, 0.3019608, 1)
+
+[node name="TimeHeader" type="Label" parent="MarginContainer/VBoxContainer/ColumnHeaders" unique_id=972321006]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.84705883, 0.3019608, 1)
+
+[node name="DateHeader" type="Label" parent="MarginContainer/VBoxContainer/ColumnHeaders" unique_id=790961849]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.84705883, 0.3019608, 1)
+
+[node name="RecordsPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer" unique_id=312986283]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/VBoxContainer/RecordsPanel" unique_id=1862929357]
+layout_mode = 2
+
+[node name="RecordsList" type="VBoxContainer" parent="MarginContainer/VBoxContainer/RecordsPanel/ScrollContainer" unique_id=1374887998]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Buttons" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=1637980741]
+layout_mode = 2
+
+[node name="BackButton" type="Button" parent="MarginContainer/VBoxContainer/Buttons" unique_id=227300402 groups=["audio_back"]]
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+text = "RETOUR AU MENU PRINCIPAL"

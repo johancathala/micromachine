@@ -28,6 +28,7 @@ SaveManager="*uid://b2cvaofvwiwwg"
 InputManager="*uid://d002bfc060a5r"
 GameManager="*uid://bnso3mr2hovhw"
 AudioManager="*uid://50nw51p3xet2"
+BestTimesManager="*uid://c6ui66rmspmys"
 
 [display]
 

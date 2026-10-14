@@ -17,6 +17,7 @@ const SCENES: Dictionary = {
 	"PlayerSlot" : "res://ui/scene/PlayerSlot.tscn",
 	"Profile" : "res://ui/scene/Profile.tscn",
 	"RaceRecap" : "res://ui/scene/RaceRecap.tscn",
+	"BestTimes" : "res://ui/scene/BestTimes.tscn",
 	"RaceResultRow" : "res://ui/scene/RaceResultRow.tscn",
 	"RaceSetup" : "res://ui/scene/RaceSetup.tscn",
 	"StartupScreen" : "res://ui/scene/StartupScreen.tscn",

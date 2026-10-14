@@ -36,7 +36,7 @@ func _on_time_trial_pressed() -> void:
 	NavigationManager.go("TimeTrialSetup")
 
 func _on_leaderboards_pressed() -> void:
-	NavigationManager.go("LeaderboardsMenu")
+	NavigationManager.go("BestTimes")
 
 func _on_options_pressed() -> void:
 	NavigationManager.go("Options")

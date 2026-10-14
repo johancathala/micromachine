@@ -524,7 +524,7 @@ func _apply_confirm_bindings() -> void:
 		var key_event := InputEventKey.new()
 
 		key_event.physical_keycode = (
-			keyboard_keycode
+			keyboard_keycode as Key
 		)
 
 		key_event.device = -1
@@ -552,7 +552,7 @@ func _apply_confirm_bindings() -> void:
 		var joy_event := InputEventJoypadButton.new()
 
 		joy_event.device = int(device_id)
-		joy_event.button_index = button_index
+		joy_event.button_index = button_index as JoyButton
 
 		custom_confirm_gamepad_events[
 			int(device_id)

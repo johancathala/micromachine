@@ -286,9 +286,9 @@ func _build_laps(
 	lap_list.add_child(spacer)
 
 
-func _format_position(position: int) -> String:
+func _format_position(_position: int) -> String:
 
-	match position:
+	match _position:
 
 		1:
 			return "1er"
@@ -300,11 +300,11 @@ func _format_position(position: int) -> String:
 			return "3ème"
 
 		_:
-			return "%dème" % position
+			return "%dème" % _position
 
-func _color_position(position: int) -> Color:
+func _color_position(_position: int) -> Color:
 
-	match position:
+	match _position:
 
 		1:
 			return OR_COLOR

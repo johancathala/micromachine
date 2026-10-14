@@ -49,7 +49,6 @@ var global_best_sections: Array[float] = []
 
 
 func _ready() -> void:
-	AudioManager.bind_sound_btt()
 	AudioManager.play_results_music()
 	restart_button.pressed.connect(
 		_on_restart_pressed
@@ -65,9 +64,16 @@ func _ready() -> void:
 
 	results = GameManager.get_last_race_results()
 	var race_config: RaceConfig = GameManager.get_active_race_config()
-	track_name_label.text = "Circuit : " + race_config.track.name
+	if race_config != null:
+		track_name_label.text = "Circuit : " + race_config.track.name
+
+		BestTimesManager.save_race_results(
+			results,
+			race_config
+		)
 
 	_build_results()
+	AudioManager.bind_sound_btt()
 
 
 func _build_results() -> void:
