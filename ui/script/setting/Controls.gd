@@ -83,9 +83,7 @@ func _setup_devices() -> void:
 
 func _refresh_controls() -> void:
 	var btt = get_viewport().gui_get_focus_owner()
-	if btt is Button:
-		print("C'est un bouton !")
-	else:
+	if not btt is Button:
 		btt = device_option
 
 	for child in controls_list.get_children():

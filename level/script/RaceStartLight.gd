@@ -30,14 +30,12 @@ func set_red() -> void:
 	current_state = LightState.RED
 	sprite.frame = 1
 	sprite.pause()
-	print("FEU -> ROUGE : ", name)
 
 
 func set_green() -> void:
 	current_state = LightState.GREEN
 	sprite.frame = 2
 	sprite.pause()
-	print("FEU -> VERT : ", name)
 
 
 func get_state() -> LightState:

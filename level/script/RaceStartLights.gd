@@ -159,9 +159,7 @@ func _run_red_sequence() -> void:
 		push_error("Séquence annulée")
 		return
 
-	print("RED SEQUENCE : avant attente")
 	await _wait_seconds(LIGHT_INTERVAL)
-	print("RED SEQUENCE : après attente")
 
 	var id_light := 0
 	for light in lights:
@@ -185,11 +183,6 @@ func _wait_before_green() -> void:
 	var delay := randf_range(
 		GREEN_DELAY_MIN,
 		GREEN_DELAY_MAX
-	)
-
-	print(
-		"RaceStartLights : délai avant vert = %.3f s"
-		% delay
 	)
 
 	await _wait_seconds(delay)
@@ -225,21 +218,13 @@ func _wait_seconds(duration: float) -> void:
 	sequence_timer.wait_time = duration
 	sequence_timer.one_shot = true
 
-	if not sequence_timer.timeout.is_connected(_on_sequence_timer_timeout):
-		sequence_timer.timeout.connect(_on_sequence_timer_timeout)
-
 	sequence_timer.start()
 
 	print("TIMER : en cours = ", sequence_timer.time_left > 0.0)
-	print("TIMER : time_left = ", sequence_timer.time_left)
 
 	await sequence_timer.timeout
 
 	print("TIMER : coroutine reprise")
-	
-
-func _on_sequence_timer_timeout() -> void:
-	print("TIMER : signal timeout reçu")
 
 
 # ============================================================
