@@ -18,9 +18,6 @@ extends CharacterBody2D
 
 class_name Car
 
-
-
-
 # ---------------------------
 # NODES
 # ---------------------------
@@ -31,6 +28,7 @@ class_name Car
 @onready var engine_running_sound: AudioStreamPlayer2D = $EngineRunningSound
 @onready var engine_rupteur_sound: AudioStreamPlayer2D = $EngineRupeurSound
 @onready var skid_sound: AudioStreamPlayer2D = $SkidSound
+@onready var collision_shape: CollisionShape2D = $CollisionShape2D
 @onready var collision_sound: AudioStreamPlayer2D = $CollisionSound
 @onready var model: Node2D = $Model
 
@@ -79,7 +77,7 @@ var last_collision_time: float = 0.0
 # ---------------------------
 # ANIMATIONS
 # ---------------------------
-const EXPLOSION_SCENE: PackedScene = preload("res://effects/scene/CarExplosion.tscn")
+const ANIMATION_SCENE: PackedScene = preload("res://effects/scene/CarAnimation.tscn")
 var _destruction_started := false
 
 # ---------------------------
@@ -534,17 +532,16 @@ func _update_engine_sound():
 		if speed < max_speed:
 			# Voiture en mouvement : jouer le son moteur dynamique
 			if not engine_running_sound.playing:
-					engine_running_sound.play()
-			# Arrêter le son au ralenti et au rupteur
+					engine_running_sound.play()				# Arrêter le son au ralenti et au rupteur
 			if engine_rupteur_sound.playing:
 				engine_rupteur_sound.stop()
 			if engine_idle_sound.playing:
 				engine_idle_sound.stop()
-		
+			
 			# Moduler le pitch en fonction de la vitesse (exemple simple)
 			var pitch = lerp(1.0, 3.0, clamp(speed / max_speed, 0, 1))
 			engine_running_sound.pitch_scale = pitch
-		
+			
 			# Moduler le volume en fonction de l'accélération (plus fort à l'accélération)
 			var volume = lerp(-15, 0, clamp(acceleration / 1000.0, 0, 1))
 			engine_running_sound.volume_db = volume
@@ -756,55 +753,54 @@ func _draw() -> void:
 func set_can_move(can_move: bool) -> void:
 	car_can_move = can_move
 
+func set_colision(active_colision: bool) -> void:
+	#var collision_object := self as CollisionObject2D
+	if active_colision:
+		collision_shape.set_deferred("disabled", false)
+	else:
+		# Retire la voiture des interactions physiques.
+		collision_shape.set_deferred("disabled", true)
+		#collision_object.collision_layer = 0
+		#collision_object.collision_mask = 0
 
+		# Désactive également les formes de collision enfants.
+		#for node in find_children("*", "CollisionShape2D", true, false):
+		#	var shape := node as CollisionShape2D
+		#	shape.set_deferred("disabled", true)
 
+		#for node in find_children("*", "CollisionPolygon2D", true, false):
+		#	var polygon := node as CollisionPolygon2D
+		#	polygon.set_deferred("disabled", true)
 
-
-
-func finish_with_explosion() -> void:
-	if _destruction_started:
-		return
-
-	_destruction_started = true
-
+# ============================================================
+# GESTION DES ANIMATIONS
+# ============================================================
+func get_node_animation() -> Node2D:
 	# Crée l'effet avant de masquer la voiture.
-	var explosion := EXPLOSION_SCENE.instantiate() as Node2D
-
-	if explosion != null:
+	var animation := ANIMATION_SCENE.instantiate() as Node2D
+	if animation != null:
 		var parent := get_parent()
 
 		if parent != null:
-			parent.add_child(explosion)
-			explosion.global_position = global_position
+			parent.add_child(animation)
+			animation.global_position = global_position
 		else:
-			explosion.free()
+			animation.free()
+	return animation
 
+func explosion() -> void:
+	if _destruction_started:
+		return
+	_destruction_started = true
+	var node_explosion := get_node_animation()
+	#node_explosion.animation_name = &"explosion"
+	node_explosion.animation_name = &"explosion_blue_oval"
+	node_explosion.play_animation()
+	hide()
+
+func finish_with_explosion() -> void:
+	set_can_move(false)
+	set_colision(false)
+	explosion()
 	# Arrête immédiatement les déplacements et les traitements
 	# de la voiture.
-	set_physics_process(false)
-	set_process(false)
-	set_process_input(false)
-	set_process_unhandled_input(false)
-
-	# Retire la voiture des interactions physiques.
-	if self is CollisionObject2D:
-		var collision_object := self as CollisionObject2D
-		collision_object.collision_layer = 0
-		collision_object.collision_mask = 0
-
-	# Désactive également les formes de collision enfants.
-	for node in find_children("*", "CollisionShape2D", true, false):
-		var shape := node as CollisionShape2D
-		shape.set_deferred("disabled", true)
-
-	for node in find_children("*", "CollisionPolygon2D", true, false):
-		var polygon := node as CollisionPolygon2D
-		polygon.set_deferred("disabled", true)
-
-	# Arrête le déplacement résiduel si la voiture utilise
-	# CharacterBody2D.
-	var character_body := self as CharacterBody2D
-	character_body.velocity = Vector2.ZERO
-
-	# La voiture disparaît, mais l'effet reste visible.
-	hide()

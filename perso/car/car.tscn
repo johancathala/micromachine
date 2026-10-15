@@ -1,16 +1,6 @@
 [gd_scene format=3 uid="uid://jmiulko26v5p"]
 
 [ext_resource type="Script" uid="uid://bqlckt5fc7aby" path="res://perso/car/script/Car.gd" id="1_8nu7u"]
-[ext_resource type="Texture2D" uid="uid://et1dfvtrhp4b" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval1.png" id="3_h7dvk"]
-[ext_resource type="Texture2D" uid="uid://dy5cwt2h4lgpa" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval2.png" id="4_ndo73"]
-[ext_resource type="Texture2D" uid="uid://bd6fhhst03dyb" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval3.png" id="5_gissw"]
-[ext_resource type="Texture2D" uid="uid://ccycf6x8phbbo" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval4.png" id="6_ax6dn"]
-[ext_resource type="Texture2D" uid="uid://c0mbavmnsky3u" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval5.png" id="7_oqwwy"]
-[ext_resource type="Texture2D" uid="uid://wca64dbht35a" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval6.png" id="8_lngs3"]
-[ext_resource type="Texture2D" uid="uid://e32ughir8330" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval7.png" id="9_p1v4b"]
-[ext_resource type="Texture2D" uid="uid://ub8jge2v5mbx" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval8.png" id="10_a1syr"]
-[ext_resource type="Texture2D" uid="uid://dgq8g1vaouq0" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval9.png" id="11_bywxq"]
-[ext_resource type="Texture2D" uid="uid://cggmt7mtvobnf" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval10.png" id="12_6x3su"]
 [ext_resource type="AudioStream" uid="uid://da5esuwqgoelq" path="res://perso/car/sound/VEHSkid_Crissement de pneus 3 (ID 2370)_LaSonotheque.fr.wav" id="14_gissw"]
 [ext_resource type="AudioStream" uid="uid://dsn117fm5d3g1" path="res://perso/car/sound/1_ralentiCobra.mp3" id="15_ax6dn"]
 [ext_resource type="AudioStream" uid="uid://e1sstgjmjy8e" path="res://perso/car/sound/2_rupteurVoiture3.mp3" id="15_gissw"]
@@ -20,74 +10,6 @@
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_6x3su"]
 radius = 26.666668
 height = 141.33334
-
-[sub_resource type="SpriteFrames" id="SpriteFrames_khcyy"]
-animations = [{
-"frames": [{
-"duration": 1.0,
-"texture": ExtResource("3_h7dvk")
-}, {
-"duration": 1.0,
-"texture": ExtResource("4_ndo73")
-}, {
-"duration": 1.0,
-"texture": ExtResource("5_gissw")
-}, {
-"duration": 1.0,
-"texture": ExtResource("6_ax6dn")
-}, {
-"duration": 1.0,
-"texture": ExtResource("7_oqwwy")
-}, {
-"duration": 1.0,
-"texture": ExtResource("8_lngs3")
-}, {
-"duration": 1.0,
-"texture": ExtResource("9_p1v4b")
-}, {
-"duration": 1.0,
-"texture": ExtResource("10_a1syr")
-}, {
-"duration": 1.0,
-"texture": ExtResource("11_bywxq")
-}, {
-"duration": 1.0,
-"texture": ExtResource("12_6x3su")
-}, {
-"duration": 1.0,
-"texture": null
-}, {
-"duration": 1.0,
-"texture": null
-}, {
-"duration": 1.0,
-"texture": null
-}, {
-"duration": 1.0,
-"texture": null
-}, {
-"duration": 1.0,
-"texture": null
-}, {
-"duration": 1.0,
-"texture": null
-}, {
-"duration": 1.0,
-"texture": null
-}, {
-"duration": 1.0,
-"texture": null
-}, {
-"duration": 1.0,
-"texture": null
-}, {
-"duration": 1.0,
-"texture": null
-}],
-"loop": 0,
-"name": &"explosion_blue_oval",
-"speed": 8.0
-}]
 
 [sub_resource type="Gradient" id="Gradient_h7dvk"]
 colors = PackedColorArray(0.7539844, 0.75398374, 0.75398386, 0.9, 0.5, 0.5, 0.5, 0)
@@ -120,13 +42,6 @@ rotation = 1.5707964
 shape = SubResource("CapsuleShape2D_6x3su")
 
 [node name="PlayerExp" type="AudioStreamPlayer2D" parent="." unique_id=303919016]
-
-[node name="AnimExplode" type="AnimatedSprite2D" parent="." unique_id=786312598]
-visible = false
-texture_filter = 1
-position = Vector2(-5, -8)
-sprite_frames = SubResource("SpriteFrames_khcyy")
-animation = &"explosion_blue_oval"
 
 [node name="GroundRay" type="RayCast2D" parent="." unique_id=31349006 groups=["Player"]]
 target_position = Vector2(40, 0)

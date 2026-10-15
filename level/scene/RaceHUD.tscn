@@ -4,6 +4,13 @@
 [ext_resource type="Script" uid="uid://k6ui6ul1qwsf" path="res://level/script/overlay/RaceHUDMargin.gd" id="2_jbulc"]
 [ext_resource type="PackedScene" uid="uid://d0kgo4qahco3c" path="res://level/scene/RaceStartLights.tscn" id="3_jbulc"]
 
+[sub_resource type="SystemFont" id="SystemFont_u45m1"]
+font_names = PackedStringArray("Impact")
+
+[sub_resource type="Theme" id="Theme_wh7f1"]
+default_font = SubResource("SystemFont_u45m1")
+default_font_size = 20
+
 [node name="HUD" type="Control" unique_id=340661902]
 layout_mode = 3
 anchors_preset = 15
@@ -11,6 +18,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = SubResource("Theme_wh7f1")
 script = ExtResource("1_jbulc")
 
 [node name="MarginContainer" type="MarginContainer" parent="." unique_id=1846056360]
@@ -35,18 +43,22 @@ size_flags_vertical = 3
 
 [node name="Lap" type="Label" parent="MarginContainer/HBoxContainer/LeftPanel/Top" unique_id=697377001]
 layout_mode = 2
+theme_override_font_sizes/font_size = 40
 text = "Tour 0/3"
 
 [node name="FirstParticipant" type="Label" parent="MarginContainer/HBoxContainer/LeftPanel/Top" unique_id=1293751907]
 layout_mode = 2
-text = "Position"
+theme_override_font_sizes/font_size = 30
+text = "Leader de la course : "
 
 [node name="BestLap" type="Label" parent="MarginContainer/HBoxContainer/LeftPanel/Top" unique_id=940944105]
 layout_mode = 2
-text = "Temps de course : "
+theme_override_font_sizes/font_size = 30
+text = "Meilleur temps :"
 
 [node name="RaceTime" type="Label" parent="MarginContainer/HBoxContainer/LeftPanel/Top" unique_id=78462254]
 layout_mode = 2
+theme_override_font_sizes/font_size = 30
 text = "Temps de course : "
 
 [node name="Center" type="VBoxContainer" parent="MarginContainer/HBoxContainer/LeftPanel" unique_id=494553576]
@@ -68,10 +80,18 @@ size_flags_vertical = 3
 [node name="Center" type="VBoxContainer" parent="MarginContainer/HBoxContainer/CenterPanel" unique_id=1646030967]
 layout_mode = 2
 size_flags_vertical = 3
+alignment = 1
 
 [node name="FeuDepart" parent="MarginContainer/HBoxContainer/CenterPanel/Center" unique_id=438047380 instance=ExtResource("3_jbulc")]
 position = Vector2(-185, -368)
 scale = Vector2(3, 3)
+
+[node name="MessageLabel" type="Label" parent="MarginContainer/HBoxContainer/CenterPanel/Center" unique_id=1208165915]
+layout_mode = 2
+theme_override_font_sizes/font_size = 50
+text = "PREPAREZ VOUS AU DEPART !"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Bottom" type="VBoxContainer" parent="MarginContainer/HBoxContainer/CenterPanel" unique_id=913421037]
 layout_mode = 2
@@ -88,22 +108,22 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Pilote"
-horizontal_alignment = 2
+horizontal_alignment = 1
 
 [node name="Speed" type="Label" parent="MarginContainer/HBoxContainer/RightPanel/Title" unique_id=1585504829]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Vitesse"
-horizontal_alignment = 2
+horizontal_alignment = 1
 
 [node name="Position" type="Label" parent="MarginContainer/HBoxContainer/RightPanel/Title" unique_id=1945195891]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Position"
-horizontal_alignment = 2
+horizontal_alignment = 1
 
 [node name="BestLap" type="Label" parent="MarginContainer/HBoxContainer/RightPanel/Title" unique_id=1585090028]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Meilleur tour"
-horizontal_alignment = 2
+horizontal_alignment = 1

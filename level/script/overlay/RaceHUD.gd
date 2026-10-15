@@ -9,7 +9,7 @@ const PARTICIPANT_ROW_SCENE := preload(
 @onready var first_participant_label: Label = $MarginContainer/HBoxContainer/LeftPanel/Top/FirstParticipant
 @onready var best_lap_label: Label = $MarginContainer/HBoxContainer/LeftPanel/Top/BestLap
 @onready var race_time_label: Label = $MarginContainer/HBoxContainer/LeftPanel/Top/RaceTime
-
+@onready var message_label: Label = $MarginContainer/HBoxContainer/CenterPanel/Center/MessageLabel
 @onready var light_start: Node2D = $MarginContainer/HBoxContainer/CenterPanel/Center/FeuDepart
 
 @onready var participant_list: VBoxContainer = $MarginContainer/HBoxContainer/RightPanel
@@ -39,6 +39,8 @@ func initialize(
 	_update_static_values()
 	
 	_build_participant_rows()
+	
+	start_message()
 
 
 func _process(_delta: float) -> void:
@@ -61,6 +63,13 @@ func _process(_delta: float) -> void:
 
 
 func _connect_controller_signals() -> void:
+
+	if not race_controller.race_started.is_connected(
+		_on_race_started
+	):
+		race_controller.race_started.connect(
+			_on_race_started
+		)
 
 	if not race_controller.participant_lap_completed.is_connected(
 		_on_participant_lap_completed
@@ -94,7 +103,6 @@ func _connect_controller_signals() -> void:
 # ------------------------------------------------------------------
 # INITIALISATION
 # ------------------------------------------------------------------
-
 func _select_displayed_participant() -> void:
 	if race_controller == null:
 		return
@@ -159,10 +167,16 @@ func _build_participant_rows() -> void:
 
 		participant_rows[state.participant_id] = row
 
+func start_message() -> void:
+	message_label.text = "PREPAREZ VOUS AU DEPART !"
+	message_label.show()
+	await get_tree().create_timer(5).timeout
+	message_label.hide()
+	
+
 # ------------------------------------------------------------------
 # COURSE
 # ------------------------------------------------------------------
-
 func _update_race_time() -> void:
 	if race_controller == null:
 		return
@@ -210,7 +224,8 @@ func _update_best_lap(state: RaceParticipantState) -> void:
 # ------------------------------------------------------------------
 # ÉVÉNEMENTS DE COURSE
 # ------------------------------------------------------------------
-
+func _on_race_started() -> void:
+	race_started = true
 
 func _on_participant_finished(
 	state: RaceParticipantState
@@ -229,6 +244,8 @@ func _on_participant_lap_completed(state: RaceParticipantState) -> void:
 
 func _on_race_finished() -> void:
 	race_started = false
+	message_label.text = "FIN DE LA COURSE !"
+	message_label.show()
 
 
 # ------------------------------------------------------------------
@@ -246,13 +263,19 @@ func _update_static_values() -> void:
 
 
 func _format_time(time_seconds: float) -> String:
-	if time_seconds < 0.0:
-		return "-%s" % _format_time(absf(time_seconds))
 
-	var minutes := int(time_seconds / 60.0)
-	var seconds := fmod(time_seconds, 60.0)
+	if time_seconds <= 0.0:
+		return "--:--.---"
 
-	return "%02d:%05.2f" % [
+	var minutes := int(time_seconds / 60)
+	var seconds := int(time_seconds) % 60
+
+	var milliseconds := int(
+		(time_seconds - floor(time_seconds)) * 1000.0
+	)
+
+	return "%02d:%02d" % [
 		minutes,
-		seconds
+		seconds,
+		milliseconds
 	]

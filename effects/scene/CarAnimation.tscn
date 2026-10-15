@@ -1,0 +1,138 @@
+[gd_scene format=3 uid="uid://ddr7vul4d8e38"]
+
+[ext_resource type="Script" uid="uid://bttglf03ron6h" path="res://effects/script/CarAnimation.gd" id="1_uq2qq"]
+[ext_resource type="Texture2D" uid="uid://bm7cd5n143mnq" path="res://effects/sprite/Circle_explosion/Circle_explosion1.png" id="2_tuqix"]
+[ext_resource type="Texture2D" uid="uid://dpttsep68jtv1" path="res://effects/sprite/Circle_explosion/Circle_explosion2.png" id="3_ejv36"]
+[ext_resource type="Texture2D" uid="uid://ofuhkfhap6bo" path="res://effects/sprite/Circle_explosion/Circle_explosion3.png" id="4_g45qa"]
+[ext_resource type="Texture2D" uid="uid://du62bguo4iiyi" path="res://effects/sprite/Circle_explosion/Circle_explosion4.png" id="5_basen"]
+[ext_resource type="Texture2D" uid="uid://d1icpcd6p6mo2" path="res://effects/sprite/Circle_explosion/Circle_explosion5.png" id="6_wbwfx"]
+[ext_resource type="Texture2D" uid="uid://pgc8acjo0h46" path="res://effects/sprite/Circle_explosion/Circle_explosion6.png" id="7_8b4ii"]
+[ext_resource type="Texture2D" uid="uid://dicc2lev86g4a" path="res://effects/sprite/Circle_explosion/Circle_explosion7.png" id="8_ou5xt"]
+[ext_resource type="Texture2D" uid="uid://dy0wpqyli7lt4" path="res://effects/sprite/Circle_explosion/Circle_explosion8.png" id="9_1fd7w"]
+[ext_resource type="Texture2D" uid="uid://1qf2p1vrebe1" path="res://effects/sprite/Circle_explosion/Circle_explosion9.png" id="10_t4wna"]
+[ext_resource type="Texture2D" uid="uid://cs4hskogvtfny" path="res://effects/sprite/Circle_explosion/Circle_explosion10.png" id="11_dcioj"]
+[ext_resource type="Texture2D" uid="uid://et1dfvtrhp4b" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval1.png" id="12_dcioj"]
+[ext_resource type="AudioStream" uid="uid://dp5fmfecok2ju" path="res://effects/sound/yodguard-short-energy-beam-shot-1-482495.mp3" id="12_xrhp2"]
+[ext_resource type="Texture2D" uid="uid://dy5cwt2h4lgpa" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval2.png" id="13_xrhp2"]
+[ext_resource type="Texture2D" uid="uid://bd6fhhst03dyb" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval3.png" id="14_58nla"]
+[ext_resource type="Texture2D" uid="uid://ccycf6x8phbbo" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval4.png" id="15_cbwen"]
+[ext_resource type="Texture2D" uid="uid://c0mbavmnsky3u" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval5.png" id="16_jsxta"]
+[ext_resource type="Texture2D" uid="uid://wca64dbht35a" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval6.png" id="17_f56sv"]
+[ext_resource type="Texture2D" uid="uid://e32ughir8330" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval7.png" id="18_b1iku"]
+[ext_resource type="Texture2D" uid="uid://ub8jge2v5mbx" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval8.png" id="19_c77r0"]
+[ext_resource type="Texture2D" uid="uid://dgq8g1vaouq0" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval9.png" id="20_6gbdp"]
+[ext_resource type="Texture2D" uid="uid://cggmt7mtvobnf" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval10.png" id="21_yft71"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_p52qu"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_tuqix")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_ejv36")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_g45qa")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_basen")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_wbwfx")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_8b4ii")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_ou5xt")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_1fd7w")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_t4wna")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_dcioj")
+}],
+"loop": 0,
+"name": &"explosion",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("12_dcioj")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_xrhp2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_58nla")
+}, {
+"duration": 1.0,
+"texture": ExtResource("15_cbwen")
+}, {
+"duration": 1.0,
+"texture": ExtResource("16_jsxta")
+}, {
+"duration": 1.0,
+"texture": ExtResource("17_f56sv")
+}, {
+"duration": 1.0,
+"texture": ExtResource("18_b1iku")
+}, {
+"duration": 1.0,
+"texture": ExtResource("19_c77r0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("20_6gbdp")
+}, {
+"duration": 1.0,
+"texture": ExtResource("21_yft71")
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}],
+"loop": 0,
+"name": &"explosion_blue_oval",
+"speed": 8.0
+}]
+
+[node name="CarAnimation" type="Node2D" unique_id=2041990868]
+script = ExtResource("1_uq2qq")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=915527999]
+sprite_frames = SubResource("SpriteFrames_p52qu")
+animation = &"explosion_blue_oval"
+speed_scale = 2.0
+
+[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="." unique_id=1702963165]
+stream = ExtResource("12_xrhp2")

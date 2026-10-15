@@ -528,27 +528,22 @@ func _on_start_sequence_finished() -> void:
 # ============================================================
 # DÉPART EFFECTIF
 # ============================================================
-
 func _start_race() -> void:
 	print("Démarrage de la course")
 	if race_state != RaceState.COUNTDOWN:
 		return
-
 	# --------------------------------------------------------
 	# Etat logique de la course.
 	# --------------------------------------------------------
 	race_state = RaceState.RUNNING
-
 	# --------------------------------------------------------
 	# Origine du chronométrage.
 	# --------------------------------------------------------
 	race_start_usec = Time.get_ticks_usec()
-
 	# --------------------------------------------------------
 	# Le HUD reçoit d'abord l'ordre de passer les feux au vert.
 	# --------------------------------------------------------
 	race_started.emit()
-
 	# --------------------------------------------------------
 	# SEULEMENT APRÈS LE SIGNAL DE DÉPART,
 	# on débloque les voitures.
@@ -586,14 +581,12 @@ func on_car_entered_section(
 	# --------------------------------------------------------
 	# Une section n'a aucun effet avant le départ.
 	# --------------------------------------------------------
-
 	if race_state != RaceState.RUNNING:
 		return
 
 	# --------------------------------------------------------
 	# Validation de l'ID.
 	# --------------------------------------------------------
-
 	if (
 		section_id < 0
 		or section_id >= section_count
@@ -609,7 +602,6 @@ func on_car_entered_section(
 	# --------------------------------------------------------
 	# Recherche de la voiture.
 	# --------------------------------------------------------
-
 	var state := _get_participant_state(car)
 
 	if state == null:
@@ -621,7 +613,6 @@ func on_car_entered_section(
 	# --------------------------------------------------------
 	# La voiture doit franchir les sections dans l'ordre.
 	# --------------------------------------------------------
-
 	if section_id != state.next_section:
 		return
 
@@ -630,7 +621,6 @@ func on_car_entered_section(
 	# ========================================================
 	# PREMIER PASSAGE SUR LA LIGNE DE DÉPART
 	# ========================================================
-
 	if not state.has_started_lap:
 
 		if section_id != 0:
@@ -646,7 +636,6 @@ func on_car_entered_section(
 	# ========================================================
 	# PASSAGE NORMAL
 	# ========================================================
-
 	state.section_times.append(
 		current_time
 	)
@@ -666,7 +655,6 @@ func on_car_entered_section(
 	# Si elle est franchie alors qu'un tour est déjà en cours,
 	# le tour vient de se terminer.
 	# --------------------------------------------------------
-
 	if section_id == 0:
 
 		_finish_lap(
@@ -679,7 +667,6 @@ func on_car_entered_section(
 	# --------------------------------------------------------
 	# Section normale.
 	# --------------------------------------------------------
-
 	state.next_section += 1
 
 	# Après la dernière section, la prochaine section
@@ -1122,7 +1109,7 @@ func _finish_race() -> void:
 	for state in participants:
 
 		if state.car != null:
-			state.car.set_can_move(false)
+			state.car.finish_with_explosion()
 
 	# On fige le classement final.
 	_update_positions()

@@ -1,57 +1,58 @@
 
 extends Node2D
-class_name CarExplosion
+class_name CarAnimation
 
 @export var animation_name: StringName = &"explosion"
 
-@onready var explosion_sprite: AnimatedSprite2D = $AnimatedSprite2D
-@onready var explosion_audio: AudioStreamPlayer2D = $AudioStreamPlayer2D
+@onready var animation_sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var animation_audio: AudioStreamPlayer2D = $AudioStreamPlayer2D
 
 var _animation_done := false
 var _audio_done := true
 
 
-func _ready() -> void:
+func play_animation() -> void:
+	animation_sprite.animation = animation_name
 	_start_animation()
 	_start_audio()
 	_try_free()
 
 
 func _start_animation() -> void:
-	if explosion_sprite.sprite_frames == null:
+	if animation_sprite.sprite_frames == null:
 		push_warning("CarExplosion : aucune ressource SpriteFrames.")
 		_animation_done = true
 		return
 
-	if not explosion_sprite.sprite_frames.has_animation(animation_name):
+	if not animation_sprite.sprite_frames.has_animation(animation_name):
 		push_warning(
 			"CarExplosion : animation introuvable : "
 			+ String(animation_name)
 		)
-		explosion_sprite.hide()
+		animation_sprite.hide()
 		_animation_done = true
 		return
 
-	explosion_sprite.animation_finished.connect(
+	animation_sprite.animation_finished.connect(
 		_on_animation_finished
 	)
 
-	explosion_sprite.play(animation_name)
+	animation_sprite.play(animation_name)
 
 
 func _start_audio() -> void:
-	if explosion_audio.stream == null:
+	if animation_audio.stream == null:
 		_audio_done = true
 		return
 
 	_audio_done = false
-	explosion_audio.finished.connect(_on_audio_finished)
-	explosion_audio.play()
+	animation_audio.finished.connect(_on_audio_finished)
+	animation_audio.play()
 
 
 func _on_animation_finished() -> void:
 	_animation_done = true
-	explosion_sprite.hide()
+	animation_sprite.hide()
 	_try_free()
 
 

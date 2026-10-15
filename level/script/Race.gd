@@ -175,6 +175,8 @@ func _initialize_camera() -> void:
 		return
 
 func _on_race_finished() -> void:
+	# Pause l'exécution de la fonction pendant 2 secondes
+	await get_tree().create_timer(4.0).timeout
 	NavigationManager.go("RaceRecap")
 
 func _on_quit_race() -> void:
