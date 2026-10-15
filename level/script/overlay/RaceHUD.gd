@@ -170,7 +170,9 @@ func _build_participant_rows() -> void:
 func start_message() -> void:
 	message_label.text = "PREPAREZ VOUS AU DEPART !"
 	message_label.show()
-	await get_tree().create_timer(5).timeout
+	await get_tree().create_timer(6).timeout
+	message_label.text = "N'ACCELEREZ PAS AVANT LES FEUX VERTS !"
+	await get_tree().create_timer(6).timeout
 	message_label.hide()
 	
 
@@ -265,17 +267,17 @@ func _update_static_values() -> void:
 func _format_time(time_seconds: float) -> String:
 
 	if time_seconds <= 0.0:
-		return "--:--.---"
+		return "--:--.--"
 
 	var minutes := int(time_seconds / 60)
 	var seconds := int(time_seconds) % 60
 
-	var milliseconds := int(
-		(time_seconds - floor(time_seconds)) * 1000.0
+	var centiseconds := int(
+		(time_seconds - floor(time_seconds)) * 100.0
 	)
 
-	return "%02d:%02d" % [
+	return "%02d:%02d.:%02d" % [
 		minutes,
 		seconds,
-		milliseconds
+		centiseconds
 	]

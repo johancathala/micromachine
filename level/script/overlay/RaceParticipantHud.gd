@@ -15,7 +15,7 @@ var race_controller: RaceController = null
 
 
 const PLACE := {
-	0: "--",
+	0: "XXXX",
 	1: "1er",
 	2: "2ème",
 	3: "3ème",
@@ -60,7 +60,7 @@ func refresh() -> void:
 	# ============================================================
 	position_label.text = PLACE.get(
 		participant.race_position,
-		"--"
+		"XXXX"
 	)
 
 	_update_position_color()
@@ -86,21 +86,20 @@ func refresh() -> void:
 		)
 
 		lap_time_label.text = (
-			" | En cours : %s"
+			" | En cours: %s"
 			% _format_time(current_lap_time)
 		)
 
 	else:
 
-		lap_time_label.text = " | En cours : --:--.---"
+		lap_time_label.text = " | En cours: --:--.--"
 
 
 	# ============================================================
 	# DELTA DERNIER SECTEUR
 	# ============================================================
 	delta_label.text = (
-		" | "
-		+ get_delta()
+		get_delta()
 	)
 	
 	_update_delta_color()
@@ -109,7 +108,7 @@ func refresh() -> void:
 	# MEILLEUR TOUR
 	# ============================================================
 	best_lap_label.text = (
-		" | Meilleur : %s"
+		"Meilleur: %s"
 		% _format_time(participant.best_lap_time)
 	)
 
@@ -117,13 +116,13 @@ func refresh() -> void:
 func get_delta() -> String:
 
 	if participant.last_section_index < 0:
-		return "Écart : --"
+		return "--.---"
 
 	if (
 		participant.last_section_index
 		>= participant.best_section_times.size()
 	):
-		return "Écart : --"
+		return "--.---"
 
 	var best_section_time := (
 		participant.best_section_times[
@@ -132,10 +131,10 @@ func get_delta() -> String:
 	)
 
 	if best_section_time <= 0.0:
-		return "Écart : --"
+		return "--.---"
 
 	return (
-		"Écart : %+.3f"
+		"%+.3f"
 		% participant.last_section_delta
 	)
 
@@ -175,17 +174,17 @@ func _speed_to_kmh(speed: float) -> float:
 func _format_time(time_seconds: float) -> String:
 
 	if time_seconds <= 0.0:
-		return "--:--.---"
+		return "--:--.--"
 
 	var minutes := int(time_seconds / 60)
 	var seconds := int(time_seconds) % 60
 
-	var milliseconds := int(
-		(time_seconds - floor(time_seconds)) * 1000.0
+	var centiseconds := int(
+		(time_seconds - floor(time_seconds)) * 100.0
 	)
 
-	return "%02d:%02d.%03d" % [
+	return "%02d:%02d.%02d" % [
 		minutes,
 		seconds,
-		milliseconds
+		centiseconds
 	]

@@ -5,7 +5,33 @@ class_name RaceCamera
 @export_category("Position")
 
 @export_range(0.1, 20.0, 0.1)
-var follow_smoothing_speed: float = 12.0
+var follow_smoothing_speed: float = 4.0
+
+@export_category("Zoom dynamique solo")
+
+# Zoom lorsque la voiture roule lentement ou est arrêtée.
+@export_range(0.1, 2.0, 0.05)
+var solo_zoom_at_low_speed: float = 0.8
+
+# Zoom lorsque la voiture atteint la vitesse de référence.
+# Plus cette valeur est petite, plus la caméra dézoome.
+@export_range(0.05, 1.0, 0.05)
+var solo_zoom_at_high_speed: float = 0.35
+
+# Vitesse à laquelle le dézoom maximal est atteint.
+@export_range(100.0, 3000.0, 50.0)
+var solo_zoom_reference_speed: float = 1600.0
+
+@export_category("Anticipation solo")
+
+# Distance maximale de recul de la caméra à haute vitesse.
+@export_range(0.0, 1000.0, 10.0)
+var solo_lookahead_distance: float = 150.0
+
+# Vitesse à laquelle le recul atteint sa valeur maximale.
+# À cette vitesse, le décalage vaut 100 % de solo_lookahead_distance.
+@export_range(100.0, 3000.0, 50.0)
+var solo_lookahead_speed: float = 1200.0
 
 @export_category("Zoom")
 
@@ -19,7 +45,7 @@ var max_zoom: float = 1.1
 var zoom_margin: float = 1.50
 
 @export_range(0.1, 20.0, 0.1)
-var zoom_smoothing_speed: float = 12.0
+var zoom_smoothing_speed: float = 4.0
 
 
 @export_category("Activation")
@@ -39,7 +65,7 @@ func _ready() -> void:
 
 	if cars_root == null:
 		push_error(
-			"RaceCamera : impossible de trouver le nœud Cars."
+            "RaceCamera : impossible de trouver le nœud Cars."
 		)
 		return
 
@@ -60,11 +86,20 @@ func _process(delta: float) -> void:
 
 	var bounds: Rect2 = _calculate_bounds(cars)
 
-	var target_position: Vector2 = bounds.get_center()
-	var target_zoom: float = _calculate_zoom(bounds)
+	var target_position: Vector2
+	var target_zoom: float
 
-	# Au premier calcul, on place immédiatement la caméra.
-	# Cela évite qu'elle parte de (0, 0) pour rejoindre les voitures.
+	if cars.size() == 1:
+		var car := cars[0] as Car
+
+		target_position = _calculate_solo_target(car)
+		target_zoom = _calculate_solo_zoom(car)
+	else:
+		# En multijoueur, on conserve le cadrage collectif.
+		target_position = bounds.get_center()
+		target_zoom = _calculate_zoom(bounds)
+
+	# Initialisation sans déplacement depuis (0, 0).
 	if not camera_initialized:
 		global_position = target_position
 		zoom = Vector2.ONE * target_zoom
@@ -96,12 +131,59 @@ func _get_cars() -> Array[Node2D]:
 	var cars: Array[Node2D] = []
 
 	for child in cars_root.get_children():
-		var car := child as Node2D
+		var car := child as Car
 
-		if car != null:
-			cars.append(car)
+		if car == null:
+			continue
+
+		# On ne cadre que les joueurs humains actifs.
+		if car.is_ai:
+			continue
+
+		if car._destruction_started:
+			continue
+
+		cars.append(car)
 
 	return cars
+
+func _calculate_solo_zoom(car: Car) -> float:
+	var current_speed: float = car.velocity.length()
+
+	var speed_ratio: float = clampf(
+		current_speed / solo_zoom_reference_speed,
+		0.0,
+		1.0
+	)
+
+	return lerpf(
+		solo_zoom_at_low_speed,
+		solo_zoom_at_high_speed,
+		speed_ratio
+	)
+
+func _calculate_solo_target(car: Car) -> Vector2:
+	# Vitesse réelle de la voiture, en unités par seconde.
+	var current_speed: float = car.speed
+
+	# Ratio entre 0 et 1.
+	var speed_ratio: float = clampf(
+		current_speed / solo_lookahead_speed,
+		0.0,
+		1.0
+	)
+
+	# Direction avant de la voiture.
+	var forward: Vector2 = Vector2.RIGHT.rotated(
+		car.global_rotation
+	)
+
+	# La caméra se place derrière la voiture.
+	var lookahead: float = (
+		solo_lookahead_distance * speed_ratio
+	)
+
+	return car.global_position - forward * lookahead
 
 
 func _calculate_bounds(cars: Array[Node2D]) -> Rect2:

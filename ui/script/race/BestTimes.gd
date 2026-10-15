@@ -139,6 +139,7 @@ func _add_record_row(record: Dictionary, rank: int) -> void:
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	var rank_label := _make_cell(str(rank), 55)
+	rank_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var nickname_label := _make_cell(
 		String(record.get("nickname", "?")),
 		180

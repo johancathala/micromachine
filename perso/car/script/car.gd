@@ -378,7 +378,7 @@ func _handle_obstacle_collision(collision: KinematicCollision2D) -> void:
 	_play_collision_sound()
 	
 func _process_human_input(_delta: float) -> void:
-	var input_state := InputManager.get_player_input(
+	var input_state: PlayerInputState = InputManager.get_player_input(
 		input_device_type,
 		input_device_id
 		)
@@ -793,14 +793,20 @@ func explosion() -> void:
 		return
 	_destruction_started = true
 	var node_explosion := get_node_animation()
-	#node_explosion.animation_name = &"explosion"
-	node_explosion.animation_name = &"explosion_blue_oval"
+	node_explosion.animation_name = &"explosion"
+	#node_explosion.animation_name = &"explosion_blue_oval"
 	node_explosion.play_animation()
 	hide()
 
 func finish_with_explosion() -> void:
 	set_can_move(false)
 	set_colision(false)
+	if engine_running_sound.playing:
+		engine_running_sound.stop()				# Arrêter le son au ralenti et au rupteur
+	if engine_rupteur_sound.playing:
+		engine_rupteur_sound.stop()
+	if engine_idle_sound.playing:
+		engine_idle_sound.stop()
 	explosion()
 	# Arrête immédiatement les déplacements et les traitements
 	# de la voiture.
