@@ -46,6 +46,10 @@ var last_section_time = 0.0
 var last_section_delta = 0.0
 var last_section_index = -1
 
+var respawn_transform: Transform2D = Transform2D.IDENTITY
+var has_respawn_point: bool = false
+var respawn_in_progress: bool = false
+
 # ============================================================
 # HISTORIQUE DES TOURS
 # ============================================================

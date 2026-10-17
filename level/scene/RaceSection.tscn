@@ -8,6 +8,7 @@ b = Vector2(653, 0)
 [node name="Section00" type="Area2D" unique_id=818761778]
 collision_mask = 2
 script = ExtResource("1_1bw0r")
+section_id = null
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=137223370]
 shape = SubResource("SegmentShape2D_p52qu")

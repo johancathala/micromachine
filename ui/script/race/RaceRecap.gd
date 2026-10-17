@@ -247,6 +247,8 @@ func _on_restart_pressed() -> void:
 	if not GameManager.restart_active_race():
 		return
 
+	AudioManager.play_start_event()
+	await get_tree().create_timer(1.0).timeout
 	NavigationManager.go("Race")
 
 

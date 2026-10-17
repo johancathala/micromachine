@@ -6,6 +6,7 @@
 
 [sub_resource type="SystemFont" id="SystemFont_u45m1"]
 font_names = PackedStringArray("Impact")
+subpixel_positioning = 0
 
 [sub_resource type="Theme" id="Theme_wh7f1"]
 default_font = SubResource("SystemFont_u45m1")
@@ -82,17 +83,6 @@ layout_mode = 2
 size_flags_vertical = 3
 alignment = 1
 
-[node name="FeuDepart" parent="MarginContainer/HBoxContainer/CenterPanel/Center" unique_id=438047380 instance=ExtResource("3_jbulc")]
-position = Vector2(-185, -368)
-scale = Vector2(3, 3)
-
-[node name="MessageLabel" type="Label" parent="MarginContainer/HBoxContainer/CenterPanel/Center" unique_id=1208165915]
-layout_mode = 2
-theme_override_font_sizes/font_size = 50
-text = "PREPAREZ VOUS AU DEPART !"
-horizontal_alignment = 1
-vertical_alignment = 1
-
 [node name="Bottom" type="VBoxContainer" parent="MarginContainer/HBoxContainer/CenterPanel" unique_id=913421037]
 layout_mode = 2
 size_flags_vertical = 3
@@ -127,3 +117,22 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Meilleur tour"
 horizontal_alignment = 1
+
+[node name="MessageLayer" type="CanvasLayer" parent="MarginContainer" unique_id=1550715327]
+
+[node name="MessageLabel" type="Label" parent="MarginContainer/MessageLayer" unique_id=1037736222]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 50
+text = "PREPAREZ VOUS AU DEPART !"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FeuLayer" type="CanvasLayer" parent="MarginContainer" unique_id=1134318419]
+
+[node name="FeuDepart" parent="MarginContainer/FeuLayer" unique_id=438047380 instance=ExtResource("3_jbulc")]
+position = Vector2(456, -7)
+scale = Vector2(3, 3)

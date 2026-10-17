@@ -9,8 +9,8 @@ const PARTICIPANT_ROW_SCENE := preload(
 @onready var first_participant_label: Label = $MarginContainer/HBoxContainer/LeftPanel/Top/FirstParticipant
 @onready var best_lap_label: Label = $MarginContainer/HBoxContainer/LeftPanel/Top/BestLap
 @onready var race_time_label: Label = $MarginContainer/HBoxContainer/LeftPanel/Top/RaceTime
-@onready var message_label: Label = $MarginContainer/HBoxContainer/CenterPanel/Center/MessageLabel
-@onready var light_start: Node2D = $MarginContainer/HBoxContainer/CenterPanel/Center/FeuDepart
+@onready var message_label: Label = $MarginContainer/MessageLayer/MessageLabel
+@onready var light_start: Node2D = $MarginContainer/FeuLayer/FeuDepart
 
 @onready var participant_list: VBoxContainer = $MarginContainer/HBoxContainer/RightPanel
 

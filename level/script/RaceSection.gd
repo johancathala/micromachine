@@ -1,11 +1,11 @@
 extends Area2D
 class_name RaceSection
 
+@onready var respawn_point: Marker2D = $RespawnPoint
 
 # ============================================================
 # CONFIGURATION
 # ============================================================
-
 @export var section_id: int = 0
 
 
@@ -39,7 +39,8 @@ func _on_body_entered(body: Node2D) -> void:
 
 	controller.on_car_entered_section(
 		car,
-		section_id
+		section_id,
+		respawn_point
 	)
 
 

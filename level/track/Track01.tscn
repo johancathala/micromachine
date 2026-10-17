@@ -110462,10 +110462,18 @@ position = Vector2(1299.0001, 1347)
 rotation = 3.143266
 scale = Vector2(2.7005463, 2.18022)
 
+[node name="RespawnPoint" type="Marker2D" parent="Sections/Section00" unique_id=1269878150]
+position = Vector2(128.12396, 1.1104525)
+rotation = 1.5732143
+
 [node name="Section01" parent="Sections" unique_id=1877420136 instance=ExtResource("9_qiq11")]
 position = Vector2(-1087.9998, -3667)
 scale = Vector2(-2.4401205, 4.9975715)
 section_id = 1
+
+[node name="RespawnPoint" type="Marker2D" parent="Sections/Section01" unique_id=710268470]
+position = Vector2(80.324005, -1.000464)
+rotation = -1.5678596
 
 [node name="Section02" parent="Sections" unique_id=658516467 instance=ExtResource("9_qiq11")]
 position = Vector2(-6243, -8145)
@@ -110473,11 +110481,19 @@ rotation = 3.1409104
 scale = Vector2(2.3472326, 2.5268753)
 section_id = 2
 
+[node name="RespawnPoint" type="Marker2D" parent="Sections/Section02" unique_id=1627140083]
+position = Vector2(267.19012, -91.247955)
+rotation = 1.5858737
+
 [node name="Section03" parent="Sections" unique_id=475067875 instance=ExtResource("9_qiq11")]
 position = Vector2(2896.0002, -9956)
 rotation = 0.5207658
 scale = Vector2(2.702819, -0.47142857)
 section_id = 3
+
+[node name="RespawnPoint" type="Marker2D" parent="Sections/Section03" unique_id=278899997]
+position = Vector2(195.37083, -47.122833)
+rotation = 4.3958855
 
 [node name="Section04" parent="Sections" unique_id=1080843683 instance=ExtResource("9_qiq11")]
 position = Vector2(1491, -5987)
@@ -110485,17 +110501,29 @@ rotation = 1.5839875
 scale = Vector2(1.9695675, 2.8902338)
 section_id = 4
 
+[node name="RespawnPoint" type="Marker2D" parent="Sections/Section04" unique_id=603374425]
+position = Vector2(453.73322, 120.1433)
+rotation = 4.676465
+
 [node name="Section05" parent="Sections" unique_id=1381638107 instance=ExtResource("9_qiq11")]
 position = Vector2(1590, -1988)
 rotation = 0.0077020666
 scale = Vector2(2.2896502, -1.6584221)
 section_id = 5
 
+[node name="RespawnPoint" type="Marker2D" parent="Sections/Section05" unique_id=43332251]
+position = Vector2(327.57477, -0.73761415)
+rotation = 4.69671
+
 [node name="Section06" parent="Sections" unique_id=2127573226 instance=ExtResource("9_qiq11")]
 position = Vector2(1231, 5497)
 rotation = 1.5654452
 scale = Vector2(1.578492, 1.3829973)
 section_id = 6
+
+[node name="RespawnPoint" type="Marker2D" parent="Sections/Section06" unique_id=1827345234]
+position = Vector2(265.5154, -419.9325)
+rotation = 1.5465378
 
 [node name="SpawnPoints" type="Node2D" parent="." unique_id=847843421]
 

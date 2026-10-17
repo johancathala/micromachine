@@ -26,7 +26,7 @@ const DEFAULT_GAMEPAD_BINDINGS := {
 	#"left": JOY_BUTTON_DPAD_LEFT,
 	#"right": JOY_BUTTON_DPAD_RIGHT,
 	"handbrake": JOY_BUTTON_X,
-	"respawn": JOY_BUTTON_Y,
+	"respawn": JOY_BUTTON_BACK,
 	"pause": JOY_BUTTON_START,
 	"confirm": JOY_BUTTON_A
 }

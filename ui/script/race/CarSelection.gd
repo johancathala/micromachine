@@ -24,8 +24,6 @@ var colors: Array = []
 
 @onready var car_description_label: Label = $MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox/PreviewPanel/PreviewVBox/CarDescription
 
-@onready var selection_status: Label = $MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox/SelectionStatus
-
 @onready var start_button: Button = $MarginContainer/VBoxContainer/Footer/StartButton
 
 
@@ -282,7 +280,6 @@ func _select_participant(index: int) -> void:
 	_refresh_car_buttons()
 	_refresh_color_buttons()
 	_refresh_preview()
-	_update_status()
 
 func _on_toggle_pressed(index: int) -> void:
 	if index < 0 or index >= race_config.participants.size():
@@ -306,7 +303,6 @@ func _on_toggle_pressed(index: int) -> void:
 	_refresh_car_buttons()
 	_refresh_color_buttons()
 	_refresh_preview()
-	_update_status()
 
 func _refresh_car_buttons() -> void:
 	if selected_participant_index < 0:
@@ -399,7 +395,6 @@ func _on_car_selected(car_id: String, car_name: String) -> void:
 	_refresh_participant_list()
 	_refresh_car_buttons()
 	_refresh_preview()
-	_update_status()
 
 
 func _on_color_selected(color_id: String) -> void:
@@ -413,7 +408,6 @@ func _on_color_selected(color_id: String) -> void:
 	_refresh_participant_list()
 	_refresh_color_buttons()
 	_refresh_preview()
-	_update_status()
 
 
 func _refresh_preview() -> void:
@@ -450,18 +444,8 @@ func _refresh_preview() -> void:
 		preview_image.modulate = Color.WHITE
 
 
-func _update_status() -> void:
-	if race_config.is_car_selection_valid():
-		selection_status.text = "Sélection complète."
-		start_button.disabled = false
-	else:
-		selection_status.text = "Chaque participant doit avoir une voiture et une couleur."
-		start_button.disabled = true
-
-
 func _on_start_pressed() -> void:
 	if not race_config.is_car_selection_valid():
-		_update_status()
 		return
 
 	if not GameManager.start_race():

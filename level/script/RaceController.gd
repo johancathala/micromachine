@@ -46,7 +46,6 @@ enum RaceState {
 }
 
 var race_state: RaceState = RaceState.COUNTDOWN
-
 var race_is_paused := false
 
 # ============================================================
@@ -291,6 +290,13 @@ func _initialize_participants() -> bool:
 		)
 
 		participants.append(state)
+		
+		if not car.respawn_requested.is_connected(
+			_on_car_respawn_requested
+		):
+			car.respawn_requested.connect(
+				_on_car_respawn_requested
+			)
 
 	if participants.is_empty():
 
@@ -388,18 +394,29 @@ func start_countdown() -> void:
 # ============================================================
 # GESTION DU MENU PAUSE
 # ==========================================================
-func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("pause"):
-		if race_is_paused:
-			resume_race()
-		else:
-			pause_race()
+func _input(event: InputEvent) -> void:
+	if not event.is_action_pressed("pause"):
+		return
+
+	if event.is_echo():
+		return
+
+	if not can_pause or race_state == RaceState.FINISHED:
+		return
+
+	if race_is_paused:
+		resume_race()
+	else:
+		pause_race()
+
+	get_viewport().set_input_as_handled()
 
 
 func pause_race() -> void:
 	if race_is_paused:
 		return
-
+	if not timer_race_end.is_stopped():
+		timer_race_end.paused = true
 	race_is_paused = true
 
 	pause_overlay.open()
@@ -411,6 +428,8 @@ func pause_race() -> void:
 func resume_race() -> void:
 	if not race_is_paused:
 		return
+	if not timer_race_end.is_stopped():
+		timer_race_end.paused = false
 	if is_instance_valid(controls_instance):
 		controls_instance.queue_free()
 
@@ -420,7 +439,7 @@ func resume_race() -> void:
 	race_start_usec += pause_end_usec - pause_start_usec
 	get_tree().paused = false
 
-	#pause_overlay.close()
+	pause_overlay.close()
 
 
 func _on_pause_resume_pressed() -> void:
@@ -480,7 +499,6 @@ func _on_return_to_main_menu() -> void:
 	race_is_paused = false
 	get_tree().paused = false
 	return_to_main_menu.emit()
-
 
 
 # ============================================================
@@ -559,7 +577,6 @@ func _start_race() -> void:
 # TEMPS DE COURSE
 # ============================================================
 func get_race_time() -> float:
-
 	if race_start_usec <= 0:
 		return 0.0
 
@@ -572,12 +589,11 @@ func get_race_time() -> float:
 # ============================================================
 # DÉTECTION D'UNE SECTION
 # ============================================================
-
 func on_car_entered_section(
 	car: Car,
-	section_id: int
+	section_id: int,
+	respawn_point: Marker2D
 ) -> void:
-
 	# --------------------------------------------------------
 	# Une section n'a aucun effet avant le départ.
 	# --------------------------------------------------------
@@ -591,12 +607,10 @@ func on_car_entered_section(
 		section_id < 0
 		or section_id >= section_count
 	):
-
 		push_error(
 			"RaceController : section_id %d invalide."
 			% section_id
 		)
-
 		return
 
 	# --------------------------------------------------------
@@ -622,15 +636,15 @@ func on_car_entered_section(
 	# PREMIER PASSAGE SUR LA LIGNE DE DÉPART
 	# ========================================================
 	if not state.has_started_lap:
-
 		if section_id != 0:
 			return
+		
+		update_respawn_point(state, respawn_point)
 
 		_start_first_lap(
 			state,
 			current_time
 		)
-
 		return
 
 	# ========================================================
@@ -648,6 +662,8 @@ func on_car_entered_section(
 		state,
 		section_id
 	)
+	
+	update_respawn_point(state, respawn_point)
 
 	# --------------------------------------------------------
 	# La section 0 est la ligne de départ / arrivée.
@@ -656,12 +672,10 @@ func on_car_entered_section(
 	# le tour vient de se terminer.
 	# --------------------------------------------------------
 	if section_id == 0:
-
 		_finish_lap(
 			state,
 			current_time
 		)
-
 		return
 
 	# --------------------------------------------------------
@@ -677,6 +691,52 @@ func on_car_entered_section(
 
 	_update_positions()
 
+# ============================================================
+# MISE A JOUR DU POINT DE RESPAWN
+# ============================================================
+func update_respawn_point(
+	state: RaceParticipantState,
+	marker: Marker2D
+) -> void:
+	if state == null or marker == null:
+		return
+
+	state.respawn_transform = marker.global_transform
+	state.has_respawn_point = true
+
+func _on_car_respawn_requested(car: Car) -> void:
+	request_respawn(car)
+
+func request_respawn(car: Car) -> void:
+	if race_state != RaceState.RUNNING:
+		return
+
+	if race_is_paused:
+		return
+
+	var state := _get_participant_state(car)
+
+	if state == null:
+		return
+
+	if state.finished:
+		return
+
+	if not state.has_respawn_point:
+		push_warning(
+			"Respawn impossible : aucun point enregistré pour %s."
+			% state.nickname
+		)
+		return
+
+	if not is_instance_valid(state.car):
+		return
+	
+	if state.car._destruction_started == false:
+		state.car.explosion()
+		await get_tree().create_timer(2.0).timeout
+		state.car.respawn_at(state.respawn_transform)
+		state.car._destruction_started = false
 
 # ============================================================
 # PREMIER DÉPART D'UN PARTICIPANT
@@ -736,7 +796,6 @@ func _finish_lap(
 		current_time
 		- state.lap_start_time
 	)
-
 	state.last_lap_time = lap_time
 
 	# --------------------------------------------------------
@@ -762,7 +821,6 @@ func _finish_lap(
 		state.best_lap_time <= 0.0
 		or lap_time < state.best_lap_time
 	):
-
 		state.best_lap_time = lap_time
 
 	# --------------------------------------------------------
@@ -771,7 +829,6 @@ func _finish_lap(
 	_update_best_section_times(
 		state
 	)
-
 	participant_lap_completed.emit(
 		state
 	)
@@ -780,12 +837,10 @@ func _finish_lap(
 	# Dernier tour de la course.
 	# --------------------------------------------------------
 	if state.current_lap >= race_config.lap_count:
-
 		_finish_participant(
 			state,
 			current_time
 		)
-
 		return
 
 	# --------------------------------------------------------
@@ -819,12 +874,10 @@ func _update_best_section_times(
 	)
 
 	for i in range(section_times.size()):
-
 		if i >= state.best_section_times.size():
 			continue
 
 		var section_time := section_times[i]
-
 		var best := (
 			state.best_section_times[i]
 		)
@@ -833,7 +886,6 @@ func _update_best_section_times(
 			best <= 0.0
 			or section_time < best
 		):
-
 			state.best_section_times[i] = section_time
 
 func _calculate_section_times(
@@ -850,11 +902,9 @@ func _calculate_section_times(
 	for i in range(
 		state.section_times.size()
 	):
-
 		var current_time := (
 			state.section_times[i]
 		)
-
 		var section_time := (
 			current_time
 			- previous_time
@@ -880,7 +930,6 @@ func _update_last_section_delta(
 		return
 
 	var section_index := state.section_times.size() - 2
-
 	if (
 		section_index < 0
 		or section_index >= state.best_section_times.size()
@@ -903,7 +952,6 @@ func _update_last_section_delta(
 	)
 
 	var section_time := current_time - previous_time
-
 	state.last_section_time = section_time
 	state.last_section_index = section_index
 
@@ -921,7 +969,6 @@ func _update_last_section_delta(
 # ============================================================
 # FIN D'UN PARTICIPANT
 # ============================================================
-
 func _finish_participant(
 	state: RaceParticipantState,
 	current_time: float
@@ -940,11 +987,9 @@ func _finish_participant(
 	)
 
 	if is_instance_valid(state.car):
-		state.car.set_can_move(false)
-
 		# Laisse le contrôleur enregistrer le résultat et le classement
 		# avant de déclencher la destruction visuelle.
-		state.car.finish_with_explosion()
+		state.car.explosion()
 
 	participant_finished.emit(state)
 
@@ -956,11 +1001,8 @@ func _finish_participant(
 	# Le premier arrivé déclenche le délai de fin de course.
 	# --------------------------------------------------------
 	if _get_finished_count() == 1:
-		
 		AudioManager.play_finish_event()
-
 		_start_race_end_timer()
-
 		race_end_countdown_started.emit(
 			RACE_END_DELAY
 		)
@@ -968,9 +1010,7 @@ func _finish_participant(
 	# Si tout le monde est arrivé avant les 30 secondes,
 	# on termine immédiatement.
 	if _get_finished_count() >= participants.size():
-
 		timer_race_end.stop()
-
 		_finish_race()
 
 # ============================================================
@@ -987,7 +1027,6 @@ func _start_race_end_timer() -> void:
 	timer_race_end.start(RACE_END_DELAY)
 
 func _on_timer_race_end_timeout() -> void:
-
 	if race_state != RaceState.RUNNING:
 		return
 
@@ -998,14 +1037,10 @@ func _on_timer_race_end_timeout() -> void:
 # ============================================================
 
 func _get_finished_count() -> int:
-
 	var count := 0
-
 	for state in participants:
-
 		if state.finished:
 			count += 1
-
 	return count
 
 
@@ -1018,7 +1053,6 @@ func _update_positions() -> void:
 	var ordered := (
 		participants.duplicate()
 	)
-
 	ordered.sort_custom(
 		_compare_participants
 	)
@@ -1026,7 +1060,6 @@ func _update_positions() -> void:
 	for i in range(
 		ordered.size()
 	):
-
 		ordered[i].race_position = i + 1
 
 	positions_changed.emit(ordered[0])
@@ -1036,22 +1069,17 @@ func _compare_participants(
 	a: RaceParticipantState,
 	b: RaceParticipantState
 ) -> bool:
-
 	# --------------------------------------------------------
 	# Les participants arrivés sont devant ceux qui courent.
 	# --------------------------------------------------------
-
 	if a.finished != b.finished:
-
 		return a.finished
 
 	# --------------------------------------------------------
 	# Deux participants arrivés :
 	# ordre d'arrivée.
 	# --------------------------------------------------------
-
 	if a.finished and b.finished:
-
 		return (
 			a.finish_position
 			<
@@ -1061,9 +1089,7 @@ func _compare_participants(
 	# --------------------------------------------------------
 	# Nombre de tours.
 	# --------------------------------------------------------
-
 	if a.current_lap != b.current_lap:
-
 		return (
 			a.current_lap
 			>
@@ -1073,31 +1099,25 @@ func _compare_participants(
 	# --------------------------------------------------------
 	# Section atteinte.
 	# --------------------------------------------------------
-
 	if a.next_section != b.next_section:
-
 		return (
 			a.next_section
 			>
 			b.next_section
 		)
-
 	# --------------------------------------------------------
 	# Même section :
 	# celui qui l'a atteinte en premier est devant.
 	# --------------------------------------------------------
-
 	return (
 		a.last_progress_time
 		<
 		b.last_progress_time
 	)
 
-
 # ============================================================
 # FIN DE COURSE
 # ============================================================
-
 func _finish_race() -> void:
 	
 	print("Fin de la course")
@@ -1111,7 +1131,7 @@ func _finish_race() -> void:
 	for state in participants:
 
 		if state.car != null:
-			state.car.finish_with_explosion()
+			state.car.explosion()
 
 	# On fige le classement final.
 	_update_positions()

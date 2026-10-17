@@ -18,6 +18,8 @@ extends CharacterBody2D
 
 class_name Car
 
+signal respawn_requested(car: Car)
+
 # ---------------------------
 # NODES
 # ---------------------------
@@ -45,6 +47,8 @@ var throttle: float = 0.0
 var	brake: float = 0.0
 var	steer_input: float = 0.0
 var	handbrake: bool = false
+var _respawn_was_pressed: bool = false
+var respawn: bool = false
 
 var _current_grip_mul: float = 1.0
 var _current_rolling_mul: float = 1.0
@@ -273,6 +277,13 @@ func _physics_process(delta: float) -> void:
 	else:
 		_process_human_input(delta)
 
+	# Le respawn est déclenché une seule fois par appui.
+	if not is_ai:
+		if respawn and not _respawn_was_pressed:
+			respawn_requested.emit(self)
+
+	_respawn_was_pressed = respawn
+
 	# Mise à jour des effets de surface
 	_update_surface(delta)
 
@@ -392,6 +403,7 @@ func _process_human_input(_delta: float) -> void:
 	brake = input_state.brake
 	steer_input = input_state.steering
 	handbrake = input_state.handbrake
+	respawn = input_state.respawn
 
 func _process_ai_input(_delta: float) -> void:
 	pass
@@ -793,25 +805,41 @@ func get_node_animation() -> Node2D:
 			animation.free()
 	return animation
 
+func respawn_at(target: Transform2D) -> void:
+	set_can_move(false)
+
+	# Arrêter tout mouvement résiduel.
+	velocity = Vector2.ZERO
+	speed = 0.0
+
+	# Récupération de la position et de la rotation du marqueur,
+	# sans reprendre son échelle.
+	global_position = target.origin
+	global_rotation = target.get_rotation()
+
+	# Réinitialiser ici les autres états physiques
+	# propres à ton script, si nécessaire.
+	show()
+	#await get_tree().create_timer(2.0).timeout
+	set_colision(true)
+	set_can_move(true)
+
 func explosion() -> void:
 	if _destruction_started:
 		return
+	sound_stop()
 	_destruction_started = true
+	set_can_move(false)
+	set_colision(false)
 	var node_explosion := get_node_animation()
 	node_explosion.animation_name = &"explosion"
-	#node_explosion.animation_name = &"explosion_blue_oval"
 	node_explosion.play_animation()
 	hide()
 
-func finish_with_explosion() -> void:
-	set_can_move(false)
-	set_colision(false)
+func sound_stop() -> void:
 	if engine_running_sound.playing:
-		engine_running_sound.stop()				# Arrêter le son au ralenti et au rupteur
+		engine_running_sound.stop()
 	if engine_rupteur_sound.playing:
 		engine_rupteur_sound.stop()
 	if engine_idle_sound.playing:
 		engine_idle_sound.stop()
-	explosion()
-	# Arrête immédiatement les déplacements et les traitements
-	# de la voiture.
