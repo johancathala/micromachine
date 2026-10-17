@@ -24,12 +24,12 @@ class_name Car
 @onready var ground_ray: RayCast2D = $GroundRay
 @onready var smoke_left: GPUParticles2D = $SmokeLeft
 @onready var smoke_right: GPUParticles2D = $SmokeRight
-@onready var engine_idle_sound: AudioStreamPlayer2D = $EngineIdleSound
-@onready var engine_running_sound: AudioStreamPlayer2D = $EngineRunningSound
-@onready var engine_rupteur_sound: AudioStreamPlayer2D = $EngineRupeurSound
-@onready var skid_sound: AudioStreamPlayer2D = $SkidSound
+@onready var engine_idle_sound: AudioStreamPlayer2D = null
+@onready var engine_running_sound: AudioStreamPlayer2D = null
+@onready var engine_rupteur_sound: AudioStreamPlayer2D = null
+@onready var skid_sound: AudioStreamPlayer2D = null
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
-@onready var collision_sound: AudioStreamPlayer2D = $CollisionSound
+@onready var collision_sound: AudioStreamPlayer2D = null
 @onready var model: Node2D = $Model
 
 var definition: CarDefinition
@@ -182,6 +182,11 @@ func setup_car(
 
 	_apply_car_definition()
 	_load_car_model()
+	engine_idle_sound = $Model/CarModel/EngineIdleSound
+	engine_running_sound = $Model/CarModel/EngineRunningSound
+	engine_rupteur_sound = $Model/CarModel/EngineRupeurSound
+	skid_sound = $Model/CarModel/SkidSound
+	collision_sound = $Model/CarModel/CollisionSound
 	
 	_update_engine_sound()
 	

@@ -956,6 +956,8 @@ func _finish_participant(
 	# Le premier arrivé déclenche le délai de fin de course.
 	# --------------------------------------------------------
 	if _get_finished_count() == 1:
+		
+		AudioManager.play_finish_event()
 
 		_start_race_end_timer()
 

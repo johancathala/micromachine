@@ -4,6 +4,11 @@ class_name ColorCatalog
 
 const COLORS := [
 	{
+		"id": "white",
+		"name": "Aucune",
+		"color": Color("#eeeeee")
+	},
+	{
 		"id": "red",
 		"name": "Rouge",
 		"color": Color("#e53935")
@@ -37,11 +42,6 @@ const COLORS := [
 		"id": "cyan",
 		"name": "Cyan",
 		"color": Color("#00acc1")
-	},
-	{
-		"id": "white",
-		"name": "Blanc",
-		"color": Color("#eeeeee")
 	}
 ]
 

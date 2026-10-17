@@ -1,157 +1,96 @@
 [gd_scene format=3 uid="uid://bsts4ufmrjpqn"]
 
 [ext_resource type="PackedScene" uid="uid://y33mux4t4ctc" path="res://perso/car/model/CarModel.tscn" id="1_lp31p"]
-[ext_resource type="Texture2D" uid="uid://2csx3gd1l0rn" path="res://perso/car/sprite/Car_3_32x32_5.png" id="2_5d8bf"]
+[ext_resource type="AudioStream" uid="uid://da5esuwqgoelq" path="res://perso/car/sound/VEHSkid_Crissement de pneus 3 (ID 2370)_LaSonotheque.fr.wav" id="3_1d6my"]
+[ext_resource type="Texture2D" uid="uid://bifvrj4cbjd5n" path="res://perso/car/sprite/Cars_32x32/Car_4_32x32_4.png" id="3_nvaje"]
+[ext_resource type="AudioStream" uid="uid://dqvmhlgm7g1a4" path="res://effects/sound/engine_idle/auto-engine-running-151384.mp3" id="4_1d6my"]
+[ext_resource type="AudioStream" uid="uid://twpfk6jnbojh" path="res://effects/sound/engine_acc/engine-revving-long.mp3" id="5_1d6my"]
+[ext_resource type="AudioStream" uid="uid://bfjgphtox7i5q" path="res://effects/sound/engine_max/engine-revving-long.mp3" id="6_s44fr"]
+[ext_resource type="AudioStream" uid="uid://d2eeedikbxqea" path="res://perso/car/sound/4_crash.mp3" id="7_yrio1"]
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_h7dvk"]
-atlas = ExtResource("2_5d8bf")
-region = Rect2(1217, 192, 96, 192)
+[sub_resource type="AtlasTexture" id="AtlasTexture_u1uy7"]
+atlas = ExtResource("3_nvaje")
+region = Rect2(2921, 176, 80, 144)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_ndo73"]
-atlas = ExtResource("2_5d8bf")
-region = Rect2(1409, 192, 96, 192)
+[sub_resource type="AtlasTexture" id="AtlasTexture_qy6jv"]
+atlas = ExtResource("3_nvaje")
+region = Rect2(3081, 176, 80, 144)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_bywxq"]
-atlas = ExtResource("2_5d8bf")
-region = Rect2(1601, 192, 96, 192)
+[sub_resource type="AtlasTexture" id="AtlasTexture_uhpkv"]
+atlas = ExtResource("3_nvaje")
+region = Rect2(3241, 176, 80, 144)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_6x3su"]
-atlas = ExtResource("2_5d8bf")
-region = Rect2(1793, 192, 96, 192)
+[sub_resource type="AtlasTexture" id="AtlasTexture_1d6my"]
+atlas = ExtResource("3_nvaje")
+region = Rect2(3401, 176, 80, 144)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_7o102"]
-atlas = ExtResource("2_5d8bf")
-region = Rect2(1985, 192, 96, 192)
+[sub_resource type="AtlasTexture" id="AtlasTexture_s44fr"]
+atlas = ExtResource("3_nvaje")
+region = Rect2(3561, 176, 80, 144)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_kuys1"]
-atlas = ExtResource("2_5d8bf")
-region = Rect2(2177, 192, 96, 192)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_4sl8p"]
-atlas = ExtResource("2_5d8bf")
-region = Rect2(3521, 192, 96, 192)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_hyym5"]
-atlas = ExtResource("2_5d8bf")
-region = Rect2(3713, 192, 96, 192)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_r6ofr"]
-atlas = ExtResource("2_5d8bf")
-region = Rect2(3905, 192, 96, 192)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_4w0e4"]
-atlas = ExtResource("2_5d8bf")
-region = Rect2(4097, 192, 96, 192)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_mqj86"]
-atlas = ExtResource("2_5d8bf")
-region = Rect2(4289, 192, 96, 192)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_00ysw"]
-atlas = ExtResource("2_5d8bf")
-region = Rect2(4481, 192, 96, 192)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_gissw"]
-atlas = ExtResource("2_5d8bf")
-region = Rect2(1217, 192, 96, 192)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_ax6dn"]
-atlas = ExtResource("2_5d8bf")
-region = Rect2(1409, 192, 96, 192)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_oqwwy"]
-atlas = ExtResource("2_5d8bf")
-region = Rect2(1601, 192, 96, 192)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_lngs3"]
-atlas = ExtResource("2_5d8bf")
-region = Rect2(1793, 192, 96, 192)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_p1v4b"]
-atlas = ExtResource("2_5d8bf")
-region = Rect2(1985, 192, 96, 192)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_a1syr"]
-atlas = ExtResource("2_5d8bf")
-region = Rect2(2177, 192, 96, 192)
+[sub_resource type="AtlasTexture" id="AtlasTexture_b0mc7"]
+atlas = ExtResource("3_nvaje")
+region = Rect2(3721, 176, 80, 144)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_nvaje"]
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_h7dvk")
+"texture": SubResource("AtlasTexture_u1uy7")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_ndo73")
+"texture": SubResource("AtlasTexture_qy6jv")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_bywxq")
+"texture": SubResource("AtlasTexture_uhpkv")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_6x3su")
+"texture": SubResource("AtlasTexture_1d6my")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_7o102")
+"texture": SubResource("AtlasTexture_s44fr")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_kuys1")
+"texture": SubResource("AtlasTexture_b0mc7")
 }],
 "loop": 1,
-"name": &"vert_clair",
-"speed": 5.0
-}, {
-"frames": [{
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_4sl8p")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_hyym5")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_r6ofr")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_4w0e4")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_mqj86")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_00ysw")
-}],
-"loop": 1,
-"name": &"vert_clair_down",
-"speed": 5.0
-}, {
-"frames": [{
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_gissw")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ax6dn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_oqwwy")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_lngs3")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_p1v4b")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_a1syr")
-}],
-"loop": 1,
-"name": &"verte",
+"name": &"down",
 "speed": 5.0
 }]
 
-[node name="Clio" unique_id=1257048408 instance=ExtResource("1_lp31p")]
+[node name="CarModel" unique_id=1257048408 instance=ExtResource("1_lp31p")]
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Body" parent_id_path=PackedInt32Array(1345352734) index="0" unique_id=1123856708]
 position = Vector2(-21, -2)
 rotation = -1.5707964
 sprite_frames = SubResource("SpriteFrames_nvaje")
-animation = &"vert_clair_down"
-autoplay = "vert_clair_down"
+animation = &"down"
+autoplay = "down"
+
+[node name="SkidSound" type="AudioStreamPlayer2D" parent="." index="1" unique_id=1574928081]
+stream = ExtResource("3_1d6my")
+max_distance = 4096.0
+
+[node name="EngineIdleSound" type="AudioStreamPlayer2D" parent="." index="2" unique_id=1716130611]
+stream = ExtResource("4_1d6my")
+volume_db = -20.0
+max_distance = 1600.0
+parameters/looping = true
+
+[node name="EngineRunningSound" type="AudioStreamPlayer2D" parent="." index="3" unique_id=1254086944]
+stream = ExtResource("5_1d6my")
+volume_db = 10.0
+max_distance = 4096.0
+parameters/looping = false
+
+[node name="EngineRupeurSound" type="AudioStreamPlayer2D" parent="." index="4" unique_id=1444427323]
+stream = ExtResource("6_s44fr")
+volume_db = -10.0
+max_distance = 4096.0
+
+[node name="CollisionSound" type="AudioStreamPlayer2D" parent="." index="5" unique_id=1398573162]
+stream = ExtResource("7_yrio1")
+volume_db = -5.0
+pitch_scale = 0.9
+max_distance = 4096.0
+max_polyphony = 4

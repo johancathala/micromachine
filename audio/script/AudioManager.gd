@@ -8,8 +8,11 @@ extends Node
 @export_group("Musiques")
 @export var music_menu: AudioStream
 @export var music_race: AudioStream
-@export var music_pause: AudioStream
-@export var music_results: AudioStream
+
+@export_group("Evenement")
+@export var event_results: AudioStream
+@export var event_start: AudioStream
+@export var event_finish: AudioStream
 
 @export_group("Sons d'interface")
 @export var sfx_click: AudioStream
@@ -41,6 +44,11 @@ var default_fade_duration: float = 0.5
 @onready var sfx_player_3: AudioStreamPlayer = $SFXPlayer3
 @onready var sfx_player_4: AudioStreamPlayer = $SFXPlayer4
 
+const dir_music = "res://audio/music/"
+var tab_music: Array[String] = []
+var last_random_music_path: String = ""
+var in_menu: = false
+
 var sfx_players: Array[AudioStreamPlayer] = []
 var sfx_index: int = 0
 
@@ -60,6 +68,8 @@ var saved_music_position: float = 0.0
 func _ready() -> void:
 	# Le gestionnaire doit fonctionner même pendant la pause.
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	
+	tab_music = get_tab_music(dir_music)
 
 	# Initialisation des lecteurs.
 	sfx_players = [
@@ -71,7 +81,20 @@ func _ready() -> void:
 
 	active_music_player = music_player
 	secondary_music_player = music_player_secondary
-#	active_music_player.set
+	
+	if not music_player.finished.is_connected(
+		_on_music_finished.bind(music_player)
+	):
+		music_player.finished.connect(
+			_on_music_finished.bind(music_player)
+		)
+
+	if not music_player_secondary.finished.is_connected(
+		_on_music_finished.bind(music_player_secondary)
+	):
+		music_player_secondary.finished.connect(
+			_on_music_finished.bind(music_player_secondary)
+		)
 
 	for player in sfx_players:
 		player.process_mode = Node.PROCESS_MODE_ALWAYS
@@ -83,6 +106,35 @@ func _ready() -> void:
 		player.volume_db = -80.0
 
 	bind_sound_btt()
+
+func get_tab_music(path: String) -> Array[String]:
+	var music_list: Array[String] = []
+	var dir := DirAccess.open(path)
+
+	if dir == null:
+		push_error("Impossible d'ouvrir le dossier : " + path)
+		return music_list
+
+	dir.list_dir_begin()
+	var file_name := dir.get_next()
+
+	while file_name != "":
+		if not dir.current_is_dir():
+			var extension := file_name.get_extension().to_lower()
+
+			if extension in ["mp3", "ogg", "wav"]:
+				music_list.append(
+					path.path_join(file_name)
+				)
+
+		file_name = dir.get_next()
+
+	dir.list_dir_end()
+
+	if music_list.is_empty():
+		print("Aucun fichier audio trouvé dans : ", path)
+
+	return music_list
 
 func bind_sound_btt() -> void:
 	# Connexion automatique des boutons existants et futurs.
@@ -236,6 +288,47 @@ func play_music(
 				outgoing.stop()
 		)
 
+func play_random_music(
+	fallback_stream: AudioStream = null,
+	fade_duration: float = -1.0
+) -> void:
+	if tab_music.is_empty():
+		if fallback_stream != null:
+			play_music(fallback_stream, fade_duration)
+		else:
+			push_warning("Aucune musique disponible.")
+		return
+
+	var available_music := tab_music.duplicate()
+
+	# Évite de rejouer immédiatement le même fichier.
+	if available_music.size() > 1:
+		available_music.erase(last_random_music_path)
+
+	available_music.shuffle()
+
+	var selected_path: String = available_music[0]
+	var stream := load(selected_path) as AudioStream
+
+	if stream == null:
+		push_warning("Impossible de charger la musique : " + selected_path)
+		tab_music.erase(selected_path)
+		play_random_music(fallback_stream, fade_duration)
+		return
+
+	last_random_music_path = selected_path
+	play_music(stream, fade_duration)
+
+
+func _on_music_finished(
+	player: AudioStreamPlayer
+) -> void:
+	# Ignore la fin d'un ancien lecteur après une transition.
+	if player != active_music_player:
+		return
+
+	play_random_music(music_menu)
+
 
 func _stop_music_tween() -> void:
 	if music_tween != null and music_tween.is_running():
@@ -245,18 +338,32 @@ func _stop_music_tween() -> void:
 
 
 func play_menu_music() -> void:
+	if not pause_override_active && not in_menu:
+		in_menu = true
+		play_random_music(music_menu)
+
+func play_start_event() -> void:
 	if not pause_override_active:
-		play_music(music_menu)
+		play_music(event_start)
+		in_menu = false
 
 
 func play_race_music() -> void:
 	if not pause_override_active:
+		in_menu = false
 		play_music(music_race)
+		
+func play_finish_event() -> void:
+	if not pause_override_active:
+		in_menu = false
+		play_sfx(event_finish)
 
 
 func play_results_music() -> void:
-	if not pause_override_active:
-		play_music(music_results)
+	play_sfx(event_results)
+	if not pause_override_active && not in_menu:
+		in_menu = true
+		play_random_music(event_results)
 
 
 func stop_music() -> void:
@@ -264,6 +371,7 @@ func stop_music() -> void:
 
 	music_player.stop()
 	music_player_secondary.stop()
+	in_menu = false
 
 	music_player.volume_db = -80.0
 	music_player_secondary.volume_db = -80.0
@@ -279,14 +387,11 @@ func push_pause_music() -> void:
 
 	pause_override_active = true
 
-	# Mémorise le morceau et sa position avant la pause.
+	# Mémorise la musique et sa position.
 	saved_music_stream = active_music_player.stream
 	saved_music_position = active_music_player.get_playback_position()
-
-	# Si aucune musique de pause n'est configurée,
-	# la musique actuelle continue normalement.
-	if music_pause != null:
-		play_music(music_pause)
+	
+	play_random_music(music_menu)
 
 
 func pop_pause_music() -> void:

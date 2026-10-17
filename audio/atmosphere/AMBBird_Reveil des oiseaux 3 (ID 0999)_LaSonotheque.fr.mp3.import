@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bsex4ro31mcmn"
+path="res://.godot/imported/AMBBird_Reveil des oiseaux 3 (ID 0999)_LaSonotheque.fr.mp3-d817b36faaf1398542f6ced85c6c00ab.mp3str"
+
+[deps]
+
+source_file="res://audio/atmosphere/AMBBird_Reveil des oiseaux 3 (ID 0999)_LaSonotheque.fr.mp3"
+dest_files=["res://.godot/imported/AMBBird_Reveil des oiseaux 3 (ID 0999)_LaSonotheque.fr.mp3-d817b36faaf1398542f6ced85c6c00ab.mp3str"]
+
+[params]
+
+loop=true
+loop_offset=0.0
+bpm=0.0
+beat_count=0
+bar_beats=4

@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://de3h01guotde1" path="res://perso/car/definition/CarDefinition.gd" id="1_8toe7"]
 [ext_resource type="PackedScene" uid="uid://bsts4ufmrjpqn" path="res://perso/car/model/Clio.tscn" id="1_28tia"]
-[ext_resource type="Texture2D" uid="uid://cgv0t8dgai1mc" path="res://perso/car/model/ClioPreview.png" id="2_6m27u"]
+[ext_resource type="Texture2D" uid="uid://t6f6r7bcx51m" path="res://perso/car/sprite/clio.png" id="2_6m27u"]
 
 [resource]
 script = ExtResource("1_8toe7")
@@ -11,9 +11,13 @@ display_name = "Clio 3"
 description = "La voiture à ta daronne."
 model_scene = ExtResource("1_28tia")
 preview_texture = ExtResource("2_6m27u")
-engine_force = 672.0
-brake_force = 1240.0
+engine_force = 999.0
+brake_force = 773.0
 reverse_force = 808.0
 max_speed = 1686.0
 max_reverse_speed = 412.0
+lateral_grip = 6.7
+high_speed_grip_start = 272.0
+handbrake_grip_multiplier = 0.03
+handbrake_brake_multiplier = 0.3
 metadata/_custom_type_script = "uid://de3h01guotde1"

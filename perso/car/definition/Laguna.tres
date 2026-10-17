@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="CarDefinition" format=3 uid="uid://b3agy2fcrpfyo"]
+
+[ext_resource type="PackedScene" uid="uid://7yoankd4k13w" path="res://perso/car/model/Laguna.tscn" id="1_kg0hk"]
+[ext_resource type="Texture2D" uid="uid://by0l6orrn0duu" path="res://perso/car/sprite/laguna.png" id="2_kg0hk"]
+[ext_resource type="Script" uid="uid://de3h01guotde1" path="res://perso/car/definition/CarDefinition.gd" id="3_a2t5j"]
+
+[resource]
+script = ExtResource("3_a2t5j")
+id = "laguna"
+display_name = "Renault Laguna 2"
+description = "Allez montez les neuveux !"
+model_scene = ExtResource("1_kg0hk")
+preview_texture = ExtResource("2_kg0hk")
+engine_force = 1721.0
+brake_force = 1092.0
+max_speed = 2196.0
+max_reverse_speed = 534.0
+lateral_grip = 8.6
+metadata/_custom_type_script = "uid://de3h01guotde1"

@@ -1,0 +1,126 @@
+[gd_scene format=3 uid="uid://dt1fmafc2c0dj"]
+
+[ext_resource type="PackedScene" uid="uid://y33mux4t4ctc" path="res://perso/car/model/CarModel.tscn" id="1_246gh"]
+[ext_resource type="Texture2D" uid="uid://bgtkeg7gfa1bk" path="res://perso/car/sprite/Cars_32x32/Car_2_complete_32x32_8.png" id="2_gvmlg"]
+[ext_resource type="Texture2D" uid="uid://br2xwgysr6by2" path="res://perso/car/sprite/Cars_32x32/Car_2_complete_32x32_9.png" id="3_2v7xs"]
+[ext_resource type="AudioStream" uid="uid://da5esuwqgoelq" path="res://perso/car/sound/VEHSkid_Crissement de pneus 3 (ID 2370)_LaSonotheque.fr.wav" id="4_24s5m"]
+[ext_resource type="AudioStream" uid="uid://ciwknnln37nta" path="res://effects/sound/engine_idle/Aggressive Motorcycle.mp3" id="5_24s5m"]
+[ext_resource type="AudioStream" uid="uid://cb0myna6nl42e" path="res://effects/sound/engine_acc/0_accelVoiture2.mp3" id="6_droja"]
+[ext_resource type="AudioStream" uid="uid://byo6kvqsialni" path="res://effects/sound/engine_max/Porsches_911.mp3" id="7_24s5m"]
+[ext_resource type="AudioStream" uid="uid://d2eeedikbxqea" path="res://perso/car/sound/4_crash.mp3" id="8_mcoda"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cx77l"]
+atlas = ExtResource("2_gvmlg")
+region = Rect2(2656, 164, 64, 156)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_24s5m"]
+atlas = ExtResource("3_2v7xs")
+region = Rect2(3184, 164, 96, 156)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_whak8"]
+atlas = ExtResource("2_gvmlg")
+region = Rect2(2720, 164, 64, 156)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_droja"]
+atlas = ExtResource("3_2v7xs")
+region = Rect2(3056, 164, 96, 156)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_50k66"]
+atlas = ExtResource("2_gvmlg")
+region = Rect2(2784, 164, 64, 156)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mcoda"]
+atlas = ExtResource("3_2v7xs")
+region = Rect2(3312, 164, 96, 156)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cmf3h"]
+atlas = ExtResource("2_gvmlg")
+region = Rect2(2912, 164, 64, 156)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_so8br"]
+atlas = ExtResource("3_2v7xs")
+region = Rect2(3568, 164, 96, 156)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_v0sb2"]
+atlas = ExtResource("2_gvmlg")
+region = Rect2(2976, 164, 64, 156)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5fw11"]
+atlas = ExtResource("3_2v7xs")
+region = Rect2(3696, 164, 96, 156)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_rx3l1"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cx77l")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_24s5m")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_whak8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_droja")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_50k66")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mcoda")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cmf3h")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_so8br")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_v0sb2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5fw11")
+}],
+"loop": 1,
+"name": &"down",
+"speed": 5.0
+}]
+
+[node name="CarModel" unique_id=1257048408 instance=ExtResource("1_246gh")]
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Body" parent_id_path=PackedInt32Array(1345352734) index="0" unique_id=1567256566]
+position = Vector2(-21, -2)
+rotation = -1.5707964
+sprite_frames = SubResource("SpriteFrames_rx3l1")
+animation = &"down"
+autoplay = "down"
+
+[node name="SkidSound" type="AudioStreamPlayer2D" parent="." index="1" unique_id=1786239424]
+stream = ExtResource("4_24s5m")
+max_distance = 4096.0
+
+[node name="EngineIdleSound" type="AudioStreamPlayer2D" parent="." index="2" unique_id=206183309]
+stream = ExtResource("5_24s5m")
+volume_db = -20.0
+max_distance = 1600.0
+parameters/looping = true
+
+[node name="EngineRunningSound" type="AudioStreamPlayer2D" parent="." index="3" unique_id=1882087710]
+stream = ExtResource("6_droja")
+volume_db = 10.0
+max_distance = 4096.0
+parameters/looping = false
+
+[node name="EngineRupeurSound" type="AudioStreamPlayer2D" parent="." index="4" unique_id=670517475]
+stream = ExtResource("7_24s5m")
+volume_db = -5.0
+pitch_scale = 1.5
+max_distance = 4096.0
+
+[node name="CollisionSound" type="AudioStreamPlayer2D" parent="." index="5" unique_id=1533156997]
+stream = ExtResource("8_mcoda")
+volume_db = -5.0
+pitch_scale = 0.9
+max_distance = 4096.0
+max_polyphony = 4

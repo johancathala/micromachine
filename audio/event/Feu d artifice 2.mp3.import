@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://c1y711gv6ypdk"
+path="res://.godot/imported/Feu d artifice 2.mp3-cd2d1bf9b8ac20c8263253b8c8ebf392.mp3str"
+
+[deps]
+
+source_file="res://audio/event/Feu d artifice 2.mp3"
+dest_files=["res://.godot/imported/Feu d artifice 2.mp3-cd2d1bf9b8ac20c8263253b8c8ebf392.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

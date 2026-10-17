@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bau27xc5e3r62"
+path="res://.godot/imported/Muscle Car Start Up Alleyway.mp3-7472efc39c3f5dff1483d893aaec9244.mp3str"
+
+[deps]
+
+source_file="res://effects/sound/engine_acc/Muscle Car Start Up Alleyway.mp3"
+dest_files=["res://.godot/imported/Muscle Car Start Up Alleyway.mp3-7472efc39c3f5dff1483d893aaec9244.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

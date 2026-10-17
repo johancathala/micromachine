@@ -1,10 +1,11 @@
 [gd_scene format=3 uid="uid://50nw51p3xet2"]
 
 [ext_resource type="Script" uid="uid://dtnqwet2j30kp" path="res://audio/script/AudioManager.gd" id="1_jewxp"]
-[ext_resource type="AudioStream" uid="uid://ca13na1q711bh" path="res://audio/music/departF1.mp3" id="2_jewxp"]
-[ext_resource type="AudioStream" uid="uid://xi2gs8h4tn0l" path="res://audio/music/bruitFondChill.mp3" id="3_sm7jd"]
-[ext_resource type="AudioStream" uid="uid://ebxo1j5bdrsx" path="res://audio/music/bruitFondPadock1.mp3" id="4_74rsu"]
-[ext_resource type="AudioStream" uid="uid://blfbtg0bh3kb2" path="res://audio/music/bruitFondPluie.mp3" id="5_voe3v"]
+[ext_resource type="AudioStream" uid="uid://ca13na1q711bh" path="res://audio/event/departF1.mp3" id="2_jewxp"]
+[ext_resource type="AudioStream" uid="uid://xi2gs8h4tn0l" path="res://audio/atmosphere/bruitFondChill.mp3" id="3_sm7jd"]
+[ext_resource type="AudioStream" uid="uid://b0jtxod1qjgjl" path="res://audio/event/generiqueF1.mp3" id="5_h6j6i"]
+[ext_resource type="AudioStream" uid="uid://cwelo5iyy4t4f" path="res://audio/event/Feu d artifice_cut.mp3" id="6_h6j6i"]
+[ext_resource type="AudioStream" uid="uid://d0hdc7galp18c" path="res://audio/event/Applaudissements concert bar.mp3" id="6_sm7jd"]
 [ext_resource type="AudioStream" uid="uid://bg0sueii2femj" path="res://audio/sfx/clickBtt4.mp3" id="6_tnd1i"]
 [ext_resource type="AudioStream" uid="uid://cxi7fmh0yqphc" path="res://audio/sfx/clickBtt2.mp3" id="7_1ucoi"]
 [ext_resource type="AudioStream" uid="uid://b1kv0721yr5ci" path="res://audio/sfx/clickBtt1.mp3" id="8_7j3cy"]
@@ -15,8 +16,9 @@ process_mode = 3
 script = ExtResource("1_jewxp")
 music_menu = ExtResource("2_jewxp")
 music_race = ExtResource("3_sm7jd")
-music_pause = ExtResource("4_74rsu")
-music_results = ExtResource("5_voe3v")
+event_results = ExtResource("6_sm7jd")
+event_start = ExtResource("5_h6j6i")
+event_finish = ExtResource("6_h6j6i")
 sfx_click = ExtResource("6_tnd1i")
 sfx_back = ExtResource("7_1ucoi")
 sfx_confirm = ExtResource("8_7j3cy")

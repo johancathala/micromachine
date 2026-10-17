@@ -12,7 +12,7 @@ var race_config: RaceConfig = null
 
 func _ready() -> void:
 	AudioManager.bind_sound_btt()
-	AudioManager.play_race_music()
+	
 	race_config = GameManager.get_active_race_config()
 
 	if race_config == null:
@@ -45,6 +45,8 @@ func _initialize_race() -> void:
 	race_controller.quit_race.connect(_on_quit_race)
 	
 	race_controller.return_to_main_menu.connect(_on_return_to_main_menu)
+	
+	AudioManager.play_race_music()
 
 
 func _load_track() -> bool:

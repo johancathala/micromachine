@@ -2,7 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://c05iggtoepsjr" path="res://perso/car/model/Dacia.tscn" id="1_4hdsc"]
 [ext_resource type="Script" uid="uid://de3h01guotde1" path="res://perso/car/definition/CarDefinition.gd" id="1_b4g6y"]
-[ext_resource type="Texture2D" uid="uid://cgv0t8dgai1mc" path="res://perso/car/model/ClioPreview.png" id="2_318ah"]
+[ext_resource type="Texture2D" uid="uid://csxodkfsj6rpy" path="res://perso/car/sprite/dacia.png" id="2_4hdsc"]
 
 [resource]
 script = ExtResource("1_b4g6y")
@@ -10,9 +10,6 @@ id = "dacia"
 display_name = "Dacia Logan"
 description = "Faut pas l'emmerder. 50 ans, toujours sous le seuil de pauvreté ça forge un sale caractère."
 model_scene = ExtResource("1_4hdsc")
-preview_texture = ExtResource("2_318ah")
-engine_force = 1739.0
-brake_force = 1303.0
-max_speed = 1862.0
-max_reverse_speed = 496.0
+preview_texture = ExtResource("2_4hdsc")
+brake_force = 859.0
 metadata/_custom_type_script = "uid://de3h01guotde1"

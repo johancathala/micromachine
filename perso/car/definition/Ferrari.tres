@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://de3h01guotde1" path="res://perso/car/definition/CarDefinition.gd" id="1_hss2r"]
 [ext_resource type="PackedScene" uid="uid://bih217f3gqgaw" path="res://perso/car/model/Ferrari.tscn" id="1_ib4y0"]
-[ext_resource type="Texture2D" uid="uid://cgv0t8dgai1mc" path="res://perso/car/model/ClioPreview.png" id="2_lkvhd"]
+[ext_resource type="Texture2D" uid="uid://did0ouyaldj61" path="res://perso/car/sprite/ferrari.png" id="2_ib4y0"]
 
 [resource]
 script = ExtResource("1_hss2r")
@@ -10,10 +10,10 @@ id = "ferrari"
 display_name = "Ferrari Mongolito"
 description = "Il va vite ce connard de bourgeois."
 model_scene = ExtResource("1_ib4y0")
-preview_texture = ExtResource("2_lkvhd")
+preview_texture = ExtResource("2_ib4y0")
 engine_force = 3058.0
-brake_force = 2306.0
+brake_force = 1699.0
 reverse_force = 1000.0
-max_speed = 2665.0
-max_reverse_speed = 592.0
+max_speed = 3000.0
+max_reverse_speed = 667.0
 metadata/_custom_type_script = "uid://de3h01guotde1"

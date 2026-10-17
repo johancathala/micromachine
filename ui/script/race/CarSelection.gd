@@ -67,8 +67,7 @@ func _setup_participant_defaults() -> void:
 				participant["car_id"] = cars[0].id
 
 		if String(participant.get("color_id", "")).is_empty():
-			if i < colors.size():
-				participant["color_id"] = colors[i]["id"]
+			participant["color_id"] = colors[0]["id"]
 
 		race_config.participants[i] = participant
 
@@ -89,7 +88,6 @@ func _setup_car_grid() -> void:
 		button.pressed.connect(
 			_on_car_selected.bind(car.id, car.display_name)
 		)
-	
 
 		car_grid.add_child(button)
 
@@ -379,40 +377,11 @@ func _refresh_color_buttons() -> void:
 			color_data["id"]
 		)
 
-		var used_by_other := _is_color_used_by_other(
-			color_id,
-			selected_participant_index
-		)
-
-		button.disabled = used_by_other
-
 		var prefix := "✓ " if color_id == selected_color_id else ""
 
 		button.text = prefix + String(
 			color_data["name"]
 		)
-
-
-func _is_color_used_by_other(
-	color_id: String,
-	current_index: int
-) -> bool:
-
-	for i in range(race_config.participants.size()):
-		if i == current_index:
-			continue
-
-		var participant := race_config.participants[i]
-
-		if not bool(participant.get("enabled", true)):
-			continue
-
-		if String(
-			participant.get("color_id", "")
-		) == color_id:
-			return true
-
-	return false
 
 
 func _on_car_selected(car_id: String, car_name: String) -> void:
@@ -435,12 +404,6 @@ func _on_car_selected(car_id: String, car_name: String) -> void:
 
 func _on_color_selected(color_id: String) -> void:
 	if selected_participant_index < 0:
-		return
-
-	if _is_color_used_by_other(
-		color_id,
-		selected_participant_index
-	):
 		return
 
 	race_config.participants[
@@ -482,6 +445,7 @@ func _refresh_preview() -> void:
 
 	if not color_data.is_empty():
 		preview_image.modulate = color_data["color"]
+		#preview_image.modulate = Color.WHITE
 	else:
 		preview_image.modulate = Color.WHITE
 
@@ -503,6 +467,8 @@ func _on_start_pressed() -> void:
 	if not GameManager.start_race():
 		return
 
+	AudioManager.play_start_event()
+	await get_tree().create_timer(1.0).timeout
 	NavigationManager.go("Race")
 
 

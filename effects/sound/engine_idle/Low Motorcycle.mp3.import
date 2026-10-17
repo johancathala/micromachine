@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://ha6asmjf6ppy"
+path="res://.godot/imported/Low Motorcycle.mp3-1b160e6eb9d69d502c7a65f86f61d33a.mp3str"
+
+[deps]
+
+source_file="res://effects/sound/engine_idle/Low Motorcycle.mp3"
+dest_files=["res://.godot/imported/Low Motorcycle.mp3-1b160e6eb9d69d502c7a65f86f61d33a.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://cyy5t4mjfkhtg"
+path="res://.godot/imported/AMBForst_Foret et ruisseau 1 (ID 2713)_LaSonotheque.fr.mp3-0ecff590b0df01238445aae8f0a7254b.mp3str"
+
+[deps]
+
+source_file="res://audio/atmosphere/AMBForst_Foret et ruisseau 1 (ID 2713)_LaSonotheque.fr.mp3"
+dest_files=["res://.godot/imported/AMBForst_Foret et ruisseau 1 (ID 2713)_LaSonotheque.fr.mp3-0ecff590b0df01238445aae8f0a7254b.mp3str"]
+
+[params]
+
+loop=true
+loop_offset=0.0
+bpm=0.0
+beat_count=0
+bar_beats=4

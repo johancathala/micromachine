@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://cahd5gif6g2mg"
+path="res://.godot/imported/VEHCar_Pot perce 3 voiture qui roule (ID 0678)_LaSonotheque.fr.mp3-9071d05531d82e8973973d5f094a9def.mp3str"
+
+[deps]
+
+source_file="res://effects/sound/a_trier/VEHCar_Pot perce 3 voiture qui roule (ID 0678)_LaSonotheque.fr.mp3"
+dest_files=["res://.godot/imported/VEHCar_Pot perce 3 voiture qui roule (ID 0678)_LaSonotheque.fr.mp3-9071d05531d82e8973973d5f094a9def.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

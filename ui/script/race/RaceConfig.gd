@@ -263,23 +263,6 @@ func is_car_selection_valid() -> bool:
 	if active_count == 0:
 		return false
 
-	# Les couleurs doivent rester uniques parmi
-	# les participants réellement présents.
-	var used_colors: Dictionary = {}
-
-	for participant in participants:
-		if not bool(participant.get("enabled", true)):
-			continue
-
-		var color_id := String(
-			participant.get("color_id", "")
-		)
-
-		if used_colors.has(color_id):
-			return false
-
-		used_colors[color_id] = true
-
 	return true
 
 

@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bx8d3hovrb6ji"
+path="res://.godot/imported/Car Door Closing .mp3-7b3aaad5bf953466c599eae82f210b60.mp3str"
+
+[deps]
+
+source_file="res://effects/sound/car_door/Car Door Closing .mp3"
+dest_files=["res://.godot/imported/Car Door Closing .mp3-7b3aaad5bf953466c599eae82f210b60.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

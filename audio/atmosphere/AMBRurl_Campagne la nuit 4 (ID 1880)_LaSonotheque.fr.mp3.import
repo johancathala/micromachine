@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://d2011c3fbi3vy"
+path="res://.godot/imported/AMBRurl_Campagne la nuit 4 (ID 1880)_LaSonotheque.fr.mp3-f4e8aa52fbf77a8ec0824f953a3b2432.mp3str"
+
+[deps]
+
+source_file="res://audio/atmosphere/AMBRurl_Campagne la nuit 4 (ID 1880)_LaSonotheque.fr.mp3"
+dest_files=["res://.godot/imported/AMBRurl_Campagne la nuit 4 (ID 1880)_LaSonotheque.fr.mp3-f4e8aa52fbf77a8ec0824f953a3b2432.mp3str"]
+
+[params]
+
+loop=true
+loop_offset=0.0
+bpm=0.0
+beat_count=0
+bar_beats=4

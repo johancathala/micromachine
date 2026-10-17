@@ -1,11 +1,6 @@
 [gd_scene format=3 uid="uid://jmiulko26v5p"]
 
-[ext_resource type="Script" uid="uid://bqlckt5fc7aby" path="res://perso/car/script/Car.gd" id="1_8nu7u"]
-[ext_resource type="AudioStream" uid="uid://da5esuwqgoelq" path="res://perso/car/sound/VEHSkid_Crissement de pneus 3 (ID 2370)_LaSonotheque.fr.wav" id="14_gissw"]
-[ext_resource type="AudioStream" uid="uid://dsn117fm5d3g1" path="res://perso/car/sound/1_ralentiCobra.mp3" id="15_ax6dn"]
-[ext_resource type="AudioStream" uid="uid://e1sstgjmjy8e" path="res://perso/car/sound/2_rupteurVoiture3.mp3" id="15_gissw"]
-[ext_resource type="AudioStream" uid="uid://cb0myna6nl42e" path="res://perso/car/sound/0_accelVoiture2.mp3" id="16_gissw"]
-[ext_resource type="AudioStream" uid="uid://d2eeedikbxqea" path="res://perso/car/sound/4_crash.mp3" id="17_oqwwy"]
+[ext_resource type="Script" uid="uid://d0p7i7vwek7gx" path="res://perso/car/script/Car.gd" id="1_8nu7u"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_6x3su"]
 radius = 26.666668
@@ -58,31 +53,3 @@ position = Vector2(-68, 22)
 lifetime = 2.0199999999999996
 speed_scale = 2.1
 process_material = SubResource("ParticleProcessMaterial_ndo73")
-
-[node name="SkidSound" type="AudioStreamPlayer2D" parent="." unique_id=14400085]
-stream = ExtResource("14_gissw")
-max_distance = 4096.0
-
-[node name="EngineIdleSound" type="AudioStreamPlayer2D" parent="." unique_id=957492693]
-stream = ExtResource("15_ax6dn")
-volume_db = -20.0
-max_distance = 1600.0
-parameters/looping = true
-
-[node name="EngineRunningSound" type="AudioStreamPlayer2D" parent="." unique_id=132344238]
-stream = ExtResource("16_gissw")
-volume_db = 10.0
-max_distance = 4096.0
-parameters/looping = false
-
-[node name="EngineRupeurSound" type="AudioStreamPlayer2D" parent="." unique_id=1781284665]
-stream = ExtResource("15_gissw")
-volume_db = -10.0
-max_distance = 4096.0
-
-[node name="CollisionSound" type="AudioStreamPlayer2D" parent="." unique_id=751133541]
-stream = ExtResource("17_oqwwy")
-volume_db = -5.0
-pitch_scale = 0.9
-max_distance = 4096.0
-max_polyphony = 4

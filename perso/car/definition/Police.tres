@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="CarDefinition" format=3 uid="uid://bbmwl5qi1na0s"]
+
+[ext_resource type="PackedScene" uid="uid://dt1fmafc2c0dj" path="res://perso/car/model/Police.tscn" id="1_37m5u"]
+[ext_resource type="Texture2D" uid="uid://ba27ltvnxytmf" path="res://perso/car/sprite/police.png" id="2_37m5u"]
+[ext_resource type="Script" uid="uid://de3h01guotde1" path="res://perso/car/definition/CarDefinition.gd" id="3_svxx6"]
+
+[resource]
+script = ExtResource("3_svxx6")
+id = "police"
+display_name = "Hendeck"
+description = "Fais gaffe à pas perdre un oeil..."
+model_scene = ExtResource("1_37m5u")
+preview_texture = ExtResource("2_37m5u")
+engine_force = 2188.0
+brake_force = 1420.0
+max_speed = 2196.0
+max_reverse_speed = 506.0
+lateral_grip = 9.1
+metadata/_custom_type_script = "uid://de3h01guotde1"

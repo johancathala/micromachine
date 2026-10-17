@@ -6,6 +6,8 @@ const CARS: Array[CarDefinition] = [
 	preload("res://perso/car/definition/Clio.tres"),
 	preload("res://perso/car/definition/Dacia.tres"),
 	preload("res://perso/car/definition/Ferrari.tres"),
+	preload("res://perso/car/definition/Laguna.tres"),
+	preload("res://perso/car/definition/Police.tres"),
 ]
 
 

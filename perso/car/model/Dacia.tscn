@@ -2,30 +2,11 @@
 
 [ext_resource type="PackedScene" uid="uid://y33mux4t4ctc" path="res://perso/car/model/CarModel.tscn" id="1_hj4m8"]
 [ext_resource type="Texture2D" uid="uid://2csx3gd1l0rn" path="res://perso/car/sprite/Car_3_32x32_5.png" id="2_ty36n"]
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_h7dvk"]
-atlas = ExtResource("2_ty36n")
-region = Rect2(1217, 192, 96, 192)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_ndo73"]
-atlas = ExtResource("2_ty36n")
-region = Rect2(1409, 192, 96, 192)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_bywxq"]
-atlas = ExtResource("2_ty36n")
-region = Rect2(1601, 192, 96, 192)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_6x3su"]
-atlas = ExtResource("2_ty36n")
-region = Rect2(1793, 192, 96, 192)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_7o102"]
-atlas = ExtResource("2_ty36n")
-region = Rect2(1985, 192, 96, 192)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_kuys1"]
-atlas = ExtResource("2_ty36n")
-region = Rect2(2177, 192, 96, 192)
+[ext_resource type="AudioStream" uid="uid://da5esuwqgoelq" path="res://perso/car/sound/VEHSkid_Crissement de pneus 3 (ID 2370)_LaSonotheque.fr.wav" id="3_ct1p7"]
+[ext_resource type="AudioStream" uid="uid://ha6asmjf6ppy" path="res://effects/sound/engine_idle/Low Motorcycle.mp3" id="4_ct1p7"]
+[ext_resource type="AudioStream" uid="uid://bfm18avhr1vbm" path="res://effects/sound/engine_acc/Low Motorcycle.mp3" id="5_grlx4"]
+[ext_resource type="AudioStream" uid="uid://c0tyioel1j1qp" path="res://effects/sound/engine_max/Low Motorcycle.mp3" id="6_miklj"]
+[ext_resource type="AudioStream" uid="uid://d2eeedikbxqea" path="res://perso/car/sound/4_crash.mp3" id="7_y055a"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_4sl8p"]
 atlas = ExtResource("2_ty36n")
@@ -79,29 +60,6 @@ region = Rect2(2177, 192, 96, 192)
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_h7dvk")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ndo73")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_bywxq")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_6x3su")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7o102")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_kuys1")
-}],
-"loop": 1,
-"name": &"vert_clair",
-"speed": 5.0
-}, {
-"frames": [{
-"duration": 1.0,
 "texture": SubResource("AtlasTexture_4sl8p")
 }, {
 "duration": 1.0,
@@ -120,7 +78,7 @@ animations = [{
 "texture": SubResource("AtlasTexture_00ysw")
 }],
 "loop": 1,
-"name": &"vert_clair_down",
+"name": &"down",
 "speed": 5.0
 }, {
 "frames": [{
@@ -143,15 +101,44 @@ animations = [{
 "texture": SubResource("AtlasTexture_a1syr")
 }],
 "loop": 1,
-"name": &"verte",
+"name": &"up",
 "speed": 5.0
 }]
 
-[node name="Dacia" unique_id=1257048408 instance=ExtResource("1_hj4m8")]
+[node name="CarModel" unique_id=1257048408 instance=ExtResource("1_hj4m8")]
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Body" parent_id_path=PackedInt32Array(1345352734) index="0" unique_id=1567256566]
 position = Vector2(-21, -2)
 rotation = -1.5707964
 sprite_frames = SubResource("SpriteFrames_rx3l1")
-animation = &"vert_clair_down"
-autoplay = "vert_clair_down"
+animation = &"down"
+autoplay = "down"
+
+[node name="SkidSound" type="AudioStreamPlayer2D" parent="." index="1" unique_id=915678056]
+stream = ExtResource("3_ct1p7")
+max_distance = 4096.0
+
+[node name="EngineIdleSound" type="AudioStreamPlayer2D" parent="." index="2" unique_id=1936281237]
+stream = ExtResource("4_ct1p7")
+volume_db = -20.0
+max_distance = 1600.0
+parameters/looping = true
+
+[node name="EngineRunningSound" type="AudioStreamPlayer2D" parent="." index="3" unique_id=279337395]
+stream = ExtResource("5_grlx4")
+volume_db = 10.0
+max_distance = 4096.0
+parameters/looping = false
+
+[node name="EngineRupeurSound" type="AudioStreamPlayer2D" parent="." index="4" unique_id=1468807646]
+stream = ExtResource("6_miklj")
+volume_db = -5.0
+pitch_scale = 1.2
+max_distance = 4096.0
+
+[node name="CollisionSound" type="AudioStreamPlayer2D" parent="." index="5" unique_id=797453734]
+stream = ExtResource("7_y055a")
+volume_db = -5.0
+pitch_scale = 0.9
+max_distance = 4096.0
+max_polyphony = 4
