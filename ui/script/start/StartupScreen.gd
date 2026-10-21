@@ -49,16 +49,20 @@ func _initialize_game() -> void:
 
 	loading_progress.value = 100.0
 	await get_tree().create_timer(0.15).timeout
+	print("StartupScreen : initialisation terminée")
 
 
 func _continue_to_next_screen() -> void:
+	# Attendre que le chargement de StartupScreen soit complètement terminé.
+	if NavigationManager.is_transitioning:
+		await NavigationManager.transition_finished
+
+	var next_screen: String
+
 	if SaveManager.is_first_launch():
-		NavigationManager.go(
-			"FirstLaunchScreen",
-			false
-		)
+		next_screen = "FirstLaunchScreen"
 	else:
-		NavigationManager.go(
-			"MainMenu",
-			false
-		)
+		next_screen = "MainMenu"
+
+	print("StartupScreen : destination = ", next_screen)
+	NavigationManager.go(next_screen, false)

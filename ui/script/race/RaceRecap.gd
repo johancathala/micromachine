@@ -249,7 +249,7 @@ func _on_restart_pressed() -> void:
 
 	AudioManager.play_start_event()
 	await get_tree().create_timer(1.0).timeout
-	NavigationManager.go("Race")
+	NavigationManager.go("Race",true,true)
 
 
 func _on_track_selection_pressed() -> void:

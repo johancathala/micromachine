@@ -49,12 +49,14 @@ offset_right = 332.0
 
 [node name="LightTorch" type="PointLight2D" parent="." unique_id=643355235]
 position = Vector2(40, 42)
-color = Color(0.7607843, 0.5254902, 0.23529412, 1)
+color = Color(0.41210052, 0.61689794, 0.6843081, 1)
 energy = 3.48
 texture = ExtResource("2_dw6db")
 
 [node name="LightTorch2" type="PointLight2D" parent="." unique_id=390700291]
 position = Vector2(288, 49)
 color = Color(0.7607843, 0.5254902, 0.23529412, 1)
-energy = 3.48
+energy = 3.88
+shadow_enabled = true
+shadow_color = Color(0, 0, 0.8, 0.88235295)
 texture = ExtResource("2_dw6db")

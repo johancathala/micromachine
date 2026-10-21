@@ -185,15 +185,17 @@ popup/item_9/id = 9
 
 [node name="TrackPreview" type="PanelContainer" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox" unique_id=758373392]
 layout_mode = 2
+size_flags_vertical = 3
 
 [node name="PreviewVBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TrackPreview" unique_id=305755982]
 layout_mode = 2
 alignment = 1
 
 [node name="PreviewImage" type="TextureRect" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TrackPreview/PreviewVBox" unique_id=46380795]
-custom_maximum_size = Vector2(800, 500)
 layout_mode = 2
+size_flags_vertical = 3
 texture = ExtResource("2_5p202")
+expand_mode = 1
 stretch_mode = 5
 
 [node name="PreviewLabel" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TrackPreview/PreviewVBox" unique_id=1814477545]

@@ -130,8 +130,8 @@ alignment = 1
 
 [node name="PreviewImage" type="TextureRect" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox/PreviewPanel/PreviewVBox" unique_id=212479864]
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 6
+size_flags_vertical = 3
+expand_mode = 1
 stretch_mode = 4
 
 [node name="CarName" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox/PreviewPanel/PreviewVBox" unique_id=1822241586]

@@ -1,6 +1,94 @@
 [gd_scene format=3 uid="uid://ck7vxha80cbet"]
 
 [ext_resource type="Script" uid="uid://cekm2dj16s2ve" path="res://ui/script/start/Main.gd" id="1_5rluy"]
+[ext_resource type="Script" uid="uid://b274tet7q2bpq" path="res://ui/script/LoadingLayer.gd" id="2_yepom"]
+[ext_resource type="Texture2D" uid="uid://bno7ajgrpjl5f" path="res://ui/sprite/loading1/frame_19_delay-0.04s.png" id="22_cj4oy"]
+[ext_resource type="Texture2D" uid="uid://ckh1ytnvn624g" path="res://ui/sprite/loading1/frame_20_delay-0.04s.png" id="23_i7nro"]
+[ext_resource type="Texture2D" uid="uid://bbb4uotsct31h" path="res://ui/sprite/loading1/frame_21_delay-0.04s.png" id="24_8xfie"]
+[ext_resource type="Texture2D" uid="uid://d2r053uhccpio" path="res://ui/sprite/loading1/frame_22_delay-0.04s.png" id="25_4edw5"]
+[ext_resource type="Texture2D" uid="uid://3anqhvoyiuke" path="res://ui/sprite/loading1/frame_23_delay-0.6s.png" id="26_ololm"]
+[ext_resource type="Texture2D" uid="uid://d0iwkwte7goml" path="res://ui/sprite/loading1/frame_24_delay-0.04s.png" id="27_l7yii"]
+[ext_resource type="Texture2D" uid="uid://jiu3vrc45u1i" path="res://ui/sprite/loading1/frame_25_delay-0.04s.png" id="28_dhjbv"]
+[ext_resource type="Texture2D" uid="uid://op5h4ajoflxl" path="res://ui/sprite/loading1/frame_26_delay-0.04s.png" id="29_2ccs7"]
+[ext_resource type="Texture2D" uid="uid://buiunldxr37hx" path="res://ui/sprite/loading1/frame_27_delay-0.04s.png" id="30_og8g4"]
+[ext_resource type="Texture2D" uid="uid://218i7ttdkaos" path="res://ui/sprite/loading1/frame_28_delay-0.04s.png" id="31_ysnds"]
+[ext_resource type="Texture2D" uid="uid://dllbd1ptukkpe" path="res://ui/sprite/loading1/frame_29_delay-0.04s.png" id="32_8wjgo"]
+[ext_resource type="Texture2D" uid="uid://bc2dmsmjx5ght" path="res://ui/sprite/loading1/frame_30_delay-0.04s.png" id="33_m0h44"]
+[ext_resource type="Texture2D" uid="uid://b8qtgtrprliqy" path="res://ui/sprite/loading1/frame_31_delay-0.04s.png" id="34_jfsqi"]
+[ext_resource type="Texture2D" uid="uid://djid6b80sqr4b" path="res://ui/sprite/loading1/frame_32_delay-0.04s.png" id="35_ej57l"]
+[ext_resource type="Texture2D" uid="uid://b3e8s5akr3wqu" path="res://ui/sprite/loading1/frame_33_delay-0.04s.png" id="36_ivjv0"]
+[ext_resource type="Texture2D" uid="uid://de7jd7mue3sih" path="res://ui/sprite/loading1/frame_34_delay-0.04s.png" id="37_km2rg"]
+[ext_resource type="Texture2D" uid="uid://2f7i0cxv8et1" path="res://ui/sprite/loading1/frame_35_delay-0.04s.png" id="38_tguu7"]
+[ext_resource type="Texture2D" uid="uid://vt3chx6y137i" path="res://ui/sprite/loading1/frame_36_delay-0.04s.png" id="39_h3lf8"]
+
+[sub_resource type="SystemFont" id="SystemFont_5rluy"]
+font_names = PackedStringArray("Impact")
+
+[sub_resource type="Theme" id="Theme_yepom"]
+default_font = SubResource("SystemFont_5rluy")
+default_font_size = 20
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_aiv0f"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("22_cj4oy")
+}, {
+"duration": 1.0,
+"texture": ExtResource("23_i7nro")
+}, {
+"duration": 1.0,
+"texture": ExtResource("24_8xfie")
+}, {
+"duration": 1.0,
+"texture": ExtResource("25_4edw5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("26_ololm")
+}, {
+"duration": 1.0,
+"texture": ExtResource("27_l7yii")
+}, {
+"duration": 1.0,
+"texture": ExtResource("28_dhjbv")
+}, {
+"duration": 1.0,
+"texture": ExtResource("29_2ccs7")
+}, {
+"duration": 1.0,
+"texture": ExtResource("30_og8g4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("31_ysnds")
+}, {
+"duration": 1.0,
+"texture": ExtResource("32_8wjgo")
+}, {
+"duration": 1.0,
+"texture": ExtResource("33_m0h44")
+}, {
+"duration": 1.0,
+"texture": ExtResource("34_jfsqi")
+}, {
+"duration": 1.0,
+"texture": ExtResource("35_ej57l")
+}, {
+"duration": 1.0,
+"texture": ExtResource("36_ivjv0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("37_km2rg")
+}, {
+"duration": 1.0,
+"texture": ExtResource("38_tguu7")
+}, {
+"duration": 1.0,
+"texture": ExtResource("39_h3lf8")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
 
 [node name="UI001Main" type="Control" unique_id=96965453]
 layout_mode = 3
@@ -9,6 +97,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = SubResource("Theme_yepom")
 script = ExtResource("1_5rluy")
 
 [node name="NavigationLayer" type="Control" parent="." unique_id=734388537]
@@ -20,6 +109,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="TransitionLayer" type="CanvasLayer" parent="." unique_id=630677038]
+process_mode = 3
 
 [node name="Fade" type="ColorRect" parent="TransitionLayer" unique_id=1973741002]
 anchors_preset = 15
@@ -29,3 +119,27 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 color = Color(0, 0, 0, 0)
+
+[node name="LoadingLayer" type="CanvasLayer" parent="TransitionLayer" unique_id=335250427]
+script = ExtResource("2_yepom")
+
+[node name="CenterContainer" type="CenterContainer" parent="TransitionLayer/LoadingLayer" unique_id=821802254]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Control" type="Control" parent="TransitionLayer/LoadingLayer/CenterContainer" unique_id=2070516383]
+layout_mode = 2
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="TransitionLayer/LoadingLayer/CenterContainer/Control" unique_id=129565520]
+scale = Vector2(0.5, 0.5)
+sprite_frames = SubResource("SpriteFrames_aiv0f")
+frame_progress = 0.1163742
+
+[node name="Label" type="Label" parent="TransitionLayer/LoadingLayer/CenterContainer" unique_id=343200643]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.34509805, 0.5921569, 1, 1)
+theme_override_font_sizes/font_size = 80
+text = "Chargement de la course..."
