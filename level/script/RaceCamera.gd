@@ -5,7 +5,7 @@ class_name RaceCamera
 @export_category("Position")
 
 @export_range(0.1, 20.0, 0.1)
-var follow_smoothing_speed: float = 4.0
+var follow_smoothing_speed: float = 10.0
 
 @export_category("Zoom dynamique solo")
 
@@ -45,7 +45,7 @@ var max_zoom: float = 1.1
 var zoom_margin: float = 1.50
 
 @export_range(0.1, 20.0, 0.1)
-var zoom_smoothing_speed: float = 4.0
+var zoom_smoothing_speed: float = 10.0
 
 
 @export_category("Activation")
