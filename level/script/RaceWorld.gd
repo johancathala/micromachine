@@ -35,6 +35,7 @@ func load_track(track_scene: PackedScene) -> Node2D:
 		return null
 
 	track_root.add_child(track)
+	
 	current_track = track
 
 	return track

@@ -53,7 +53,7 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_b0mc7")
 }],
-"loop": true,
+"loop": 1,
 "name": &"down",
 "speed": 5.0
 }]
@@ -61,6 +61,7 @@ animations = [{
 [node name="CarModel" unique_id=1257048408 instance=ExtResource("1_lp31p")]
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Body" parent_id_path=PackedInt32Array(1345352734) index="0" unique_id=1123856708]
+y_sort_enabled = true
 position = Vector2(-11, 0)
 rotation = -1.5707964
 sprite_frames = SubResource("SpriteFrames_nvaje")

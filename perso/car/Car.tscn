@@ -21,6 +21,7 @@ gravity = Vector3(0, 98, 0)
 color_ramp = SubResource("GradientTexture1D_ndo73")
 
 [node name="Car" type="CharacterBody2D" unique_id=1639454759 groups=["obstacle"]]
+y_sort_enabled = true
 collision_layer = 2
 collision_mask = 14
 script = ExtResource("1_8nu7u")
@@ -30,8 +31,10 @@ lateral_grip_at_high_speed = 1.0
 steering_response_high_speed = 0.15
 
 [node name="Model" type="Node2D" parent="." unique_id=590434381]
+y_sort_enabled = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=995528492]
+y_sort_enabled = true
 position = Vector2(-1.3333309, 6.357829e-07)
 rotation = 1.5707964
 shape = SubResource("CapsuleShape2D_6x3su")

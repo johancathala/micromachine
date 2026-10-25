@@ -3,6 +3,8 @@
 [ext_resource type="Script" uid="uid://6e8jt6o6xu2t" path="res://perso/car/script/CarModel.gd" id="1_d5w1u"]
 
 [node name="CarModel" type="Node2D" unique_id=1257048408]
+y_sort_enabled = true
 script = ExtResource("1_d5w1u")
 
 [node name="Body" type="Node2D" parent="." unique_id=1345352734]
+y_sort_enabled = true

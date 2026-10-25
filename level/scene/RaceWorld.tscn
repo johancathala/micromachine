@@ -13,6 +13,7 @@ script = ExtResource("1_fo27f")
 y_sort_enabled = true
 
 [node name="Cars" type="Node2D" parent="." unique_id=1619317226]
+y_sort_enabled = true
 
 [node name="SkidMarks" type="Node2D" parent="." unique_id=2130437793]
 position = Vector2(838, 1452.9998)
