@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://ba7w6e0n5n8qv" path="res://level/script/RaceStartLights.gd" id="1_gogr4"]
 [ext_resource type="AudioStream" uid="uid://crr0keydvbhyt" path="res://level/sound/feuPassageRouge1.mp3" id="2_0ahcg"]
 [ext_resource type="AudioStream" uid="uid://c0ujjv26n11sl" path="res://level/sound/feuPassageRouge2.mp3" id="3_iy600"]
+[ext_resource type="PackedScene" uid="uid://30k0vti0v3fl" path="res://level/sprite/tilemap/0_feu.tscn" id="5_6l1p2"]
 
 [node name="RaceStartLights" type="Node2D" unique_id=2071751392 groups=["race_start_lights"]]
 script = ExtResource("1_gogr4")
@@ -11,45 +12,29 @@ metadata/_edit_group_ = true
 
 [node name="Feu01" parent="." unique_id=589795955 groups=["race_start_lights"] instance=ExtResource("1_3ypl3")]
 
-[node name="Feu02" parent="." unique_id=1255919356 groups=["race_start_lights"] instance=ExtResource("1_3ypl3")]
-offset_left = 30.0
-offset_right = 62.0
-
 [node name="Feu03" parent="." unique_id=1225340422 groups=["race_start_lights"] instance=ExtResource("1_3ypl3")]
-offset_left = 60.0
-offset_right = 92.0
-
-[node name="Feu04" parent="." unique_id=1669604972 groups=["race_start_lights"] instance=ExtResource("1_3ypl3")]
-offset_left = 90.0
-offset_right = 122.0
+offset_left = 64.0
+offset_top = -1.0
+offset_right = 96.0
+offset_bottom = 47.0
 
 [node name="Feu05" parent="." unique_id=1022827611 groups=["race_start_lights"] instance=ExtResource("1_3ypl3")]
-offset_left = 120.0
-offset_right = 152.0
-
-[node name="Feu06" parent="." unique_id=573068053 groups=["race_start_lights"] instance=ExtResource("1_3ypl3")]
-offset_left = 150.0
-offset_right = 182.0
+offset_left = 128.0
+offset_top = -1.0
+offset_right = 160.0
+offset_bottom = 47.0
 
 [node name="Feu07" parent="." unique_id=342955328 groups=["race_start_lights"] instance=ExtResource("1_3ypl3")]
-offset_left = 180.0
-offset_right = 212.0
-
-[node name="Feu08" parent="." unique_id=1171686613 groups=["race_start_lights"] instance=ExtResource("1_3ypl3")]
-offset_left = 210.0
-offset_right = 242.0
+offset_left = 192.0
+offset_top = -1.0
+offset_right = 224.0
+offset_bottom = 47.0
 
 [node name="Feu09" parent="." unique_id=1911082640 groups=["race_start_lights"] instance=ExtResource("1_3ypl3")]
-offset_left = 240.0
-offset_right = 272.0
-
-[node name="Feu10" parent="." unique_id=1061166158 groups=["race_start_lights"] instance=ExtResource("1_3ypl3")]
-offset_left = 270.0
-offset_right = 302.0
-
-[node name="Feu11" parent="." unique_id=1271623119 groups=["race_start_lights"] instance=ExtResource("1_3ypl3")]
-offset_left = 300.0
-offset_right = 332.0
+offset_left = 256.0
+offset_top = -1.0
+offset_right = 288.0
+offset_bottom = 47.0
 
 [node name="SoundLight" type="AudioStreamPlayer" parent="." unique_id=600544604]
 stream = ExtResource("2_0ahcg")
@@ -61,3 +46,6 @@ pitch_scale = 0.55
 
 [node name="SequenceTimer" type="Timer" parent="." unique_id=2002294398]
 one_shot = true
+
+[node name="0_Feux" parent="." unique_id=906857799 instance=ExtResource("5_6l1p2")]
+tile_map_data = PackedByteArray(0, 0, 1, 0, 0, 0, 2, 0, 2, 0, 7, 0, 0, 16, 3, 0, 0, 0, 2, 0, 2, 0, 7, 0, 0, 16, 5, 0, 0, 0, 2, 0, 2, 0, 7, 0, 0, 0, 7, 0, 0, 0, 2, 0, 2, 0, 7, 0, 0, 0)

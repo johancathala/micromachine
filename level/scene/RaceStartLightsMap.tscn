@@ -7,56 +7,31 @@
 
 [node name="Feu01" parent="." unique_id=589795955 instance=ExtResource("1_46wlq")]
 
-[node name="Feu02" parent="." unique_id=2068602452 instance=ExtResource("1_46wlq")]
-offset_left = 30.0
-offset_right = 62.0
-
 [node name="Feu03" parent="." unique_id=89182852 instance=ExtResource("1_46wlq")]
-offset_left = 60.0
-offset_right = 92.0
-
-[node name="Feu04" parent="." unique_id=1882591557 instance=ExtResource("1_46wlq")]
-offset_left = 90.0
-offset_right = 122.0
+offset_left = 66.0
+offset_right = 98.0
 
 [node name="Feu05" parent="." unique_id=945102151 instance=ExtResource("1_46wlq")]
-offset_left = 120.0
-offset_right = 152.0
-
-[node name="Feu06" parent="." unique_id=2005309047 instance=ExtResource("1_46wlq")]
-offset_left = 150.0
-offset_right = 182.0
+offset_left = 129.0
+offset_right = 161.0
 
 [node name="Feu07" parent="." unique_id=473835635 instance=ExtResource("1_46wlq")]
-offset_left = 180.0
-offset_right = 212.0
-
-[node name="Feu08" parent="." unique_id=1736159466 instance=ExtResource("1_46wlq")]
-offset_left = 210.0
-offset_right = 242.0
+offset_left = 194.0
+offset_right = 226.0
 
 [node name="Feu09" parent="." unique_id=1311738803 instance=ExtResource("1_46wlq")]
-offset_left = 240.0
-offset_right = 272.0
-
-[node name="Feu12" parent="." unique_id=100110795 instance=ExtResource("1_46wlq")]
-offset_left = 270.0
-offset_right = 302.0
-
-[node name="Feu13" parent="." unique_id=1077226862 instance=ExtResource("1_46wlq")]
-offset_left = 300.0
-offset_right = 332.0
+offset_left = 258.0
+offset_right = 290.0
 
 [node name="LightTorch" type="PointLight2D" parent="." unique_id=643355235]
-position = Vector2(40, 42)
-color = Color(0.41210052, 0.61689794, 0.6843081, 1)
-energy = 3.48
+position = Vector2(22, 28)
+color = Color(0.7607843, 0.5254902, 0.23529412, 1)
+energy = 3.0
 texture = ExtResource("2_dw6db")
 
 [node name="LightTorch2" type="PointLight2D" parent="." unique_id=390700291]
-position = Vector2(288, 49)
+position = Vector2(261, 29)
 color = Color(0.7607843, 0.5254902, 0.23529412, 1)
-energy = 3.88
-shadow_enabled = true
+energy = 3.0
 shadow_color = Color(0, 0, 0.8, 0.88235295)
 texture = ExtResource("2_dw6db")

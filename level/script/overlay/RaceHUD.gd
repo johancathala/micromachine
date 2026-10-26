@@ -170,9 +170,9 @@ func _build_participant_rows() -> void:
 func start_message() -> void:
 	message_label.text = "PREPAREZ VOUS AU DEPART !"
 	message_label.show()
-	await get_tree().create_timer(6).timeout
+	await get_tree().create_timer(3).timeout
 	message_label.text = "N'ACCELEREZ PAS AVANT LES FEUX VERTS !"
-	await get_tree().create_timer(6).timeout
+	await get_tree().create_timer(4).timeout
 	message_label.hide()
 	
 
