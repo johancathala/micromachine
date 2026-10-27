@@ -91,7 +91,7 @@ func _spawn_cars() -> bool:
 
 	for spawn_index in range(participants.size()):
 		var participant: Dictionary = participants[spawn_index]
-
+		
 		if not _spawn_participant(participant, spawn_index):
 			return false
 
@@ -148,7 +148,7 @@ func _spawn_participant(
 		)
 		car.queue_free()
 		return false
-
+	
 	race_world.add_car(car)
 
 	car.global_position = spawn.global_position
@@ -163,7 +163,7 @@ func _spawn_participant(
 		int(participant.get("device_id", -1)),
 		race_world.get_skid_marks()
 	)
-
+	
 	return true
 
 

@@ -83,6 +83,7 @@ var last_collision_time: float = 0.0
 # ---------------------------
 const ANIMATION_SCENE: PackedScene = preload("res://effects/scene/CarAnimation.tscn")
 var _destruction_started := false
+var _respawning := false
 
 # ---------------------------
 # TUNING (moteur / vitesses)
@@ -280,7 +281,7 @@ func _physics_process(delta: float) -> void:
 	# Le respawn est déclenché une seule fois par appui.
 	if not is_ai:
 		if respawn and not _respawn_was_pressed:
-			respawn_requested.emit(self)
+			explosion()
 
 	_respawn_was_pressed = respawn
 
@@ -770,6 +771,14 @@ func _draw() -> void:
 func set_can_move(can_move: bool) -> void:
 	car_can_move = can_move
 
+func sound_stop() -> void:
+	if engine_running_sound.playing:
+		engine_running_sound.stop()
+	if engine_rupteur_sound.playing:
+		engine_rupteur_sound.stop()
+	if engine_idle_sound.playing:
+		engine_idle_sound.stop()
+
 func set_colision(active_colision: bool) -> void:
 	#var collision_object := self as CollisionObject2D
 	if active_colision:
@@ -806,40 +815,83 @@ func get_node_animation() -> Node2D:
 	return animation
 
 func respawn_at(target: Transform2D) -> void:
+	_respawning = true
+	_destruction_started = true
+	
 	set_can_move(false)
-
 	# Arrêter tout mouvement résiduel.
 	velocity = Vector2.ZERO
 	speed = 0.0
-
+	acceleration = 0.0
+	previous_speed = 0.0
 	# Récupération de la position et de la rotation du marqueur,
 	# sans reprendre son échelle.
 	global_position = target.origin
 	global_rotation = target.get_rotation()
 
-	# Réinitialiser ici les autres états physiques
-	# propres à ton script, si nécessaire.
 	show()
-	#await get_tree().create_timer(2.0).timeout
 	set_colision(true)
+	# Laisser passer une frame pour que les zones de détection
+	# prennent en compte la nouvelle position.
+	await get_tree().physics_frame
+
+	_respawning = false
+	_destruction_started = false
 	set_can_move(true)
 
 func explosion() -> void:
-	if _destruction_started:
+	if _destruction_started or _respawning:
 		return
-	sound_stop()
+	
 	_destruction_started = true
-	set_can_move(false)
-	set_colision(false)
-	var node_explosion := get_node_animation()
-	node_explosion.animation_name = &"explosion"
-	node_explosion.play_animation()
+	delete_car()
+	
+	var animation := get_node_animation() as CarAnimation
+	if animation == null:
+		push_error("Car : impossible de créer l'effet d'explosion.")
+		return
+
+	if not animation.effect_finished.is_connected(
+		_on_effect_finished
+	):
+		animation.effect_finished.connect(
+			_on_effect_finished
+		)
+
+	animation.play_animation("explosion")
 	hide()
 
-func sound_stop() -> void:
-	if engine_running_sound.playing:
-		engine_running_sound.stop()
-	if engine_rupteur_sound.playing:
-		engine_rupteur_sound.stop()
-	if engine_idle_sound.playing:
-		engine_idle_sound.stop()
+
+func sink_in_water() -> void:
+	if _destruction_started or _respawning:
+		return
+
+	_destruction_started = true
+	delete_car()
+
+	var animation := get_node_animation() as CarAnimation
+	if animation == null:
+		push_error("Car : impossible de créer l'effet de noyade.")
+		return
+
+	if not animation.effect_finished.is_connected(
+		_on_effect_finished
+	):
+		animation.effect_finished.connect(
+			_on_effect_finished
+		)
+
+	animation.play_animation("sink")
+	hide()
+
+func delete_car() -> void:
+	# Immobiliser la voiture et désactiver ses collisions.
+	sound_stop()
+	set_can_move(false)
+	velocity = Vector2.ZERO
+	speed = 0.0
+	set_colision(false)
+
+func _on_effect_finished() -> void:
+	_destruction_started = false
+	respawn_requested.emit(self)

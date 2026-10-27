@@ -51,7 +51,7 @@ alignment = 1
 [node name="Logo" type="Label" parent="MarginContainer/VBoxContainer/VBoxContainer" unique_id=295111644]
 layout_mode = 2
 theme_override_font_sizes/font_size = 120
-text = "QUISSAC RACER"
+text = "BRISSAC RACER"
 horizontal_alignment = 1
 vertical_alignment = 1
 

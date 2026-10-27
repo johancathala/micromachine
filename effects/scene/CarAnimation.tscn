@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://bttglf03ron6h" path="res://effects/script/CarAnimation.gd" id="1_uq2qq"]
 [ext_resource type="Texture2D" uid="uid://bm7cd5n143mnq" path="res://effects/sprite/Circle_explosion/Circle_explosion1.png" id="2_tuqix"]
 [ext_resource type="Texture2D" uid="uid://dpttsep68jtv1" path="res://effects/sprite/Circle_explosion/Circle_explosion2.png" id="3_ejv36"]
+[ext_resource type="AudioStream" uid="uid://cduijjsk140j" path="res://effects/sound/plouf/heavy-large-object-falls-into.mp3" id="3_xrhp2"]
 [ext_resource type="Texture2D" uid="uid://ofuhkfhap6bo" path="res://effects/sprite/Circle_explosion/Circle_explosion3.png" id="4_g45qa"]
 [ext_resource type="Texture2D" uid="uid://du62bguo4iiyi" path="res://effects/sprite/Circle_explosion/Circle_explosion4.png" id="5_basen"]
 [ext_resource type="Texture2D" uid="uid://d1icpcd6p6mo2" path="res://effects/sprite/Circle_explosion/Circle_explosion5.png" id="6_wbwfx"]
@@ -12,7 +13,7 @@
 [ext_resource type="Texture2D" uid="uid://1qf2p1vrebe1" path="res://effects/sprite/Circle_explosion/Circle_explosion9.png" id="10_t4wna"]
 [ext_resource type="Texture2D" uid="uid://cs4hskogvtfny" path="res://effects/sprite/Circle_explosion/Circle_explosion10.png" id="11_dcioj"]
 [ext_resource type="Texture2D" uid="uid://et1dfvtrhp4b" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval1.png" id="12_dcioj"]
-[ext_resource type="AudioStream" uid="uid://dp5fmfecok2ju" path="res://effects/sound/yodguard-short-energy-beam-shot-1-482495.mp3" id="12_xrhp2"]
+[ext_resource type="AudioStream" uid="uid://dp5fmfecok2ju" path="res://effects/sound/explode/yodguard-short-energy-beam-shot-1-482495.mp3" id="12_xrhp2"]
 [ext_resource type="Texture2D" uid="uid://dy5cwt2h4lgpa" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval2.png" id="13_xrhp2"]
 [ext_resource type="Texture2D" uid="uid://bd6fhhst03dyb" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval3.png" id="14_58nla"]
 [ext_resource type="Texture2D" uid="uid://ccycf6x8phbbo" path="res://perso/car/sprite/explosion_blue_oval/Explosion_blue_oval4.png" id="15_cbwen"]
@@ -122,16 +123,18 @@ animations = [{
 "texture": null
 }],
 "loop": 0,
-"name": &"explosion_blue_oval",
+"name": &"sink",
 "speed": 8.0
 }]
 
 [node name="CarAnimation" type="Node2D" unique_id=2041990868]
 script = ExtResource("1_uq2qq")
+audio_explosion = ExtResource("12_xrhp2")
+audio_sink = ExtResource("3_xrhp2")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=915527999]
 sprite_frames = SubResource("SpriteFrames_p52qu")
-animation = &"explosion_blue_oval"
+animation = &"sink"
 speed_scale = 2.0
 
 [node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="." unique_id=1702963165]

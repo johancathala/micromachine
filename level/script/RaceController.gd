@@ -297,6 +297,9 @@ func _initialize_participants() -> bool:
 			car.respawn_requested.connect(
 				_on_car_respawn_requested
 			)
+		
+		var spawn := race_world.get_spawn_point(car.participant_id)
+		update_respawn_point(state,spawn)
 
 	if participants.is_empty():
 
@@ -698,28 +701,37 @@ func update_respawn_point(
 	state: RaceParticipantState,
 	marker: Marker2D
 ) -> void:
-	if state == null or marker == null:
+	if state == null:
+		print("updateRespawn: erreur state")
+		return
+	if marker == null:
+		print("updateRespawn: erreur marker")
 		return
 
 	state.respawn_transform = marker.global_transform
 	state.has_respawn_point = true
 
 func _on_car_respawn_requested(car: Car) -> void:
+	print("respawn demandé")
 	request_respawn(car)
 
 func request_respawn(car: Car) -> void:
 	if race_state != RaceState.RUNNING:
+		print("respawn: la course est finie")
 		return
 
 	if race_is_paused:
+		print("respawn: en pause")
 		return
 
 	var state := _get_participant_state(car)
 
 	if state == null:
+		print("respawn: voiture introuvable")
 		return
 
 	if state.finished:
+		print("respawn: voiture a fini la course")
 		return
 
 	if not state.has_respawn_point:
@@ -730,13 +742,13 @@ func request_respawn(car: Car) -> void:
 		return
 
 	if not is_instance_valid(state.car):
+		print("respawn: voiture invalide")
 		return
 	
+	print("respawn: destruction en cours ? "+str(state.car._destruction_started))
 	if state.car._destruction_started == false:
-		state.car.explosion()
-		await get_tree().create_timer(2.0).timeout
 		state.car.respawn_at(state.respawn_transform)
-		state.car._destruction_started = false
+
 
 # ============================================================
 # PREMIER DÉPART D'UN PARTICIPANT
@@ -1205,7 +1217,7 @@ func get_participant_states() -> Array[RaceParticipantState]:
 	return participants
 
 
-func get_participant_state(
+func get_participant_state_by_id(
 	participant_id: int
 ) -> RaceParticipantState:
 

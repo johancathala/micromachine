@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://ywkaj1nq1n1d"]
+
+[ext_resource type="Script" uid="uid://hqmum67yrtgx" path="res://level/script/WaterArea.gd" id="1_w52ob"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_pw13x"]
+
+[node name="WaterArea" type="Area2D" unique_id=65558404]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_w52ob")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1632818724]
+shape = SubResource("CapsuleShape2D_pw13x")
