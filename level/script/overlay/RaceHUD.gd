@@ -23,7 +23,7 @@ var displayed_participant_id: int = -1
 var displayed_car: Car = null
 
 var race_started: bool = false
-
+var best_lap : float = 0.0
 
 func initialize(
 	controller: RaceController,
@@ -215,11 +215,15 @@ func _update_first_participant_values(state: RaceParticipantState) -> void:
 func _update_best_lap(state: RaceParticipantState) -> void:
 	if race_controller == null:
 		return
-
-	var best_lap : float = state.best_lap_time
+	
+	var lap_time = state.best_lap_time
+	if lap_time >= best_lap && best_lap > 0.0:
+		return
+		
+	best_lap = state.best_lap_time
 
 	best_lap_label.text = (
-		"Meilleur temps (à modif) : %s"
+		"Meilleur temps : %s"
 		% _format_time(best_lap)
 	)
 
