@@ -219,7 +219,7 @@ func _update_best_lap(state: RaceParticipantState) -> void:
 	var lap_time = state.best_lap_time
 	if lap_time >= best_lap && best_lap > 0.0:
 		return
-		
+	
 	best_lap = state.best_lap_time
 
 	best_lap_label.text = (
