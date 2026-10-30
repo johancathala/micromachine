@@ -1,0 +1,125 @@
+[gd_scene format=3 uid="uid://c1sce1qwjlpns"]
+
+[ext_resource type="PackedScene" uid="uid://xx1bpue1d5m3" path="res://level/scene/ExplosiveObstacle.tscn" id="1_se32c"]
+[ext_resource type="Texture2D" uid="uid://c655s2ht8a3mv" path="res://effects/sprite/Animated_sheets_32x32/Flame_4_32x32.png" id="2_nkp27"]
+[ext_resource type="Texture2D" uid="uid://30fu1qq0kl18" path="res://effects/sprite/Explosion_two_colors/Explosion_two_colors1.png" id="8_iqwsl"]
+[ext_resource type="Texture2D" uid="uid://t0hj62yjjyo0" path="res://effects/sprite/Explosion_two_colors/Explosion_two_colors2.png" id="9_f5jm1"]
+[ext_resource type="Texture2D" uid="uid://c3nium276vq00" path="res://effects/sprite/Explosion_two_colors/Explosion_two_colors3.png" id="10_emsda"]
+[ext_resource type="Texture2D" uid="uid://bomffbw0tw0w8" path="res://effects/sprite/Explosion_two_colors/Explosion_two_colors4.png" id="11_7tb1y"]
+[ext_resource type="Texture2D" uid="uid://dmneedph7s04w" path="res://effects/sprite/Explosion_two_colors/Explosion_two_colors5.png" id="12_k3s5w"]
+[ext_resource type="Texture2D" uid="uid://b7x14r04sba60" path="res://effects/sprite/Explosion_two_colors/Explosion_two_colors6.png" id="13_5h31b"]
+[ext_resource type="Texture2D" uid="uid://m6ugm3mpwotq" path="res://effects/sprite/Explosion_two_colors/Explosion_two_colors7.png" id="14_5yhhr"]
+[ext_resource type="Texture2D" uid="uid://bsfisiexkvrgb" path="res://effects/sprite/Explosion_two_colors/Explosion_two_colors8.png" id="15_x7amm"]
+[ext_resource type="Texture2D" uid="uid://y5l0wjq4x0fa" path="res://effects/sprite/Explosion_two_colors/Explosion_two_colors9.png" id="16_c17ad"]
+[ext_resource type="Texture2D" uid="uid://dncm3tl53eb6q" path="res://effects/sprite/Explosion_two_colors/Explosion_two_colors10.png" id="17_y1nsh"]
+[ext_resource type="Texture2D" uid="uid://c0hfkqasbetv8" path="res://level/sprite/tilemap/0_baril_toxic2.png" id="18_5d3ql"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2i2kh"]
+atlas = ExtResource("2_nkp27")
+region = Rect2(0, 0, 64, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mmqcm"]
+atlas = ExtResource("2_nkp27")
+region = Rect2(64, 0, 64, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_72h37"]
+atlas = ExtResource("2_nkp27")
+region = Rect2(128, 0, 64, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f0b83"]
+atlas = ExtResource("2_nkp27")
+region = Rect2(192, 0, 64, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_r7fud"]
+atlas = ExtResource("2_nkp27")
+region = Rect2(256, 0, 64, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1wdrt"]
+atlas = ExtResource("18_5d3ql")
+region = Rect2(37, 98, 60, 62)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_wxu5k"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2i2kh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mmqcm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_72h37")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_f0b83")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_r7fud")
+}],
+"loop": 1,
+"name": &"burning",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("8_iqwsl")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_f5jm1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_emsda")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_7tb1y")
+}, {
+"duration": 1.0,
+"texture": ExtResource("12_k3s5w")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_5h31b")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_5yhhr")
+}, {
+"duration": 1.0,
+"texture": ExtResource("15_x7amm")
+}, {
+"duration": 1.0,
+"texture": ExtResource("16_c17ad")
+}, {
+"duration": 1.0,
+"texture": ExtResource("17_y1nsh")
+}],
+"loop": 0,
+"name": &"explosion",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1wdrt")
+}],
+"loop": 0,
+"name": &"idle",
+"speed": 5.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_gqdf4"]
+radius = 16.999132
+height = 51.99998
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_lfdc8"]
+radius = 80.024994
+
+[node name="Baril_green" unique_id=1935394708 instance=ExtResource("1_se32c")]
+
+[node name="AnimatedSprite2D" parent="." index="0" unique_id=1848874567]
+rotation = 0.007912912
+sprite_frames = SubResource("SpriteFrames_wxu5k")
+
+[node name="CollisionShape2D" parent="." index="1" unique_id=1753737271]
+position = Vector2(4.656613e-10, 9)
+shape = SubResource("CapsuleShape2D_gqdf4")
+
+[node name="CollisionShape2D" parent="BlastArea" parent_id_path=PackedInt32Array(645307689) index="0" unique_id=1197323696]
+shape = SubResource("CircleShape2D_lfdc8")
