@@ -10,9 +10,10 @@ config_version=5
 
 [application]
 
-config/name="Micromachine Brissac"
+config/name="Micro Racer"
 run/main_scene="uid://ck7vxha80cbet"
 config/features=PackedStringArray("4.7", "GL Compatibility")
+boot_splash/bg_color=Color(0.26443154, 0.22560203, 0.057039417, 1)
 config/icon="res://icon.svg"
 
 [audio]
@@ -34,6 +35,7 @@ BestTimesManager="*uid://c6ui66rmspmys"
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
+window/size/mode=2
 
 [global_group]
 

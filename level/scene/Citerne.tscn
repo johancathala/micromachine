@@ -1,0 +1,5 @@
+[gd_scene format=3 uid="uid://cfqp5ae3g5f7"]
+
+[ext_resource type="PackedScene" uid="uid://xx1bpue1d5m3" path="res://level/scene/ExplosiveObstacle.tscn" id="1_83hs8"]
+
+[node name="Citerne" unique_id=1935394708 instance=ExtResource("1_83hs8")]

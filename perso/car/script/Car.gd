@@ -70,13 +70,21 @@ var acceleration: float = 0.0
 var previous_speed: float = 0.0
 # Management des sons de collision
 var last_collision_time: float = 0.0
-@export var collision_cooldown: float = 0.3  # en secondes
+@export var collision_cooldown: float = 0.2  # en secondes
 
 # ---------------------------
 # COLLISION
 # ---------------------------
 # Coefficient de rebond (0 = pas de rebond, 1 = rebond parfait)
 @export_range(0.0, 3.0, 0.01) var bounce_factor: float = 0.8
+
+# Vitesse minimale de l'impact, mesurée sur l'axe de collision,
+# pour déclencher l'explosion. Unité : pixels/seconde.
+@export_range(0.0, 3000.0, 10.0) var explosion_impact_speed: float = 700.0
+
+# Vélocité juste avant move_and_slide(), nécessaire pour mesurer
+# la vitesse réelle de l'impact après résolution physique.
+var _velocity_before_move: Vector2 = Vector2.ZERO
 
 # ---------------------------
 # ANIMATIONS
@@ -367,33 +375,92 @@ func _process_collisions() -> void:
 		if collider == null:
 			continue
 
-		if not collider.is_in_group("obstacle"):
+		# Collision entre deux voitures : on mesure leur vitesse relative.
+		if collider is Car:
+			_handle_car_collision(collision, collider as Car)
+			if _destruction_started:
+				return
 			continue
 
+		# Les obstacles ordinaires conservent leur rebond.
+		#if collider.is_in_group("obstacle"):
 		_handle_obstacle_collision(collision)
+		if _destruction_started:
+			return
+
+
+func _get_impact_speed(
+	collision: KinematicCollision2D,
+	collider_velocity: Vector2 = Vector2.ZERO
+) -> float:
+	# La normale pointe du collider vers la voiture.
+	# On ne retient que la composante de vitesse dirigée vers le collider.
+	var relative_velocity := _velocity_before_move - collider_velocity
+	var velocity_toward_collider := -relative_velocity.dot(collision.get_normal())
+
+	return maxf(velocity_toward_collider, 0.0)
+
+
+func _handle_car_collision(
+	collision: KinematicCollision2D,
+	other_car: Car
+) -> void:
+	if _destruction_started or _respawning:
+		return
+
+	var other_velocity := other_car.velocity
+	var impact_speed := _get_impact_speed(collision, other_velocity)
+
+	if impact_speed >= explosion_impact_speed:
+		explosion()
+
+
 
 func _handle_obstacle_collision(collision: KinematicCollision2D) -> void:
-	if speed <= 100.0:
+	if _destruction_started or _respawning:
+		return
+
+	var collider := collision.get_collider()
+
+	# --------------------------------------------------------
+	# OBSTACLE EXPLOSIF
+	# --------------------------------------------------------
+	if collider is ExplosiveObstacle:
+		var obstacle := collider as ExplosiveObstacle
+
+		# Déclenche l'explosion du baril.
+		# Si celui-ci a déjà explosé, cette méthode ne fait rien.
+		obstacle.detonate()
+
+		# Le contact direct avec le baril détruit toujours la voiture.
+		explosion()
+		return
+
+	# --------------------------------------------------------
+	# OBSTACLE CLASSIQUE
+	# --------------------------------------------------------
+	var impact_speed := _get_impact_speed(collision)
+
+	if impact_speed >= explosion_impact_speed:
+		explosion()
+		return
+
+	# En dessous du seuil, on conserve le rebond habituel.
+	if impact_speed <= 100.0:
 		return
 
 	var normal: Vector2 = collision.get_normal()
-
-	# Composante de la vitesse dirigée vers l'obstacle.
 	var velocity_into_surface: float = velocity.dot(normal)
 
-	# Si la voiture s'éloigne déjà de l'obstacle,
-	# il n'y a pas de rebond à appliquer.
 	if velocity_into_surface >= 0.0:
 		return
 
-	# Réflexion de la vitesse par rapport à la normale.
 	velocity = velocity - 2.0 * velocity_into_surface * normal
-
-	# Amortissement du rebond.
 	velocity *= bounce_factor
 
 	_play_collision_sound()
-	
+
+
 func _process_human_input(_delta: float) -> void:
 	var input_state: PlayerInputState = InputManager.get_player_input(
 		input_device_type,
@@ -745,6 +812,10 @@ func _clamp_velocity(fwd: Vector2, v_long: Vector2, v_lat: Vector2) -> void:
 	if v.length() > v_max_total:
 		v = v.normalized() * v_max_total
 
+	# Mémorise la vitesse avant résolution des collisions.
+	# Elle sert à calculer la violence réelle de l'impact dans
+	# _process_collisions(), car move_and_slide() peut modifier velocity.
+	_velocity_before_move = v
 	velocity = v
 
 	# Unique déplacement physique de la voiture.
@@ -817,6 +888,7 @@ func get_node_animation() -> Node2D:
 func respawn_at(target: Transform2D) -> void:
 	_respawning = true
 	_destruction_started = true
+	_velocity_before_move = Vector2.ZERO
 	
 	set_can_move(false)
 	# Arrêter tout mouvement résiduel.

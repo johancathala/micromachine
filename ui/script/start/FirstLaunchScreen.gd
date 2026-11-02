@@ -56,9 +56,6 @@ func _validate_and_continue() -> void:
 
 	SaveManager.set_nickname(nickname)
 
-	NavigationManager.go_to(
-		"MainMenu",
-		false
-	)
+	NavigationManager.go("MainMenu",false)
 	
 	
