@@ -15,6 +15,12 @@ export_credentials.cfg
 .mono/
 data_*/
 mono_crash.*.json
+
 build/windows/*
+!build/windows/.gitkeep
+
 build/macos/*
+!build/macos/.gitkeep
+
 build/linux/*
+!build/linux/.gitkeep
