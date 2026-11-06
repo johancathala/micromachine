@@ -10,6 +10,26 @@
 [ext_resource type="AudioStream" uid="uid://cxi7fmh0yqphc" path="res://audio/sfx/clickBtt2.mp3" id="7_1ucoi"]
 [ext_resource type="AudioStream" uid="uid://b1kv0721yr5ci" path="res://audio/sfx/clickBtt1.mp3" id="8_7j3cy"]
 [ext_resource type="AudioStream" uid="uid://b8equrq1ascfg" path="res://audio/sfx/effetMenu2.mp3" id="9_xwfei"]
+[ext_resource type="AudioStream" uid="uid://bs2s6hnpfiyfg" path="res://audio/music/alex-morgan-mood-emotional-cinematic-background-music.mp3" id="11_dc3mw"]
+[ext_resource type="AudioStream" uid="uid://dskg1ygi1oimt" path="res://audio/music/ambiance-moderne.mp3" id="12_1oi5s"]
+[ext_resource type="AudioStream" uid="uid://6jgwndvc012t" path="res://audio/music/ambient-background-music.mp3" id="13_pvuab"]
+[ext_resource type="AudioStream" uid="uid://iahr5d43l6mw" path="res://audio/music/atlasaudio-atmosphere.mp3" id="14_tfc2r"]
+[ext_resource type="AudioStream" uid="uid://3iduxn70i2bk" path="res://audio/music/atlasaudio-chill-vibe.mp3" id="15_xj2kl"]
+[ext_resource type="AudioStream" uid="uid://c5ycy6k5fpjic" path="res://audio/music/chill-vibe-beat.mp3" id="16_xon3u"]
+[ext_resource type="AudioStream" uid="uid://bdbmqstavbeui" path="res://audio/music/courant-astral.mp3" id="17_krrxn"]
+[ext_resource type="AudioStream" uid="uid://6vsvy88coiq2" path="res://audio/music/folk_tales-vibe-good-vibes.mp3" id="18_ejrtg"]
+[ext_resource type="AudioStream" uid="uid://wrs7o8ctidpi" path="res://audio/music/jonasblakewood-vibe-vibe-music.mp3" id="19_x14kx"]
+[ext_resource type="AudioStream" uid="uid://ds6dij0qcxbsc" path="res://audio/music/leberch-cozy-ambience.mp3" id="20_ndos7"]
+[ext_resource type="AudioStream" uid="uid://dcg7brxlvcniv" path="res://audio/music/leberch-lo-fi-chill.mp3" id="21_msn1i"]
+[ext_resource type="AudioStream" uid="uid://dg2p3vmu7h8ta" path="res://audio/music/Moon-Wisper.mp3" id="22_4jh23"]
+[ext_resource type="AudioStream" uid="uid://bvdqvmgv828bm" path="res://audio/music/nighttime-ambiance.mp3" id="23_jrsmq"]
+[ext_resource type="AudioStream" uid="uid://125k5k5bc2mk" path="res://audio/music/ouverture-cyberntique.mp3" id="24_ybrqs"]
+[ext_resource type="AudioStream" uid="uid://b3xqa82nnrya3" path="res://audio/music/prettyjohn1-vibe.mp3" id="25_jnjwd"]
+[ext_resource type="AudioStream" uid="uid://bg48mpyjnskyy" path="res://audio/music/sub_clair-lofi-background.mp3" id="26_tbdwf"]
+[ext_resource type="AudioStream" uid="uid://t0d80hyeua3s" path="res://audio/music/synthwave-dominion.mp3" id="27_v04l0"]
+[ext_resource type="AudioStream" uid="uid://di1doiwll8s1r" path="res://audio/music/the_mountain-vibe-song.mp3" id="28_l7t50"]
+[ext_resource type="AudioStream" uid="uid://bsmyhnoiqsf74" path="res://audio/music/velariomusic-chill-vibe.mp3" id="29_nl7ae"]
+[ext_resource type="AudioStream" uid="uid://dyhsyjo3f2ttd" path="res://audio/music/vibemode-summer-vibe-summer.mp3" id="30_drvnp"]
 
 [node name="AudioManager" type="Node" unique_id=885718649]
 process_mode = 3
@@ -24,6 +44,7 @@ sfx_back = ExtResource("7_1ucoi")
 sfx_confirm = ExtResource("8_7j3cy")
 sfx_disabled = ExtResource("9_xwfei")
 music_volume_db = -10.0
+music_playlist = Array[AudioStream]([ExtResource("11_dc3mw"), ExtResource("12_1oi5s"), ExtResource("13_pvuab"), ExtResource("14_tfc2r"), ExtResource("15_xj2kl"), ExtResource("16_xon3u"), ExtResource("17_krrxn"), ExtResource("18_ejrtg"), ExtResource("19_x14kx"), ExtResource("20_ndos7"), ExtResource("21_msn1i"), ExtResource("22_4jh23"), ExtResource("23_jrsmq"), ExtResource("24_ybrqs"), ExtResource("25_jnjwd"), ExtResource("26_tbdwf"), ExtResource("27_v04l0"), ExtResource("28_l7t50"), ExtResource("29_nl7ae"), ExtResource("30_drvnp")])
 
 [node name="MusicPlayer" type="AudioStreamPlayer" parent="." unique_id=1274793380]
 bus = &"Music"

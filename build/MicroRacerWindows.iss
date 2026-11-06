@@ -1,5 +1,5 @@
 
-#define MyAppName "micromachine"
+#define MyAppName "MicroRacer"
 #define MyAppVersion "0.2.0"
 #define MyAppPublisher "JojoStudio"
 #define MyAppExeName "MicroRacer.exe"
@@ -11,7 +11,7 @@ AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
-OutputDir=.
+OutputDir=windows
 OutputBaseFilename=MicroRacerSetup
 Compression=lzma2
 SolidCompression=yes
@@ -25,7 +25,7 @@ Name: "french"; MessagesFile: "compiler:Languages\French.isl"
 Name: "desktopicon"; Description: "Créer un raccourci sur le bureau"; Flags: unchecked
 
 [Files]
-Source: "..\Build\Windows\MicroRacer.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "windows\MicroRacer.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
