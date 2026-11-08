@@ -58,7 +58,7 @@ const SAVE_PATH := "user://profile.cfg"
 
 const DEFAULT_RESOLUTION := Vector2i(1920, 1080)
 
-const DEFAULT_WINDOW_MODE := DisplayServer.WINDOW_MODE_WINDOWED
+const DEFAULT_WINDOW_MODE := DisplayServer.WINDOW_MODE_FULLSCREEN
 
 const DEFAULT_VSYNC := true
 

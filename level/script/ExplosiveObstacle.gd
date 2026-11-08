@@ -23,6 +23,7 @@ var blast_duration: float = 0.5
 # ============================================================
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var explode_sound: AudioStreamPlayer2D = $ExplodeSound
 @onready var blast_area: Area2D = $BlastArea
 @onready var blast_shape: CollisionShape2D = $BlastArea/CollisionShape2D
 
@@ -78,6 +79,7 @@ func detonate() -> void:
 
 	# Animation de l'explosion.
 	sprite.play("explosion")
+	explode_sound.play()
 
 	# Activation du rayon de dégâts et de propagation.
 	blast_area.set_deferred("monitoring", true)

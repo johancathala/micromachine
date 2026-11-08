@@ -1,5 +1,7 @@
 extends Control
 
+@onready var focus_manager: MenuFocusManager = $MenuFocusManager
+
 @onready var single_race_button: Button = $MarginContainer/VBoxContainer/MenuContainer/SingleRaceButton
 @onready var championship_button: Button = $MarginContainer/VBoxContainer/MenuContainer/ChampionshipButton
 @onready var time_trial_button: Button = $MarginContainer/VBoxContainer/MenuContainer/TimeTrialButton
@@ -13,7 +15,17 @@ func _ready() -> void:
 	AudioManager.play_menu_music()
 	_connect_signals()
 	_update_profile_label()
-	single_race_button.grab_focus()
+	
+	focus_manager.set_vertical_navigation([
+		single_race_button,
+		championship_button,
+		time_trial_button,
+		leaderboards_button,
+		options_button,
+		quit_button
+	])
+
+	focus_manager.focus_initial()
 
 func _update_profile_label() -> void:
 	profile_label.text = "Pseudo : %s" % SaveManager.get_nickname()

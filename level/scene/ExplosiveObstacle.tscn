@@ -10,6 +10,7 @@
 [ext_resource type="Texture2D" uid="uid://bkdorj868x2eg" path="res://effects/sprite/Nuclear_explosion/Nuclear_explosion6.png" id="12_md40y"]
 [ext_resource type="Texture2D" uid="uid://bft3ubgy7f0jj" path="res://effects/sprite/Nuclear_explosion/Nuclear_explosion7.png" id="13_qsye4"]
 [ext_resource type="Texture2D" uid="uid://de0a6vtwg8fl0" path="res://effects/sprite/Nuclear_explosion/Nuclear_explosion8.png" id="14_l47jb"]
+[ext_resource type="AudioStream" uid="uid://cbk0ql5nnge6u" path="res://effects/sound/explode/Explosion_forte.mp3" id="14_rucjv"]
 [ext_resource type="Texture2D" uid="uid://5xmimqexa3r2" path="res://effects/sprite/Nuclear_explosion/Nuclear_explosion9.png" id="15_dpj07"]
 [ext_resource type="Texture2D" uid="uid://vaacfoduhnrs" path="res://effects/sprite/Nuclear_explosion/Nuclear_explosion10.png" id="16_j6xk8"]
 [ext_resource type="Texture2D" uid="uid://c7ovlfovoij4s" path="res://level/sprite/tilemap/0_citerne.png" id="17_as3sq"]
@@ -132,3 +133,6 @@ collision_mask = 10
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="BlastArea" unique_id=1197323696]
 shape = SubResource("CircleShape2D_f5b6p")
+
+[node name="ExplodeSound" type="AudioStreamPlayer2D" parent="." unique_id=1369041152]
+stream = ExtResource("14_rucjv")

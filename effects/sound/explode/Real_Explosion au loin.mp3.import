@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://v6km2uyitmam"
+path="res://.godot/imported/Real_Explosion au loin.mp3-cf524c150d97c8355441713a63764b19.mp3str"
+
+[deps]
+
+source_file="res://effects/sound/explode/Real_Explosion au loin.mp3"
+dest_files=["res://.godot/imported/Real_Explosion au loin.mp3-cf524c150d97c8355441713a63764b19.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

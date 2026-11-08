@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://bu3cwvgwdfkhe"]
 
 [ext_resource type="Script" uid="uid://d3ovxcbd78pi8" path="res://ui/script/MainMenu.gd" id="1_eu4y2"]
+[ext_resource type="Script" uid="uid://cevjm5wtehw21" path="res://ui/script/MenuFocusManager.gd" id="2_54dqs"]
 
 [sub_resource type="SystemFont" id="SystemFont_re1gs"]
 font_names = PackedStringArray("Impact")
@@ -118,3 +119,7 @@ theme_override_font_sizes/font_size = 40
 text = "Pseudo : Le Pseudo"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="MenuFocusManager" type="Node" parent="." unique_id=1618894333]
+script = ExtResource("2_54dqs")
+initial_focus_path = NodePath("../MarginContainer/VBoxContainer/MenuContainer/SingleRaceButton")
