@@ -1,7 +1,7 @@
 extends Control
 
-@onready var loading_label: Label = $MarginContainer/VBoxContainer/VBoxContainer/LoadingLabel
-@onready var loading_progress: ProgressBar = $MarginContainer/VBoxContainer/VBoxContainer/LoadingProgress
+@onready var loading_label: Label = $MarginContainer/VBoxContainer/LoadingLabel
+@onready var loading_progress: ProgressBar = $MarginContainer/VBoxContainer/LoadingProgress
 
 
 func _ready() -> void:
@@ -34,17 +34,22 @@ func _initialize_game() -> void:
 	loading_progress.value = 60.0
 	await get_tree().process_frame
 	SaveManager.apply_display_settings()
+	
+	loading_label.text = "Chargement des paramètres audio..."
+	loading_progress.value = 70.0
+	await get_tree().process_frame
+	SaveManager.apply_audio_settings()
 
 	# Important :
 	# InputManager doit être initialisé APRÈS
 	# le chargement de la sauvegarde.
 	loading_label.text = "Chargement des paramètres de contrôle..."
-	loading_progress.value = 70.0
+	loading_progress.value = 80.0
 	await get_tree().process_frame
 	InputManager.initialize()
-
+	
 	loading_label.text = "Préparation..."
-	loading_progress.value = 80.0
+	loading_progress.value = 90.0
 	await get_tree().process_frame
 
 	loading_progress.value = 100.0

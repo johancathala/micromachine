@@ -88,85 +88,47 @@ func _build_laps(
 		result.get("best_lap_time", 0.0)
 	)
 
-	var personal_best_sections: Array = (
-		result.get(
-			"best_section_times",
-			[]
-		)
-	)
 
 	# --------------------------------------------------------
-	# En-tête des secteurs
+	# En-tête des tours
 	# --------------------------------------------------------
 
 	var header := HBoxContainer.new()
 
-	var lap_header := Label.new()
-	lap_header.text = "Tour"
-	lap_header.custom_minimum_size.x = 90
-	lap_header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-
-	header.add_child(lap_header)
-
-	var time_header := Label.new()
-	time_header.text = "Temps"
-	time_header.custom_minimum_size.x = 100
-	time_header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-
-	header.add_child(time_header)
-
-	for section_index in range(section_count):
-
-		var section_header := Label.new()
-
-		section_header.text = (
-			"S%d"
-			% (section_index + 1)
-		)
-
-		section_header.custom_minimum_size.x = 100
-		section_header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-
-		header.add_child(section_header)
-
-	header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lap_list.add_child(header)
-
-
-	# --------------------------------------------------------
-	# Tours
-	# --------------------------------------------------------
-
 	for record in records:
-
-		var lap_row := HBoxContainer.new()
-
+		
+		var lap_label := Label.new()
+		
 		var lap_number := int(
 			record.get("lap", 0)
 		)
 
-		var lap_label := Label.new()
 
 		lap_label.text = (
 			"Tour %d"
 			% lap_number
 		)
 
-		lap_label.custom_minimum_size.x = 90
+		lap_label.custom_minimum_size.x = 100
 		lap_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		lap_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
-		lap_row.add_child(lap_label)
+		header.add_child(lap_label)
 
+	header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lap_list.add_child(header)
 
+	var lap_row := HBoxContainer.new()
+	
+	for record in records:
 		# ----------------------------------------------------
 		# Temps du tour
 		# ----------------------------------------------------
-
+		var lap_time_label := Label.new()
+		
 		var lap_time := float(
 			record.get("lap_time", 0.0)
 		)
-
-		var lap_time_label := Label.new()
 
 		lap_time_label.text = _format_time(
 			lap_time
@@ -199,87 +161,13 @@ func _build_laps(
 			)
 
 		lap_time_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		lap_time_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lap_row.add_child(
 			lap_time_label
 		)
 
-
-		# ----------------------------------------------------
-		# Temps intermédiaires
-		# ----------------------------------------------------
-
-		var section_times: Array = (
-			record.get(
-				"section_times",
-				[]
-			)
-		)
-
-		for section_index in range(section_count):
-
-			var section_label := Label.new()
-
-			if section_index < section_times.size():
-
-				var section_time := float(
-					section_times[section_index]
-				)
-
-				section_label.text = (
-					_format_time(section_time)
-				)
-
-				# Meilleur temps absolu de la course
-				if (
-					section_index
-					< global_best_sections.size()
-					and global_best_sections[
-						section_index
-					] > 0.0
-					and is_equal_approx(
-						section_time,
-						global_best_sections[
-							section_index
-						]
-					)
-				):
-
-					section_label.modulate = (
-						GLOBAL_BEST_COLOR
-					)
-
-				# Meilleur temps personnel
-				elif (
-					section_index
-					< personal_best_sections.size()
-					and personal_best_sections[
-						section_index
-					] > 0.0
-					and is_equal_approx(
-						section_time,
-						personal_best_sections[
-							section_index
-						]
-					)
-				):
-
-					section_label.modulate = (
-						PERSONAL_BEST_COLOR
-					)
-
-			else:
-
-				section_label.text = "--"
-
-			section_label.custom_minimum_size.x = 100
-
-			section_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			lap_row.add_child(
-				section_label
-			)
-		
-		lap_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		lap_list.add_child(lap_row)
+	lap_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lap_list.add_child(lap_row)
 	
 	var spacer := HSeparator.new()
 	spacer.custom_minimum_size.y = 30

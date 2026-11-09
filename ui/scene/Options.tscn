@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://bsjoj6lc5y3ic"]
 
 [ext_resource type="Script" uid="uid://cvo80nocyslb5" path="res://ui/script/setting/Options.gd" id="1_cvpa2"]
+[ext_resource type="Script" uid="uid://cevjm5wtehw21" path="res://ui/script/MenuFocusManager.gd" id="2_usgkv"]
 
 [sub_resource type="SystemFont" id="SystemFont_re1gs"]
 font_names = PackedStringArray("Impact")
@@ -102,3 +103,7 @@ text = "RETOUR MENU PRINCIPAL"
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 size_flags_vertical = 3
+
+[node name="MenuFocusManager" type="Node" parent="." unique_id=732137818]
+script = ExtResource("2_usgkv")
+initial_focus_path = NodePath("../MarginContainer/VBoxContainer/OptionsContainer/ProfileButton")

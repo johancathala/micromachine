@@ -1,19 +1,16 @@
 extends Control
 
-@onready var back_button: Button = \
-	$MarginContainer/VBoxContainer/OptionsContainer/BackButton
+@onready var back_button: Button = $MarginContainer/VBoxContainer/OptionsContainer/BackButton
 
-@onready var profile_button: Button = \
-	$MarginContainer/VBoxContainer/OptionsContainer/ProfileButton
+@onready var profile_button: Button = $MarginContainer/VBoxContainer/OptionsContainer/ProfileButton
 
-@onready var controls_button: Button = \
-	$MarginContainer/VBoxContainer/OptionsContainer/ControlsButton
+@onready var controls_button: Button = $MarginContainer/VBoxContainer/OptionsContainer/ControlsButton
 
-@onready var audio_button: Button = \
-	$MarginContainer/VBoxContainer/OptionsContainer/AudioButton
+@onready var audio_button: Button = $MarginContainer/VBoxContainer/OptionsContainer/AudioButton
 
-@onready var display_button: Button = \
-	$MarginContainer/VBoxContainer/OptionsContainer/DisplayButton
+@onready var display_button: Button = $MarginContainer/VBoxContainer/OptionsContainer/DisplayButton
+
+@onready var focus_manager: MenuFocusManager = $MenuFocusManager
 
 
 func _ready() -> void:
@@ -24,7 +21,17 @@ func _ready() -> void:
 	audio_button.pressed.connect(_on_audio_pressed)
 	display_button.pressed.connect(_on_display_pressed)
 
-	profile_button.grab_focus()
+	set_focus()
+
+
+func set_focus() -> void:
+	focus_manager.set_vertical_navigation([
+		profile_button,
+		controls_button,
+		audio_button,
+		display_button,
+		back_button
+	])
 
 
 func _on_back_pressed() -> void:

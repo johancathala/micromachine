@@ -8,6 +8,7 @@ const MAX_VISIBLE_RECORDS := 30
 @onready var car_tabs: HBoxContainer = $MarginContainer/VBoxContainer/CarTabs
 @onready var records_list: VBoxContainer = $MarginContainer/VBoxContainer/RecordsPanel/ScrollContainer/RecordsList
 @onready var back_button: Button = $MarginContainer/VBoxContainer/Buttons/BackButton
+@onready var focus_manager: MenuFocusManager = $MenuFocusManager
 
 var selected_track_id: int = -1
 var selected_car_id: String = ""
@@ -21,6 +22,11 @@ func _ready() -> void:
 	_build_track_tabs()
 	_build_car_tabs()
 	_refresh_records()
+	
+	focus_manager.set_vertical_navigation([
+		back_button
+	])
+	focus_manager.focus_initial()
 
 
 func _build_track_tabs() -> void:

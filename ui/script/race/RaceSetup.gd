@@ -23,37 +23,23 @@ var track_catalog: Array
 var keyboard_player_joined := false
 
 
-@onready var back_button: Button = (
-	$MarginContainer/VBoxContainer/Footer/BackButton
-)
+@onready var back_button: Button = ($MarginContainer/VBoxContainer/Footer/BackButton)
 
-@onready var player_list: VBoxContainer = (
-	$MarginContainer/VBoxContainer/MainContent/PlayersPanel/PlayersMargin/PlayersVBox/PlayerListScroll/PlayerList
-)
+@onready var player_list: VBoxContainer = ($MarginContainer/VBoxContainer/MainContent/PlayersPanel/PlayersMargin/PlayersVBox/PlayerListScroll/PlayerList)
 
-@onready var join_hint: Label = (
-	$MarginContainer/VBoxContainer/MainContent/PlayersPanel/PlayersMargin/PlayersVBox/JoinHint
-)
+@onready var join_hint: Label = ($MarginContainer/VBoxContainer/MainContent/PlayersPanel/PlayersMargin/PlayersVBox/JoinHint)
 
-@onready var ai_difficulty: OptionButton = (
-	$MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/AIDifficultyRow/AIDifficulty
-)
+@onready var ai_difficulty: OptionButton = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/AIDifficultyRow/AIDifficulty)
 
-@onready var track_selector: OptionButton = (
-	$MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TrackRow/Track
-)
+@onready var track_selector: OptionButton = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TrackRow/Track)
 
-@onready var lap_selector: OptionButton = (
-	$MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/LapCountRow/LapCount
-)
+@onready var lap_selector: OptionButton = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/LapCountRow/LapCount)
 
-@onready var start_button: Button = (
-	$MarginContainer/VBoxContainer/Footer/StartButton
-)
+@onready var start_button: Button = ($MarginContainer/VBoxContainer/Footer/StartButton)
 
-@onready var help_label: Label = (
-	$MarginContainer/VBoxContainer/Footer/HelpLabel
-)
+@onready var help_label: Label = ($MarginContainer/VBoxContainer/Footer/HelpLabel)
+
+@onready var focus_manager: MenuFocusManager = $MenuFocusManager
 
 func _ready() -> void:
 	AudioManager.bind_sound_btt()
@@ -68,7 +54,18 @@ func _ready() -> void:
 	_connect_signals()
 	_refresh_ui()
 
-	back_button.grab_focus()
+
+func set_focus() -> void:
+	focus_manager.set_vertical_navigation([
+		ai_difficulty,
+		track_selector,
+		lap_selector
+	])
+	
+	focus_manager.set_neighbors(lap_selector,track_selector,back_button)
+	focus_manager.set_neighbors(back_button,lap_selector,ai_difficulty,start_button,start_button)
+	focus_manager.set_neighbors(start_button,lap_selector,ai_difficulty,back_button,back_button)
+
 
 
 func _exit_tree() -> void:
@@ -298,6 +295,7 @@ func _refresh_ui() -> void:
 	_refresh_players()
 	_refresh_start_button()
 	_refresh_join_hint()
+	set_focus()
 
 
 func _refresh_players() -> void:

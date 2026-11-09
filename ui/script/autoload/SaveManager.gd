@@ -295,6 +295,28 @@ func reset_audio_settings() -> void:
 
 	save_profile()
 
+func apply_audio_settings() -> void:
+	AudioServer.set_bus_volume_linear(
+		AudioServer.get_bus_index("Master"),
+		audio_settings.get("master_volume", 1.0)
+	)
+
+	var music_bus := AudioServer.get_bus_index("Music")
+
+	if music_bus >= 0:
+		AudioServer.set_bus_volume_linear(
+			music_bus,
+			audio_settings.get("music_volume", 1.0)
+		)
+
+	var sfx_bus := AudioServer.get_bus_index("SFX")
+
+	if sfx_bus >= 0:
+		AudioServer.set_bus_volume_linear(
+			sfx_bus,
+			audio_settings.get("sfx_volume", 1.0)
+		)
+
 
 func _ensure_audio_structure() -> void:
 	if not audio_settings is Dictionary:

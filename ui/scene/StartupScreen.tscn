@@ -30,43 +30,38 @@ color = Color(0.36862746, 0.5058824, 1, 1)
 
 [node name="MarginContainer" type="MarginContainer" parent="." unique_id=1681882132]
 layout_mode = 0
-offset_left = 45.0
-offset_top = 45.0
-offset_right = 1875.0
-offset_bottom = 1030.0
+anchor_left = 0.0234375
+anchor_top = 0.041666668
+anchor_right = 0.9765625
+anchor_bottom = 0.9537037
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=1616157434]
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=1302473185]
 layout_mode = 2
+size_flags_vertical = 3
 alignment = 1
 
 [node name="Control" type="Control" parent="MarginContainer/VBoxContainer" unique_id=756519482]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=1302473185]
-layout_mode = 2
-size_flags_vertical = 3
-alignment = 1
-
-[node name="Logo" type="Label" parent="MarginContainer/VBoxContainer/VBoxContainer" unique_id=295111644]
+[node name="Logo" type="Label" parent="MarginContainer/VBoxContainer" unique_id=295111644]
 layout_mode = 2
 theme_override_font_sizes/font_size = 120
 text = "MICRO RACER"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="LoadingLabel" type="Label" parent="MarginContainer/VBoxContainer/VBoxContainer" unique_id=1835923041]
+[node name="LoadingLabel" type="Label" parent="MarginContainer/VBoxContainer" unique_id=1835923041]
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
-size_flags_vertical = 6
 theme_override_font_sizes/font_size = 40
 text = "Chargement . . ."
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="LoadingProgress" type="ProgressBar" parent="MarginContainer/VBoxContainer/VBoxContainer" unique_id=936937629]
+[node name="LoadingProgress" type="ProgressBar" parent="MarginContainer/VBoxContainer" unique_id=936937629]
 layout_mode = 2
-size_flags_vertical = 2
+size_flags_vertical = 4
 
 [node name="Control2" type="Control" parent="MarginContainer/VBoxContainer" unique_id=1256497749]
 layout_mode = 2

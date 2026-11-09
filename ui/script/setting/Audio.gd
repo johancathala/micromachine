@@ -1,6 +1,6 @@
 extends Control
 
-
+@onready var focus_manager: MenuFocusManager = $MenuFocusManager
 @onready var back_button: Button = \
 	$MarginContainer/VBoxContainer/Footer/BackButton
 
@@ -22,7 +22,16 @@ func _ready() -> void:
 	_load_values()
 	_connect_signals()
 
-	master_slider.grab_focus()
+	focus_manager.set_vertical_navigation([
+		master_slider,
+		music_slider,
+		sfx_slider,
+		back_button
+	])
+	focus_manager.set_neighbors(back_button,null,null,reset_button,reset_button)
+	focus_manager.set_neighbors(reset_button,null,null,back_button,back_button)
+
+	focus_manager.set_focus(master_slider)
 
 
 func _connect_signals() -> void:
@@ -95,26 +104,7 @@ func _on_sfx_changed(value: float) -> void:
 
 
 func _apply_audio() -> void:
-	AudioServer.set_bus_volume_linear(
-		AudioServer.get_bus_index("Master"),
-		master_slider.value
-	)
-
-	var music_bus := AudioServer.get_bus_index("Music")
-
-	if music_bus >= 0:
-		AudioServer.set_bus_volume_linear(
-			music_bus,
-			music_slider.value
-		)
-
-	var sfx_bus := AudioServer.get_bus_index("SFX")
-
-	if sfx_bus >= 0:
-		AudioServer.set_bus_volume_linear(
-			sfx_bus,
-			sfx_slider.value
-		)
+	SaveManager.apply_audio_settings()
 
 
 func _on_reset_pressed() -> void:

@@ -14,7 +14,7 @@ config/name="Micro Racer"
 run/main_scene="uid://ck7vxha80cbet"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 boot_splash/bg_color=Color(0.26443154, 0.22560203, 0.057039417, 1)
-config/icon="res://icon.svg"
+config/icon="uid://c6mswkgfk54b1"
 
 [audio]
 

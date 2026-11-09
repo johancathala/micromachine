@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://fou2tf3hf5y5" path="res://ui/script/race/RaceSetup.gd" id="1_droqj"]
 [ext_resource type="Texture2D" uid="uid://hk45ullq5mw2" path="res://level/sprite/minia/classique.png" id="2_5p202"]
+[ext_resource type="Script" uid="uid://cevjm5wtehw21" path="res://ui/script/MenuFocusManager.gd" id="3_p1law"]
 
 [sub_resource type="SystemFont" id="SystemFont_pw13x"]
 font_names = PackedStringArray("Impact")
@@ -230,3 +231,7 @@ text = "CHOIX DES VOITURES"
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
+
+[node name="MenuFocusManager" type="Node" parent="." unique_id=1044521647]
+script = ExtResource("3_p1law")
+initial_focus_path = NodePath("../MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/AIDifficultyRow/AIDifficulty")

@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://djhjck1vd2may"]
 
 [ext_resource type="Script" uid="uid://cygjy0kkb5ihr" path="res://ui/script/player/Profile.gd" id="1_2ska2"]
+[ext_resource type="Script" uid="uid://cevjm5wtehw21" path="res://ui/script/MenuFocusManager.gd" id="2_qlp2h"]
 
 [sub_resource type="SystemFont" id="SystemFont_re1gs"]
 font_names = PackedStringArray("Impact")
@@ -131,3 +132,7 @@ text = "Sauvegarder"
 [node name="Control2" type="Control" parent="MarginContainer/VBoxContainer/Footer" unique_id=707865884]
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="MenuFocusManager" type="Node" parent="." unique_id=1240625006]
+script = ExtResource("2_qlp2h")
+initial_focus_path = NodePath("../MarginContainer/VBoxContainer/VBoxContainer/NicknameEdit")

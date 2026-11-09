@@ -30,6 +30,7 @@ signal quit_control()
 @onready var reset_button: Button = \
 	$MarginContainer/VBoxContainer/Footer/ResetButton
 
+@onready var focus_manager: MenuFocusManager = $MenuFocusManager
 #var opened_from_pause := false
 
 var selected_device_type := "keyboard"
@@ -62,9 +63,15 @@ func _ready() -> void:
 		_on_device_selected
 	)
 
-	device_option.grab_focus()
 	AudioManager.bind_sound_btt()
 
+
+func set_focus() -> void:
+	
+	focus_manager.set_neighbors(back_button,null,null,reset_button,reset_button)
+	focus_manager.set_neighbors(reset_button,null,null,back_button,back_button)
+
+	focus_manager.focus_initial()
 
 func _setup_devices() -> void:
 	device_option.clear()
@@ -112,7 +119,7 @@ func _refresh_controls() -> void:
 			_on_binding_requested
 		)
 		
-		device_option.grab_focus()
+	set_focus()
 
 
 func _on_device_selected(index: int) -> void:

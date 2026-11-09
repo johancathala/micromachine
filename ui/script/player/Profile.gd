@@ -1,17 +1,15 @@
 extends Control
 
 
-@onready var back_button: Button = \
-	$MarginContainer/VBoxContainer/Footer/BackButton
+@onready var back_button: Button = $MarginContainer/VBoxContainer/Footer/BackButton
 
-@onready var nickname_edit: LineEdit = \
-	$MarginContainer/VBoxContainer/VBoxContainer/NicknameEdit
+@onready var nickname_edit: LineEdit = $MarginContainer/VBoxContainer/VBoxContainer/NicknameEdit
 
-@onready var error_label: Label = \
-	$MarginContainer/VBoxContainer/VBoxContainer/ErrorLabel
+@onready var error_label: Label = $MarginContainer/VBoxContainer/VBoxContainer/ErrorLabel
 
-@onready var save_button: Button = \
-	$MarginContainer/VBoxContainer/Footer/SaveButton
+@onready var save_button: Button = $MarginContainer/VBoxContainer/Footer/SaveButton
+
+@onready var focus_manager: MenuFocusManager = $MenuFocusManager
 
 
 func _ready() -> void:
@@ -27,8 +25,18 @@ func _ready() -> void:
 		_on_nickname_submitted
 	)
 
-	nickname_edit.grab_focus()
+	set_focus()
 	AudioManager.bind_sound_btt()
+
+
+func set_focus() -> void:
+	focus_manager.set_vertical_navigation([
+		nickname_edit,
+		save_button
+	])
+	
+	focus_manager.set_neighbors(back_button,null,null,save_button,save_button)
+	focus_manager.set_neighbors(save_button,null,null,back_button,back_button)
 
 
 func _on_back_pressed() -> void:

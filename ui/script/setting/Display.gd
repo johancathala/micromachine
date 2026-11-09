@@ -16,30 +16,19 @@ const UI_SCALES := {
 	"large": 1.15
 }
 
-@onready var mode_option: OptionButton = (
-	$MarginContainer/VBoxContainer/DisplayContainer/ModeRow/ModeOption
-)
+@onready var mode_option: OptionButton = ($MarginContainer/VBoxContainer/DisplayContainer/ModeRow/ModeOption)
 
-@onready var resolution_option: OptionButton = (
-	$MarginContainer/VBoxContainer/DisplayContainer/ResolutionRow/ResolutionOption
-)
+@onready var resolution_option: OptionButton = ($MarginContainer/VBoxContainer/DisplayContainer/ResolutionRow/ResolutionOption)
 
-@onready var vsync_option: OptionButton = (
-	$MarginContainer/VBoxContainer/DisplayContainer/VSyncRow/VSyncOption
-)
+@onready var vsync_option: OptionButton = ($MarginContainer/VBoxContainer/DisplayContainer/VSyncRow/VSyncOption)
 
-@onready var ui_scale_option: OptionButton = (
-	$MarginContainer/VBoxContainer/DisplayContainer/UIScaleRow/UIScaleOption
-)
+@onready var ui_scale_option: OptionButton = ($MarginContainer/VBoxContainer/DisplayContainer/UIScaleRow/UIScaleOption)
 
-@onready var reset_button: Button = (
-	$MarginContainer/VBoxContainer/Footer/ResetButton
-)
+@onready var reset_button: Button = ($MarginContainer/VBoxContainer/Footer/ResetButton)
 
-@onready var back_button: Button = (
-	$MarginContainer/VBoxContainer/Footer/BackButton
-)
+@onready var back_button: Button = ($MarginContainer/VBoxContainer/Footer/BackButton)
 
+@onready var focus_manager: MenuFocusManager = $MenuFocusManager
 
 func _ready() -> void:
 	_setup_mode_options()
@@ -50,10 +39,27 @@ func _ready() -> void:
 	_load_settings()
 	_connect_signals()
 
-	back_button.grab_focus()
+	set_focus()
 	AudioManager.bind_sound_btt()
 
 
+func set_focus(btt_focus: Control = null) -> void:
+	
+	focus_manager.set_vertical_navigation([
+		mode_option,
+		resolution_option,
+		vsync_option,
+		ui_scale_option,
+		back_button
+	])
+	
+	focus_manager.set_neighbors(back_button,null,null,reset_button,reset_button)
+	focus_manager.set_neighbors(reset_button,null,null,back_button,back_button)
+
+	if !btt_focus:
+		focus_manager.focus_initial()
+	else:
+		focus_manager.set_focus(btt_focus)
 # ============================================================
 # INITIALISATION DES LISTES
 # ============================================================

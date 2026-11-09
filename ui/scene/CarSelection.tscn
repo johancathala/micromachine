@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://che7u1xas0q6"]
 
 [ext_resource type="Script" uid="uid://cay0ku6c802g" path="res://ui/script/race/CarSelection.gd" id="1_vv833"]
+[ext_resource type="Script" uid="uid://cevjm5wtehw21" path="res://ui/script/MenuFocusManager.gd" id="2_rfpr3"]
 
 [sub_resource type="SystemFont" id="SystemFont_vv833"]
 font_names = PackedStringArray("Impact")
@@ -166,3 +167,7 @@ horizontal_alignment = 1
 [node name="StartButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" unique_id=184580182 groups=["audio_confirm"]]
 layout_mode = 2
 text = "COMMENCER LA COURSE"
+
+[node name="MenuFocusManager" type="Node" parent="." unique_id=1942512455]
+script = ExtResource("2_rfpr3")
+initial_focus_path = NodePath("../MarginContainer/VBoxContainer/Footer/BackButton")

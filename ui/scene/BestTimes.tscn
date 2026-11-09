@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://c3j3krew7mnge"]
 
 [ext_resource type="Script" uid="uid://heg12k62qdpq" path="res://ui/script/race/BestTimes.gd" id="1_dnk5q"]
+[ext_resource type="Script" uid="uid://cevjm5wtehw21" path="res://ui/script/MenuFocusManager.gd" id="2_up7vf"]
 
 [sub_resource type="SystemFont" id="SystemFont_up7vf"]
 font_names = PackedStringArray("Impact")
@@ -102,3 +103,7 @@ layout_mode = 2
 layout_mode = 2
 theme_override_font_sizes/font_size = 40
 text = "RETOUR AU MENU PRINCIPAL"
+
+[node name="MenuFocusManager" type="Node" parent="." unique_id=1778727305]
+script = ExtResource("2_up7vf")
+initial_focus_path = NodePath("../MarginContainer/VBoxContainer/Buttons/BackButton")

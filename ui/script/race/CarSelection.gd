@@ -7,6 +7,7 @@ var selected_participant_index: int = -1
 var cars: Array[CarDefinition] = []
 var colors: Array = []
 
+@onready var focus_manager: MenuFocusManager = $MenuFocusManager
 
 @onready var back_button: Button = $MarginContainer/VBoxContainer/Footer/BackButton
 
@@ -53,7 +54,20 @@ func _ready() -> void:
 	back_button.pressed.connect(_on_back_pressed)
 
 	AudioManager.bind_sound_btt()
-	back_button.grab_focus()
+	
+	focus_manager.set_vertical_navigation([
+		car_grid,
+		color_grid,
+		start_button
+	])
+	
+	focus_manager.set_neighbors(car_grid,null,null,participant_list,participant_list)
+	focus_manager.set_neighbors(participant_list,null,null,car_grid,car_grid)
+	
+	focus_manager.set_neighbors(back_button,null,null,start_button,start_button)
+	focus_manager.set_neighbors(start_button,null,null,back_button,back_button)
+
+	focus_manager.focus_initial()
 
 
 func _setup_participant_defaults() -> void:
@@ -303,6 +317,7 @@ func _on_toggle_pressed(index: int) -> void:
 	_refresh_car_buttons()
 	_refresh_color_buttons()
 	_refresh_preview()
+	focus_manager.set_focus(back_button)
 
 func _refresh_car_buttons() -> void:
 	if selected_participant_index < 0:

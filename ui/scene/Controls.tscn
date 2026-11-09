@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://jlyr8ol625lx"]
 
 [ext_resource type="Script" uid="uid://cg3gsl8i4s1sb" path="res://ui/script/setting/Controls.gd" id="1_mdrwf"]
+[ext_resource type="Script" uid="uid://cevjm5wtehw21" path="res://ui/script/MenuFocusManager.gd" id="2_oiw85"]
 
 [sub_resource type="SystemFont" id="SystemFont_re1gs"]
 font_names = PackedStringArray("Impact")
@@ -141,3 +142,7 @@ text = "REINISTIALISER"
 [node name="Control2" type="Control" parent="MarginContainer/VBoxContainer/Footer" unique_id=1909148586]
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="MenuFocusManager" type="Node" parent="." unique_id=1574497058]
+script = ExtResource("2_oiw85")
+initial_focus_path = NodePath("../MarginContainer/VBoxContainer/DeviceSelector/DeviceOption")

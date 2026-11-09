@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://dyeklntwsjnvm"]
 
 [ext_resource type="Script" uid="uid://c8e650pfgppyt" path="res://ui/script/race/RaceRecap.gd" id="1_6teyk"]
+[ext_resource type="Script" uid="uid://cevjm5wtehw21" path="res://ui/script/MenuFocusManager.gd" id="2_56dvk"]
 
 [sub_resource type="SystemFont" id="SystemFont_anga4"]
 font_names = PackedStringArray("Impact")
@@ -125,3 +126,7 @@ size_flags_horizontal = 3
 [node name="RestartButton" type="Button" parent="MarginContainer/VBoxContainer/Buttons" unique_id=1785055774]
 layout_mode = 2
 text = "REDEMARRER LA COURSE"
+
+[node name="MenuFocusManager" type="Node" parent="." unique_id=756675659]
+script = ExtResource("2_56dvk")
+initial_focus_path = NodePath("../MarginContainer/VBoxContainer/Buttons/MainMenuButton")

@@ -7,38 +7,23 @@ const RESULT_ROW_SCENE := preload(
 )
 
 
-@onready var title_label: Label = (
-	$MarginContainer/VBoxContainer/Title
-)
+@onready var title_label: Label = $MarginContainer/VBoxContainer/Title
 
-@onready var track_name_label: Label = (
-	$MarginContainer/VBoxContainer/TrackName
-)
+@onready var track_name_label: Label = $MarginContainer/VBoxContainer/TrackName
 
-@onready var results_list: VBoxContainer = (
-	$MarginContainer/VBoxContainer/ResultsPanel/MarginContainer/ResultsScroll/ResultsList
-)
+@onready var results_list: VBoxContainer = $MarginContainer/VBoxContainer/ResultsPanel/MarginContainer/ResultsScroll/ResultsList
 
-@onready var best_lap_name_label: Label = (
-	$MarginContainer/VBoxContainer/BestLapPanel/BestLapNameLabel
-)
+@onready var best_lap_name_label: Label = $MarginContainer/VBoxContainer/BestLapPanel/BestLapNameLabel
 
-@onready var best_lap_label: Label = (
-	$MarginContainer/VBoxContainer/BestLapPanel/BestLapLabel
-)
+@onready var best_lap_label: Label = $MarginContainer/VBoxContainer/BestLapPanel/BestLapLabel
 
-@onready var restart_button: Button = (
-	$MarginContainer/VBoxContainer/Buttons/RestartButton
-)
+@onready var restart_button: Button = $MarginContainer/VBoxContainer/Buttons/RestartButton
 
-@onready var track_selection_button: Button = (
-	$MarginContainer/VBoxContainer/Buttons/TrackSelectionButton
-)
+@onready var track_selection_button: Button = $MarginContainer/VBoxContainer/Buttons/TrackSelectionButton
 
-@onready var main_menu_button: Button = (
-	$MarginContainer/VBoxContainer/Buttons/MainMenuButton
-)
+@onready var main_menu_button: Button = $MarginContainer/VBoxContainer/Buttons/MainMenuButton
 
+@onready var focus_manager: MenuFocusManager = $MenuFocusManager
 
 var results: Array[Dictionary] = []
 
@@ -74,6 +59,18 @@ func _ready() -> void:
 
 	_build_results()
 	AudioManager.bind_sound_btt()
+	set_focus()
+
+
+func set_focus() -> void:
+	focus_manager.set_vertical_navigation([
+		results_list,
+		main_menu_button
+	])
+	
+	focus_manager.set_neighbors(main_menu_button,null,null,restart_button,track_selection_button)
+	focus_manager.set_neighbors(track_selection_button,null,null,main_menu_button,restart_button)
+	focus_manager.set_neighbors(restart_button,null,null,track_selection_button,main_menu_button)
 
 
 func _build_results() -> void:
