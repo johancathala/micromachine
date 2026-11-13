@@ -133,6 +133,10 @@ func _connect_controller_signals() -> void:
 		_on_start_reactions_judged
 	)
 
+	race_controller.time_trial_lap_cancelled.connect(
+		func(state): show_player_message(state, "TOUR ANNULÉ\nretour en fond de grille", 2.5)
+	)
+
 	if race_controller.ghost_manager != null:
 		race_controller.ghost_manager.new_record.connect(_on_ghost_record)
 		race_controller.race_started.connect(_announce_ghost)

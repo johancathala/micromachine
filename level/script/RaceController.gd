@@ -31,6 +31,10 @@ signal race_end_countdown_started(
 
 signal race_finished()
 
+# Contre-la-montre : réapparition = retour au fond de grille, le tour
+# en cours est annulé.
+signal time_trial_lap_cancelled(state: RaceParticipantState)
+
 # Un participant a coupé : il a franchi une section plus loin que celle
 # qu'il devait passer. Il explose et réapparaît à la section sautée.
 signal shortcut_detected(state: RaceParticipantState, missed_section: int)
@@ -449,6 +453,13 @@ func _initialize_participants() -> bool:
 		
 		var spawn := race_world.get_spawn_point(car.participant_id)
 		update_respawn_point(state,spawn)
+
+		# Place réelle sur la grille (elle peut différer de l'ordre des
+		# participants, ex. contre-la-montre en fond de grille).
+		state.grid_transform = car.global_transform
+
+		if race_config.is_time_trial():
+			state.respawn_transform = state.grid_transform
 
 	if participants.is_empty():
 
@@ -943,6 +954,20 @@ func request_respawn(car: Car) -> void:
 		print("respawn: voiture invalide")
 		return
 	
+	# Contre-la-montre : une erreur gâche le chrono. Retour au fond de
+	# grille, le tour en cours est annulé (le chrono repartira au
+	# prochain passage de la ligne).
+	if race_config.is_time_trial():
+		state.respawn_transform = state.grid_transform
+		state.pending_section_validation = -1
+
+		if state.has_started_lap:
+			state.current_lap = maxi(state.current_lap - 1, 0)
+			state.has_started_lap = false
+			state.next_section = 0
+			state.section_times.clear()
+			time_trial_lap_cancelled.emit(state)
+
 	print("respawn: destruction en cours ? "+str(state.car._destruction_started))
 	if state.car._destruction_started == false:
 		state.car.respawn_at(state.respawn_transform)
@@ -1031,7 +1056,9 @@ func _start_first_lap(
 
 	state.has_started_lap = true
 
-	state.current_lap = 1
+	# 0 -> 1 au départ ; en contre-la-montre, un tour annulé est refait
+	# sans compter un tour de plus.
+	state.current_lap += 1
 
 	state.lap_start_time = current_time
 

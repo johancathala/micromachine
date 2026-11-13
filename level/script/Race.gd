@@ -102,10 +102,17 @@ func _spawn_cars() -> bool:
 		)
 		return false
 
+	# Contre-la-montre : départ en fond de grille.
+	var spawn_count := race_world.current_track.get_node("SpawnPoints").get_child_count()
+
 	for spawn_index in range(participants.size()):
 		var participant: Dictionary = participants[spawn_index]
-		
-		if not _spawn_participant(participant, spawn_index):
+		var grid_index := spawn_index
+
+		if race_config.is_time_trial():
+			grid_index = spawn_count - 1 - spawn_index
+
+		if not _spawn_participant(participant, grid_index):
 			return false
 
 	return true
