@@ -74,6 +74,14 @@ func refresh() -> void:
 		% participant.current_lap
 	)
 
+	# Usure des pneus (option de course classique).
+	if (
+		race_controller.pit_stops != null
+		and not participant.is_ai
+		and is_instance_valid(participant.car)
+	):
+		lap_label.text += " | PNEUS %d%%" % int(participant.car.tire_wear * 100.0)
+
 	# Mode élimination : points et état dans la manche.
 	if race_controller.is_elimination_mode():
 		lap_label.text = " | %d PTS" % participant.points

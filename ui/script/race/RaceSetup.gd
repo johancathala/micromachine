@@ -44,6 +44,10 @@ const TARGET_SCORES := [5, 10, 15, 20, 30]
 
 @onready var screen_mode_selector: OptionButton = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/ScreenModeRow/ScreenMode)
 
+@onready var tire_wear_row: HBoxContainer = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TireWearRow)
+
+@onready var tire_wear_selector: OptionButton = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TireWearRow/TireWear)
+
 enum ScreenMode {
 	SHARED,
 	SPLIT
@@ -80,6 +84,9 @@ func set_focus() -> void:
 	if screen_mode_row.visible:
 		settings.append(screen_mode_selector)
 
+	if tire_wear_row.visible:
+		settings.append(tire_wear_selector)
+
 	if target_score_row.visible:
 		settings.append(target_score_selector)
 
@@ -111,8 +118,18 @@ func _setup_settings() -> void:
 	_setup_tracks()
 	_setup_game_types()
 	_setup_screen_modes()
+	_setup_tire_wear()
 	_setup_target_scores()
 	_apply_game_type_ui()
+
+
+func _setup_tire_wear() -> void:
+	tire_wear_selector.clear()
+
+	tire_wear_selector.add_item("Non", 0)
+	tire_wear_selector.add_item("Oui (arrêts au stand)", 1)
+
+	tire_wear_selector.select(1 if race_config.tire_wear else 0)
 
 
 func _setup_screen_modes() -> void:
@@ -172,6 +189,8 @@ func _apply_game_type_ui() -> void:
 	target_score_row.visible = elimination
 	# L'écran splitté ne concerne que la course classique.
 	screen_mode_row.visible = not elimination
+	# Usure des pneus : course classique uniquement.
+	tire_wear_row.visible = not elimination
 	ai_difficulty.disabled = elimination
 	lap_selector.disabled = elimination
 
@@ -269,6 +288,10 @@ func _connect_signals() -> void:
 
 	screen_mode_selector.item_selected.connect(
 		_on_screen_mode_changed
+	)
+
+	tire_wear_selector.item_selected.connect(
+		_on_tire_wear_changed
 	)
 
 	# IMPORTANT :
@@ -506,6 +529,10 @@ func _on_game_type_changed(index: int) -> void:
 
 	_apply_game_type_ui()
 	_refresh_ui()
+
+
+func _on_tire_wear_changed(index: int) -> void:
+	race_config.tire_wear = tire_wear_selector.get_item_id(index) == 1
 
 
 func _on_screen_mode_changed(index: int) -> void:

@@ -144,6 +144,9 @@ var start_lights: RaceStartLights = null
 # Créé uniquement si race_config.is_elimination().
 var elimination_rules: EliminationRules = null
 
+# Usure des pneus et arrêts au stand (option de course classique).
+var pit_stops: PitStopManager = null
+
 const RACE_END_DELAY := 30.0
 
 
@@ -200,6 +203,12 @@ func initialize(
 
 	if race_config.is_elimination():
 		_initialize_elimination()
+
+	if race_config.uses_tire_wear():
+		pit_stops = PitStopManager.new()
+		pit_stops.name = "PitStopManager"
+		add_child(pit_stops)
+		pit_stops.setup(self)
 
 	return true
 

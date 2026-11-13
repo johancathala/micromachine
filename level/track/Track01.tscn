@@ -15,6 +15,7 @@
 [ext_resource type="PackedScene" uid="uid://ywkaj1nq1n1d" path="res://level/track/WaterArea.tscn" id="11_3j51r"]
 [ext_resource type="PackedScene" uid="uid://cfqp5ae3g5f7" path="res://level/scene/Citerne.tscn" id="11_c6864"]
 [ext_resource type="PackedScene" uid="uid://c1sce1qwjlpns" path="res://level/scene/Baril_toxic.tscn" id="12_fjbng"]
+[ext_resource type="Script" path="res://level/script/PitStop.gd" id="pitstop_script"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_p52qu"]
 size = Vector2(477, 1431)
@@ -90,6 +91,9 @@ size = Vector2(109, 293)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_4dbdo"]
 size = Vector2(74.173096, 913.9871)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pitstop"]
+size = Vector2(160, 2000)
 
 [node name="Track01" type="Node2D" unique_id=1561549427]
 y_sort_enabled = true
@@ -519,3 +523,10 @@ rotation = -1.5707964
 [node name="Sapwn08" type="Marker2D" parent="SpawnPoints" unique_id=262973386]
 position = Vector2(928, 3550)
 rotation = -1.5707964
+
+[node name="PitStop" type="Area2D" parent="."]
+position = Vector2(100, 385)
+script = ExtResource("pitstop_script")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PitStop"]
+shape = SubResource("RectangleShape2D_pitstop")

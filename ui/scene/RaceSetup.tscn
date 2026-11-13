@@ -210,6 +210,19 @@ horizontal_alignment = 1
 layout_mode = 2
 size_flags_horizontal = 3
 
+[node name="TireWearRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TireWearRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Usure des pneus"
+horizontal_alignment = 1
+
+[node name="TireWear" type="OptionButton" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TireWearRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
 [node name="TargetScoreRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox"]
 layout_mode = 2
 

@@ -143,6 +143,37 @@ var _respawning := false
 var slipstream_factor: float = 0.0
 
 # ---------------------------
+# USURE DES PNEUS
+# ---------------------------
+# Activée par la course (option « Usure des pneus »).
+var tire_wear_enabled: bool = false
+# 0 = pneus neufs, 1 = pneus complètement usés.
+var tire_wear: float = 0.0
+# Distance (px) pour user complètement les pneus sans glisser
+# (~1,5 tour de Track01 avant le « BOX » à 60 %).
+@export_range(1000.0, 1000000.0, 1000.0) var tire_wear_distance: float = 150000.0
+# La glisse use plus vite (x3 en pleine glisse).
+@export_range(0.0, 10.0, 0.1) var tire_wear_slip_factor: float = 2.0
+# Adhérence restante avec des pneus complètement usés (35 %).
+@export_range(0.0, 1.0, 0.01) var worn_tire_grip: float = 0.35
+# Freinage / motricité restants avec des pneus usés.
+@export_range(0.0, 1.0, 0.01) var worn_tire_brake: float = 0.7
+@export_range(0.0, 1.0, 0.01) var worn_tire_traction: float = 0.8
+
+
+## Effet de l'usure, progressif : faible au début, très marqué
+## en fin de vie des pneus (courbe quadratique).
+func _tire_effect(worn_value: float) -> float:
+	if not tire_wear_enabled:
+		return 1.0
+
+	return lerpf(1.0, worn_value, tire_wear * tire_wear)
+
+
+func reset_tires() -> void:
+	tire_wear = 0.0
+
+# ---------------------------
 # DÉPART (réaction au feu vert)
 # ---------------------------
 # Modificateur de puissance moteur appliqué au départ :
@@ -395,6 +426,7 @@ func _process_movement(_delta: float) -> void:
 	# Forces longitudinales
 	var force_long: float = _calculate_longitudinal_forces(speed, v_long_scalar)
 	var grip_mult: float = 1.0 if not handbrake else handbrake_grip_multiplier
+	grip_mult *= _tire_effect(worn_tire_grip)
 
 	# Apply longitudinal acceleration
 	v_long += fwd * (force_long * _delta)
@@ -422,6 +454,14 @@ func _process_movement(_delta: float) -> void:
 	# FX SYSTEM
 	# ======================
 	var slip = _compute_slip_intensity(v_lat_scalar, speed)
+
+	# Usure des pneus : distance parcourue, accélérée par la glisse.
+	if tire_wear_enabled and speed > 1.0:
+		tire_wear = minf(
+			tire_wear
+			+ speed * _delta / tire_wear_distance * (1.0 + tire_wear_slip_factor * slip),
+			1.0
+		)
 
 	# Faux départ : les roues patinent (fumée, traces, crissement).
 	if _start_wheelspin and throttle > 0.1:
@@ -844,12 +884,12 @@ func _calculate_longitudinal_forces(_speed: float, v_long_scalar: float) -> floa
 			1.0 + _start_engine_bonus * _get_start_effect_fade(),
 			0.0
 		)
-		force_long += engine_force * _current_engine_mul * throttle * engine_fade * start_mul
+		force_long += engine_force * _current_engine_mul * throttle * engine_fade * start_mul * _tire_effect(worn_tire_traction)
 
 	# Brake or reverse
 	if brake > 0.001:
 		if v_long_scalar > 60.0:
-			force_long -= brake_force * _current_brake_mul * brake
+			force_long -= brake_force * _current_brake_mul * brake * _tire_effect(worn_tire_brake)
 		else:
 			if v_long_scalar < 10.0:
 				var rev_fade: float = 1.0 - clamp(_speed / max_reverse_speed, 0.0, 1.0) * 0.35

@@ -106,6 +106,15 @@ func _connect_controller_signals() -> void:
 		_on_start_reactions_judged
 	)
 
+	if race_controller.pit_stops != null:
+		var pits := race_controller.pit_stops
+
+		pits.box_requested.connect(_on_box_requested)
+		pits.pit_started.connect(_on_pit_changed.bind(""))
+		pits.pit_progress.connect(func(state, _i): _on_pit_changed(state, []))
+		pits.pit_error.connect(func(state): _on_pit_changed(state, [], "ERREUR ! On recommence"))
+		pits.pit_finished.connect(_on_pit_finished)
+
 	if race_controller.is_elimination_mode():
 		var rules := race_controller.elimination_rules
 
@@ -132,6 +141,83 @@ func _show_message(text: String, duration: float = 0.0) -> void:
 
 	if id == _message_id:
 		message_label.hide()
+
+
+# ------------------------------------------------------------------
+# USURE DES PNEUS / STAND
+# ------------------------------------------------------------------
+var _qte_label: Label = null
+
+
+func _on_box_requested(state: RaceParticipantState, wear: float) -> void:
+	_show_message(
+		"%s : BOX, BOX ! (pneus usés à %d %%)" % [
+			state.nickname.to_upper(),
+			int(wear * 100.0)
+		],
+		3.0
+	)
+
+
+func _get_qte_label() -> Label:
+	if _qte_label == null:
+		_qte_label = Label.new()
+		_qte_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_qte_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+		_qte_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
+		_qte_label.grow_vertical = Control.GROW_DIRECTION_BEGIN
+		_qte_label.offset_bottom = -60.0
+		_qte_label.add_theme_font_size_override("font_size", 40)
+		_qte_label.add_theme_color_override("font_outline_color", Color.BLACK)
+		_qte_label.add_theme_constant_override("outline_size", 10)
+		add_child(_qte_label)
+
+	return _qte_label
+
+
+## Une ligne par joueur au stand : directions réussies entre
+## crochets, direction attendue soulignée par des chevrons.
+func _refresh_qte_label(notice: Dictionary = {}) -> void:
+	var lines: PackedStringArray = []
+
+	for state in race_controller.get_participant_states():
+		var qte := race_controller.pit_stops.get_qte(state)
+
+		if qte.is_empty():
+			continue
+
+		var parts: PackedStringArray = []
+		var sequence: Array = qte["sequence"]
+
+		for i in range(sequence.size()):
+			var symbol: String = PitStopManager.DIRECTION_SYMBOLS[sequence[i]]
+
+			if i < qte["index"]:
+				parts.append("[%s]" % symbol)
+			elif i == qte["index"]:
+				parts.append("> %s <" % symbol)
+			else:
+				parts.append(symbol)
+
+		var line := "%s AU STAND :  %s" % [state.nickname.to_upper(), "  ".join(parts)]
+
+		if notice.has(state):
+			line += "   " + String(notice[state])
+
+		lines.append(line)
+
+	var label := _get_qte_label()
+	label.text = "\n".join(lines)
+	label.visible = not lines.is_empty()
+
+
+func _on_pit_changed(state: RaceParticipantState, _sequence: Variant, notice: String = "") -> void:
+	_refresh_qte_label({state: notice} if not notice.is_empty() else {})
+
+
+func _on_pit_finished(state: RaceParticipantState) -> void:
+	_refresh_qte_label()
+	_show_message("%s : PNEUS NEUFS !" % state.nickname.to_upper(), 2.0)
 
 
 func _on_start_reactions_judged(results: Array) -> void:

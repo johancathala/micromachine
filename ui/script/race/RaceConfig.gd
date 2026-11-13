@@ -34,6 +34,9 @@ var target_score: int = DEFAULT_TARGET_SCORE
 # au lieu d'une caméra commune (écran partagé).
 var split_screen: bool = false
 
+# Course classique : usure des pneus et arrêts au stand.
+var tire_wear: bool = false
+
 # Joueurs humains ayant rejoint le lobby.
 var players: Array[Dictionary] = []
 
@@ -156,6 +159,12 @@ func is_valid() -> bool:
 
 func is_elimination() -> bool:
 	return race_rules == RaceRules.ELIMINATION
+
+
+## L'usure des pneus ne concerne que la course classique
+## (écran partagé ou splitté).
+func uses_tire_wear() -> bool:
+	return tire_wear and not is_elimination()
 
 
 ## L'écran splitté ne s'applique qu'à la course classique,
@@ -418,6 +427,7 @@ func duplicate_config() -> RaceConfig:
 	copy.race_rules = race_rules
 	copy.target_score = target_score
 	copy.split_screen = split_screen
+	copy.tire_wear = tire_wear
 
 	copy.players = players.duplicate(true)
 	copy.participants = participants.duplicate(true)

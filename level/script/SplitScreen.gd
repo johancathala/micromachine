@@ -170,6 +170,9 @@ func _process(_delta: float) -> void:
 				race_controller.get_lap_count()
 			]
 
+		if race_controller != null and race_controller.pit_stops != null:
+			text += "   Pneus %d %%" % int(state.car.tire_wear * 100.0)
+
 		if state.finished:
 			text += "   ARRIVÉ"
 
