@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="CarDefinition" format=3]
+
+[ext_resource type="Script" uid="uid://de3h01guotde1" path="res://perso/car/definition/CarDefinition.gd" id="1_hss2r"]
+[ext_resource type="PackedScene" path="res://perso/car/model/F1.tscn" id="1_ib4y0"]
+[ext_resource type="Texture2D" path="res://perso/car/sprite/f1_preview.png" id="2_ib4y0"]
+
+[resource]
+script = ExtResource("1_hss2r")
+id = "f1"
+display_name = "Formule 1"
+description = "Monoplace : la plus rapide et la plus collée à la piste, mais nerveuse et fragile au freinage tardif."
+model_scene = ExtResource("1_ib4y0")
+preview_texture = ExtResource("2_ib4y0")
+engine_force = 3400.0
+brake_force = 2600.0
+reverse_force = 900.0
+max_speed = 3200.0
+max_reverse_speed = 500.0
+lateral_grip = 14.0
+lateral_grip_at_high_speed = 4.0
+high_speed_grip_start = 500.0
+steering_response_high_speed = 0.55
+metadata/_custom_type_script = "uid://de3h01guotde1"
