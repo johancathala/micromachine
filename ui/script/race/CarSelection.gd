@@ -41,6 +41,19 @@ const STATS := [
 var _stat_bars: Array[ProgressBar] = []
 var _stat_max: Array[float] = []
 
+# ------------------------------------------------------------
+# Sélection simultanée : un panneau par joueur humain (jusqu'à 8),
+# chacun avec ses propres commandes.
+# ------------------------------------------------------------
+const MAX_SIMULTANEOUS_PLAYERS := 8
+# Au-delà, panneaux sur 4 colonnes et liste de gauche masquée.
+const COMPACT_FROM_PLAYERS := 5
+# Délai avant le départ quand tout le monde est prêt.
+const ALL_READY_DELAY := 0.8
+
+var _pickers: Array[PlayerCarPicker] = []
+var _all_ready_timer: SceneTreeTimer = null
+
 
 func _ready() -> void:
 	race_config = GameManager.get_pending_race_config()
@@ -66,6 +79,8 @@ func _ready() -> void:
 	if race_config.participants.size() > 0:
 		_select_participant(0)
 
+	_setup_player_pickers()
+
 	start_button.pressed.connect(_on_start_pressed)
 	_refresh_start_button()
 	back_button.pressed.connect(_on_back_pressed)
@@ -84,7 +99,238 @@ func _ready() -> void:
 	focus_manager.set_neighbors(back_button,null,null,start_button,start_button)
 	focus_manager.set_neighbors(start_button,null,null,back_button,back_button)
 
+	# Panneaux simultanés : les touches des joueurs (flèches comprises)
+	# ne doivent pas déplacer le focus des menus.
+	if not _pickers.is_empty():
+		get_viewport().gui_release_focus()
+		return
+
 	focus_manager.focus_initial()
+
+
+# ============================================================
+# SÉLECTION SIMULTANÉE (1 à 4 joueurs)
+# ============================================================
+
+func _setup_player_pickers() -> void:
+	var human_indices: Array[int] = []
+
+	for i in range(race_config.participants.size()):
+		if not bool(race_config.participants[i].get("is_ai", false)):
+			human_indices.append(i)
+
+	if human_indices.is_empty() or human_indices.size() > MAX_SIMULTANEOUS_PLAYERS:
+		return
+
+	var selection_panel := $MarginContainer/VBoxContainer/MainContent/SelectionPanel as Control
+	selection_panel.hide()
+
+	var grid := GridContainer.new()
+	grid.name = "PlayerPickers"
+	var count := human_indices.size()
+	grid.columns = 1 if count == 1 else (2 if count < COMPACT_FROM_PLAYERS else 4)
+
+	# Beaucoup de joueurs : toute la largeur pour les panneaux.
+	if count >= COMPACT_FROM_PLAYERS:
+		($MarginContainer/VBoxContainer/MainContent/ParticipantsPanel as Control).hide()
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	grid.size_flags_stretch_ratio = selection_panel.size_flags_stretch_ratio
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 8)
+	selection_panel.get_parent().add_child(grid)
+	selection_panel.get_parent().move_child(grid, selection_panel.get_index() + 1)
+
+	var player_number := 1
+
+	for index in human_indices:
+		var picker := PlayerCarPicker.new()
+		grid.add_child(picker)
+		picker.setup(index, player_number, race_config.participants[index], STATS)
+		picker.car_step_requested.connect(_on_picker_car_step)
+		picker.color_step_requested.connect(_on_picker_color_step)
+		picker.ready_toggled.connect(_on_picker_ready_toggled)
+		_pickers.append(picker)
+		player_number += 1
+
+	_resolve_ai_liveries()
+	_refresh_pickers()
+
+
+func _refresh_pickers() -> void:
+	for picker in _pickers:
+		var participant := race_config.participants[picker.participant_index]
+		var car := CarCatalog.get_car(String(participant.get("car_id", "")))
+		var color_data := ColorCatalog.get_color(String(participant.get("color_id", "")))
+		var ratios: Array = []
+
+		if car != null:
+			var values := get_car_stats(car)
+
+			for i in range(values.size()):
+				ratios.append(values[i] / _stat_max[i] if _stat_max[i] > 0.0 else 0.0)
+
+		picker.refresh(car, color_data, ratios)
+
+	_refresh_participant_list()
+	_refresh_start_button()
+
+
+func _on_picker_car_step(picker: PlayerCarPicker, direction: int) -> void:
+	var participant := race_config.participants[picker.participant_index]
+	var current := _car_index(String(participant.get("car_id", "")))
+
+	# Voiture suivante qui a encore une couleur libre pour ce joueur.
+	for step in range(1, cars.size() + 1):
+		var car_id: String = cars[posmod(current + direction * step, cars.size())].id
+		participant["car_id"] = car_id
+		race_config.participants[picker.participant_index] = participant
+
+		if _human_livery_available(picker.participant_index):
+			break
+
+	_ensure_unique_livery_vs_humans(picker.participant_index)
+	_resolve_ai_liveries()
+	AudioManager.play_click()
+	_refresh_pickers()
+
+
+func _on_picker_color_step(picker: PlayerCarPicker, direction: int) -> void:
+	var participant := race_config.participants[picker.participant_index]
+	var car_id := String(participant.get("car_id", ""))
+	var ids := _get_color_ids()
+	var current := ids.find(String(participant.get("color_id", "")))
+
+	# Couleur suivante non prise par un autre joueur humain.
+	for step in range(1, ids.size() + 1):
+		var color_id: String = ids[posmod(current + direction * step, ids.size())]
+
+		if not _taken_by_other_human(car_id, color_id, picker.participant_index):
+			participant["color_id"] = color_id
+			break
+
+	race_config.participants[picker.participant_index] = participant
+	_resolve_ai_liveries()
+	AudioManager.play_click()
+	_refresh_pickers()
+
+
+func _on_picker_ready_toggled(picker: PlayerCarPicker) -> void:
+	picker.is_ready = not picker.is_ready
+	AudioManager.play_click()
+	_refresh_pickers()
+
+	for other in _pickers:
+		if not other.is_ready:
+			return
+
+	# Tout le monde est prêt : départ après un court délai, annulé si
+	# quelqu'un repasse « pas prêt » entre-temps.
+	_all_ready_timer = get_tree().create_timer(ALL_READY_DELAY)
+	var timer := _all_ready_timer
+	await timer.timeout
+
+	if timer != _all_ready_timer:
+		return
+
+	for other in _pickers:
+		if not other.is_ready:
+			return
+
+	_on_start_pressed()
+
+
+func _car_index(car_id: String) -> int:
+	for i in range(cars.size()):
+		if cars[i].id == car_id:
+			return i
+
+	return 0
+
+
+func _is_human(index: int) -> bool:
+	return not bool(race_config.participants[index].get("is_ai", false))
+
+
+## Couleur prise, pour ce modèle, par un AUTRE joueur humain
+## (les IA s'écartent d'elles-mêmes).
+func _taken_by_other_human(car_id: String, color_id: String, index: int) -> bool:
+	if not race_config.requires_unique_liveries():
+		return false
+
+	for i in range(race_config.participants.size()):
+		if i == index or not _is_human(i):
+			continue
+
+		var other := race_config.participants[i]
+
+		if String(other.get("car_id", "")) == car_id and String(other.get("color_id", "")) == color_id:
+			return true
+
+	return false
+
+
+func _human_livery_available(index: int) -> bool:
+	var car_id := String(race_config.participants[index].get("car_id", ""))
+
+	for color_id in _get_color_ids():
+		if not _taken_by_other_human(car_id, color_id, index):
+			return true
+
+	return false
+
+
+func _ensure_unique_livery_vs_humans(index: int) -> void:
+	var participant := race_config.participants[index]
+	var car_id := String(participant.get("car_id", ""))
+
+	if not _taken_by_other_human(car_id, String(participant.get("color_id", "")), index):
+		return
+
+	for color_id in _get_color_ids():
+		if not _taken_by_other_human(car_id, color_id, index):
+			participant["color_id"] = color_id
+			race_config.participants[index] = participant
+			return
+
+
+## Les IA cèdent leur livrée aux joueurs : une IA en conflit reçoit
+## une couleur libre (ou un autre modèle si toutes sont prises).
+func _resolve_ai_liveries() -> void:
+	if not race_config.requires_unique_liveries():
+		return
+
+	for i in range(race_config.participants.size()):
+		if _is_human(i):
+			continue
+
+		var participant := race_config.participants[i]
+
+		if not bool(participant.get("enabled", true)):
+			continue
+
+		if not race_config.is_livery_taken(
+			String(participant.get("car_id", "")),
+			String(participant.get("color_id", "")),
+			i
+		):
+			continue
+
+		# Son modèle d'abord, puis les autres.
+		var candidates: Array = [CarCatalog.get_car(String(participant.get("car_id", "")))]
+		candidates.append_array(cars)
+
+		for car in candidates:
+			if car == null:
+				continue
+
+			var free := race_config.find_free_color(car.id, i, _get_color_ids())
+
+			if not free.is_empty():
+				participant["car_id"] = car.id
+				participant["color_id"] = free
+				race_config.participants[i] = participant
+				break
 
 
 func _setup_participant_defaults() -> void:

@@ -835,11 +835,18 @@ func _get_keyboard_display_name(
 	if physical_keycode == KEY_NONE:
 		return "Non configuré"
 
-	var key_label := DisplayServer.keyboard_get_label_from_physical(
-		physical_keycode as Key
-	)
+	var text := ""
+	var physical_name := OS.get_keycode_string(physical_keycode as Key)
 
-	var text := OS.get_keycode_string(key_label)
+	# Pavé numérique : nom explicite (sinon « Left », « Clear »... selon
+	# l'état du Verr. Num).
+	if physical_name.begins_with("Kp "):
+		text = "Pavé " + physical_name.substr(3).replace("Subtract", "-").replace("Add", "+").replace("Multiply", "*").replace("Divide", "/").replace("Period", ".").replace("Enter", "Entrée")
+	else:
+		var key_label := DisplayServer.keyboard_get_label_from_physical(
+			physical_keycode as Key
+		)
+		text = OS.get_keycode_string(key_label)
 
 	match get_binding_location(binding):
 		KEY_LOCATION_LEFT:
