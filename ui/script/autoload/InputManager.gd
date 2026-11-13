@@ -11,15 +11,25 @@ signal gamepad_disconnected(device_id: int)
 # Touches PHYSIQUES (position sur le clavier, indépendante de la disposition).
 # Les commentaires donnent l'équivalent AZERTY.
 # La réapparition est placée près des touches de chaque joueur.
+#
+# Un binding clavier est un entier : physical_keycode, auquel s'ajoute
+# éventuellement le côté de la touche (KeyLocation) décalé de
+# KEY_LOCATION_SHIFT bits. Cela permet de distinguer Ctrl gauche et
+# Ctrl droit (même physical_keycode pour Godot).
+const KEY_LOCATION_SHIFT := 28
+const KEY_BINDING_CODE_MASK := (1 << KEY_LOCATION_SHIFT) - 1
 
-# Joueur clavier 1 : Z Q S D, frein à main A, réapparition R.
+const KEY_CTRL_LEFT := KEY_CTRL | (KEY_LOCATION_LEFT << KEY_LOCATION_SHIFT)
+const KEY_CTRL_RIGHT := KEY_CTRL | (KEY_LOCATION_RIGHT << KEY_LOCATION_SHIFT)
+
+# Joueur clavier 1 : Z Q S D, frein à main Ctrl gauche, réapparition R.
 # Pause et confirmation sont communes et portées par le clavier 1.
 const DEFAULT_KEY_BINDINGS := {
 	"accelerate": KEY_W,
 	"brake": KEY_S,
 	"left": KEY_A,
 	"right": KEY_D,
-	"handbrake": KEY_Q,
+	"handbrake": KEY_CTRL_LEFT,
 	"respawn": KEY_R,
 	"pause": KEY_ESCAPE,
 	"confirm": KEY_ENTER
@@ -35,14 +45,14 @@ const DEFAULT_KEY_BINDINGS_P2 := {
 	"respawn": KEY_P
 }
 
-# Joueur clavier 3 : flèches, frein à main Suppr, réapparition Page préc.
+# Joueur clavier 3 : flèches, frein à main Ctrl droit, réapparition Page suiv.
 const DEFAULT_KEY_BINDINGS_P3 := {
 	"accelerate": KEY_UP,
 	"brake": KEY_DOWN,
 	"left": KEY_LEFT,
 	"right": KEY_RIGHT,
-	"handbrake": KEY_DELETE,
-	"respawn": KEY_PAGEUP
+	"handbrake": KEY_CTRL_RIGHT,
+	"respawn": KEY_PAGEDOWN
 }
 
 # Joueur clavier 4 : pavé numérique 8 4 5 6, frein à main 0, réapparition -.
@@ -91,11 +101,73 @@ var gamepad_bindings: Dictionary = {}
 var custom_confirm_keyboard_event: InputEventKey = null
 var custom_confirm_gamepad_events: Dictionary = {}
 
+# État des touches avec côté (binding encodé -> enfoncée).
+# Input.is_physical_key_pressed() ne distingue pas gauche / droite.
+var _located_keys_pressed: Dictionary = {}
+
 
 func _ready() -> void:
+	# Continuer à suivre les relâchements de touches pendant la pause.
+	process_mode = Node.PROCESS_MODE_ALWAYS
+
 	Input.joy_connection_changed.connect(
 		_on_joy_connection_changed
 	)
+
+
+func _input(event: InputEvent) -> void:
+	var key_event := event as InputEventKey
+
+	if key_event == null or key_event.echo:
+		return
+
+	var keycode := int(key_event.physical_keycode)
+
+	if key_event.location == KEY_LOCATION_UNSPECIFIED:
+		# Côté inconnu (dépend du système) : on considère les deux.
+		for location in [KEY_LOCATION_LEFT, KEY_LOCATION_RIGHT]:
+			_located_keys_pressed[
+				encode_key_binding(keycode, location)
+			] = key_event.pressed
+		return
+
+	_located_keys_pressed[
+		encode_key_binding(keycode, key_event.location)
+	] = key_event.pressed
+
+
+func _notification(what: int) -> void:
+	# Évite les touches « bloquées » si la fenêtre perd le focus.
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		_located_keys_pressed.clear()
+
+
+# ============================================================
+# CLAVIER : ENCODAGE DES TOUCHES (CODE + CÔTÉ)
+# ============================================================
+
+func encode_key_binding(keycode: int, location: int) -> int:
+	return keycode | (location << KEY_LOCATION_SHIFT)
+
+
+func get_binding_keycode(binding: int) -> int:
+	return binding & KEY_BINDING_CODE_MASK
+
+
+func get_binding_location(binding: int) -> int:
+	return binding >> KEY_LOCATION_SHIFT
+
+
+func is_key_binding_pressed(binding: int) -> bool:
+	var keycode := get_binding_keycode(binding)
+
+	if keycode == KEY_NONE:
+		return false
+
+	if get_binding_location(binding) == KEY_LOCATION_UNSPECIFIED:
+		return Input.is_physical_key_pressed(keycode as Key)
+
+	return bool(_located_keys_pressed.get(binding, false))
 
 
 func initialize() -> void:
@@ -122,13 +194,23 @@ func _load_keyboard_bindings() -> void:
 		var bindings: Dictionary = {}
 
 		for action in defaults:
-			var saved_value = SaveManager.get_keyboard_binding(
-				action,
-				defaults[action],
-				keyboard_index
-			)
+			var default_binding := int(defaults[action])
 
-			bindings[action] = int(saved_value)
+			var saved_value := int(SaveManager.get_keyboard_binding(
+				action,
+				default_binding,
+				keyboard_index
+			))
+
+			# Ancienne sauvegarde sans côté (ex. « Ctrl ») identique
+			# à la touche par défaut : on reprend le côté par défaut.
+			if (
+				get_binding_location(saved_value) == KEY_LOCATION_UNSPECIFIED
+				and saved_value == get_binding_keycode(default_binding)
+			):
+				saved_value = default_binding
+
+			bindings[action] = saved_value
 
 		keyboard_bindings.append(bindings)
 
@@ -249,7 +331,12 @@ func set_keyboard_binding(
 	if keyboard_bindings.size() <= keyboard_index:
 		_load_keyboard_bindings()
 
-	var keycode := event.physical_keycode
+	# Le côté n'est conservé que pour les touches doubles
+	# (Ctrl, Shift, Alt, Méta) ; il vaut UNSPECIFIED pour les autres.
+	var keycode := encode_key_binding(
+		int(event.physical_keycode),
+		int(event.location)
+	)
 
 	keyboard_bindings[keyboard_index][action_name] = keycode
 
@@ -433,15 +520,12 @@ func _get_keyboard_action_strength(
 	device_id: int
 ) -> float:
 
-	var physical_keycode := get_keyboard_binding(
+	var binding := get_keyboard_binding(
 		action_name,
 		device_id
 	)
 
-	if physical_keycode == KEY_NONE:
-		return 0.0
-
-	if Input.is_physical_key_pressed(physical_keycode):
+	if is_key_binding_pressed(binding):
 		return 1.0
 
 	return 0.0
@@ -635,8 +719,8 @@ func _apply_confirm_bindings() -> void:
 	# CLAVIER
 	# --------------------------------------------------------
 
-	var keyboard_keycode := get_keyboard_binding(
-		"confirm"
+	var keyboard_keycode := get_binding_keycode(
+		get_keyboard_binding("confirm")
 	)
 
 	if keyboard_keycode != KEY_NONE:
@@ -741,19 +825,29 @@ func _get_keyboard_display_name(
 	device_id: int
 ) -> String:
 
-	var physical_keycode := get_keyboard_binding(
+	var binding := get_keyboard_binding(
 		action_name,
 		device_id
 	)
+
+	var physical_keycode := get_binding_keycode(binding)
 
 	if physical_keycode == KEY_NONE:
 		return "Non configuré"
 
 	var key_label := DisplayServer.keyboard_get_label_from_physical(
-		physical_keycode
+		physical_keycode as Key
 	)
 
-	return OS.get_keycode_string(key_label)
+	var text := OS.get_keycode_string(key_label)
+
+	match get_binding_location(binding):
+		KEY_LOCATION_LEFT:
+			text += " gauche"
+		KEY_LOCATION_RIGHT:
+			text += " droit"
+
+	return text
 
 
 func _get_gamepad_display_name(
