@@ -61,6 +61,14 @@ const MINIMAP_MARGIN := 1.08
 # Taille des minimaps au dernier cadrage (recadrage si elle change).
 var _minimap_framed_sizes: Array[Vector2i] = []
 
+# Le circuit ne bouge pas : la minimap n'est dessinée que pendant
+# quelques images après chaque cadrage (le temps que les tuiles soient
+# prêtes), puis figée. Seules les pastilles des joueurs sont mises à
+# jour. La redessiner à chaque image coûtait ~75 % des performances
+# (tout le circuit, ~450 000 tuiles sur Alès).
+const MINIMAP_RENDER_FRAMES := 10
+var _minimap_render_left: Array[int] = []
+
 
 ## Construit les vues et y place le monde de course.
 ## À appeler AVANT de charger le circuit et les voitures.
@@ -267,6 +275,7 @@ func _build_minimap_cell(grid: GridContainer) -> void:
 	_minimap_cameras.append(camera)
 	_minimap_overlays.append(overlay)
 	_minimap_framed_sizes.append(Vector2i.ZERO)
+	_minimap_render_left.append(0)
 
 
 ## Cadre tout le circuit dans chaque minimap. Un circuit en hauteur
@@ -300,6 +309,9 @@ func _frame_minimaps() -> void:
 			view_size.x / track_size.x,
 			view_size.y / track_size.y
 		)
+
+		_minimap_viewports[i].render_target_update_mode = SubViewport.UPDATE_ALWAYS
+		_minimap_render_left[i] = MINIMAP_RENDER_FRAMES
 
 
 ## Emprise du circuit : chemins de la course si disponibles,
@@ -344,6 +356,15 @@ func _process(_delta: float) -> void:
 		if size.x > 16 and size.y > 16 and size != _minimap_framed_sizes[i]:
 			_minimap_framed_sizes[i] = size
 			_frame_minimaps()
+
+		# Quelques images de rendu après le cadrage, puis image figée.
+		if _minimap_render_left[i] > 0:
+			_minimap_render_left[i] -= 1
+
+			if _minimap_render_left[i] == 0:
+				_minimap_viewports[i].render_target_update_mode = (
+					SubViewport.UPDATE_DISABLED
+				)
 	for i in range(mini(_labels.size(), _states.size())):
 		var state := _states[i]
 
