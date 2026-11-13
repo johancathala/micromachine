@@ -8,35 +8,65 @@ signal gamepad_connected(device_id: int)
 signal gamepad_disconnected(device_id: int)
 
 
+# Touches PHYSIQUES (position sur le clavier, indépendante de la disposition).
+# Les commentaires donnent l'équivalent AZERTY.
+# La réapparition est placée près des touches de chaque joueur.
+
+# Joueur clavier 1 : Z Q S D, frein à main A, réapparition R.
+# Pause et confirmation sont communes et portées par le clavier 1.
 const DEFAULT_KEY_BINDINGS := {
-	"accelerate": KEY_UP,
-	"brake": KEY_DOWN,
-	"left": KEY_LEFT,
-	"right": KEY_RIGHT,
-	"handbrake": KEY_SPACE,
+	"accelerate": KEY_W,
+	"brake": KEY_S,
+	"left": KEY_A,
+	"right": KEY_D,
+	"handbrake": KEY_Q,
 	"respawn": KEY_R,
 	"pause": KEY_ESCAPE,
 	"confirm": KEY_ENTER
 }
 
-
-# Second joueur sur le même clavier.
-# Touches physiques : WASD sur QWERTY = ZQSD sur AZERTY.
-# Pause et confirmation restent communes (gérées par le clavier 1).
+# Joueur clavier 2 : O K L M, frein à main U, réapparition P.
 const DEFAULT_KEY_BINDINGS_P2 := {
-	"accelerate": KEY_W,
-	"brake": KEY_S,
-	"left": KEY_A,
-	"right": KEY_D,
-	"handbrake": KEY_SHIFT,
-	"respawn": KEY_F
+	"accelerate": KEY_O,
+	"brake": KEY_L,
+	"left": KEY_K,
+	"right": KEY_SEMICOLON,
+	"handbrake": KEY_U,
+	"respawn": KEY_P
 }
+
+# Joueur clavier 3 : flèches, frein à main Suppr, réapparition Page préc.
+const DEFAULT_KEY_BINDINGS_P3 := {
+	"accelerate": KEY_UP,
+	"brake": KEY_DOWN,
+	"left": KEY_LEFT,
+	"right": KEY_RIGHT,
+	"handbrake": KEY_DELETE,
+	"respawn": KEY_PAGEUP
+}
+
+# Joueur clavier 4 : pavé numérique 8 4 5 6, frein à main 0, réapparition -.
+const DEFAULT_KEY_BINDINGS_P4 := {
+	"accelerate": KEY_KP_8,
+	"brake": KEY_KP_5,
+	"left": KEY_KP_4,
+	"right": KEY_KP_6,
+	"handbrake": KEY_KP_0,
+	"respawn": KEY_KP_SUBTRACT
+}
+
+const KEYBOARD_DEFAULTS := [
+	DEFAULT_KEY_BINDINGS,
+	DEFAULT_KEY_BINDINGS_P2,
+	DEFAULT_KEY_BINDINGS_P3,
+	DEFAULT_KEY_BINDINGS_P4
+]
 
 
 # Nombre de joueurs pouvant partager le clavier.
-# device_id clavier : 0 = clavier 1, 1 = clavier 2
+# device_id clavier : 0..3 = clavier 1..4
 # (-1 est accepté comme clavier 1 pour compatibilité).
-const KEYBOARD_PLAYER_COUNT := 2
+const KEYBOARD_PLAYER_COUNT := 4
 
 
 const DEFAULT_GAMEPAD_BINDINGS := {
@@ -117,14 +147,13 @@ func get_default_keyboard_bindings(
 	keyboard_index: int
 ) -> Dictionary:
 
-	if keyboard_index == 1:
-		return DEFAULT_KEY_BINDINGS_P2
-
-	return DEFAULT_KEY_BINDINGS
+	return KEYBOARD_DEFAULTS[
+		clampi(keyboard_index, 0, KEYBOARD_DEFAULTS.size() - 1)
+	]
 
 
 ## Indique si une action est configurable pour ce joueur clavier
-## (le clavier 2 n'a ni pause ni confirmation).
+## (seul le clavier 1 a la pause et la confirmation).
 func has_keyboard_action(
 	action_name: String,
 	device_id: int

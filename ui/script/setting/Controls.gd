@@ -116,7 +116,7 @@ func _refresh_controls() -> void:
 		child.queue_free()
 
 	for action in ACTIONS:
-		# Le clavier 2 n'a que les actions de conduite.
+		# Seul le clavier 1 a la pause et la confirmation.
 		if (
 			selected_device_type == "keyboard"
 			and not InputManager.has_keyboard_action(

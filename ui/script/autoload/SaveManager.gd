@@ -340,7 +340,7 @@ func _ensure_audio_structure() -> void:
 
 ## Clé de sauvegarde d'un joueur clavier :
 ## "keyboard" pour le clavier 1 (format historique),
-## "keyboard_2" pour le clavier 2.
+## "keyboard_2", "keyboard_3"… pour les suivants.
 func _keyboard_key(keyboard_index: int) -> String:
 	if keyboard_index >= 1:
 		return "keyboard_%d" % (keyboard_index + 1)

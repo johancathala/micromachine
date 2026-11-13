@@ -341,7 +341,7 @@ func _refresh_join_hint() -> void:
 
 
 	if human_count == 0:
-		join_hint.text = ("Appuyer pour rejoindre (Touche E : clavier, 2 joueurs max / B : manette)")
+		join_hint.text = ("Appuyer pour rejoindre (Touche E : clavier, 4 joueurs max / B : manette)")
 		help_label.text = "Aucun joueur dans la partie"
 		return
 
@@ -352,7 +352,7 @@ func _refresh_join_hint() -> void:
 		return
 
 
-	join_hint.text = "Appuyer pour rejoindre (Touche E : clavier, 2 joueurs max / B : manette)"
+	join_hint.text = "Appuyer pour rejoindre (Touche E : clavier, 4 joueurs max / B : manette)"
 	help_label.text = ("%d joueurs / %d IA") % [
 		human_count,
 		ai_count
