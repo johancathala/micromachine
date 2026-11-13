@@ -166,7 +166,7 @@ func _show_message(text: String, duration: float = 0.0) -> void:
 # ------------------------------------------------------------------
 # USURE DES PNEUS / STAND
 # ------------------------------------------------------------------
-var _qte_label: Label = null
+var _qte_label: RichTextLabel = null
 
 
 func _on_box_requested(state: RaceParticipantState, wear: float) -> void:
@@ -229,24 +229,67 @@ func _update_car_callouts() -> void:
 		label.global_position = screen - Vector2(label.size.x / 2.0, label.size.y + 70.0)
 
 
-func _get_qte_label() -> Label:
+# Couleur de la flèche à faire dans le QTE du stand.
+const QTE_CURRENT_COLOR := "#ffd54f"
+
+
+func _get_qte_label() -> RichTextLabel:
 	if _qte_label == null:
-		_qte_label = Label.new()
-		_qte_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_qte_label = create_qte_label(40)
 		_qte_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
 		_qte_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
 		_qte_label.grow_vertical = Control.GROW_DIRECTION_BEGIN
+		_qte_label.offset_left = -700.0
+		_qte_label.offset_right = 700.0
 		_qte_label.offset_bottom = -60.0
-		_qte_label.add_theme_font_size_override("font_size", 40)
-		_qte_label.add_theme_color_override("font_outline_color", Color.BLACK)
-		_qte_label.add_theme_constant_override("outline_size", 10)
 		add_child(_qte_label)
 
 	return _qte_label
 
 
-## Une ligne par joueur au stand : directions réussies entre
-## crochets, direction attendue soulignée par des chevrons.
+## Texte riche centré pour le QTE du stand (gras disponible).
+static func create_qte_label(font_size: int) -> RichTextLabel:
+	var label := RichTextLabel.new()
+	label.bbcode_enabled = true
+	label.fit_content = true
+	label.scroll_active = false
+	label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_font_size_override("normal_font_size", font_size)
+	label.add_theme_font_size_override("bold_font_size", int(font_size * 1.3))
+	label.add_theme_color_override("font_outline_color", Color.BLACK)
+	label.add_theme_constant_override("outline_size", 10)
+
+	# Gras : police par défaut épaissie.
+	var bold := FontVariation.new()
+	bold.base_font = ThemeDB.fallback_font
+	bold.variation_embolden = 1.2
+	label.add_theme_font_override("bold_font", bold)
+
+	label.hide()
+	return label
+
+
+## Flèches restantes séparées par des espaces : celles déjà faites
+## disparaissent, celle à faire est en gras et en couleur.
+static func format_qte(qte: Dictionary) -> String:
+	var sequence: Array = qte["sequence"]
+	var index: int = qte["index"]
+	var parts: PackedStringArray = []
+
+	for i in range(index, sequence.size()):
+		var symbol: String = PitStopManager.DIRECTION_SYMBOLS[sequence[i]]
+
+		if i == index:
+			parts.append("[b][color=%s]%s[/color][/b]" % [QTE_CURRENT_COLOR, symbol])
+		else:
+			parts.append(symbol)
+
+	return " ".join(parts)
+
+
+## Une ligne par joueur au stand (écran partagé), ou le QTE dans la
+## vue de chaque joueur (écran splitté).
 func _refresh_qte_label(notice: Dictionary = {}) -> void:
 	var lines: PackedStringArray = []
 
@@ -254,60 +297,26 @@ func _refresh_qte_label(notice: Dictionary = {}) -> void:
 		var qte := race_controller.pit_stops.get_qte(state)
 
 		if qte.is_empty():
+			if split_screen != null:
+				split_screen.set_player_status(state, "")
 			continue
 
-		var parts: PackedStringArray = []
-		var sequence: Array = qte["sequence"]
-
-		for i in range(sequence.size()):
-			var symbol: String = PitStopManager.DIRECTION_SYMBOLS[sequence[i]]
-
-			if i < qte["index"]:
-				parts.append("[%s]" % symbol)
-			elif i == qte["index"]:
-				parts.append("> %s <" % symbol)
-			else:
-				parts.append(symbol)
-
-		var line := "%s AU STAND :  %s" % [state.nickname.to_upper(), "  ".join(parts)]
+		var arrows := format_qte(qte)
+		var extra := ""
 
 		if notice.has(state):
-			line += "   " + String(notice[state])
+			extra = "\n[font_size=28]%s[/font_size]" % String(notice[state])
 
-		lines.append(line)
+		if split_screen != null:
+			split_screen.set_player_status(state, "STAND : " + arrows + extra)
+		else:
+			lines.append("%s AU STAND : %s%s" % [state.nickname.to_upper(), arrows, extra])
 
-	# Écran splitté : le QTE s'affiche dans la vue du joueur.
 	if split_screen != null:
-		for state in race_controller.get_participant_states():
-			var qte := race_controller.pit_stops.get_qte(state)
-
-			if qte.is_empty():
-				split_screen.set_player_status(state, "")
-				continue
-
-			var arrows: PackedStringArray = []
-			var sequence: Array = qte["sequence"]
-
-			for i in range(sequence.size()):
-				var symbol: String = PitStopManager.DIRECTION_SYMBOLS[sequence[i]]
-
-				if i < qte["index"]:
-					arrows.append("[%s]" % symbol)
-				elif i == qte["index"]:
-					arrows.append("> %s <" % symbol)
-				else:
-					arrows.append(symbol)
-
-			var line := "STAND :  " + "  ".join(arrows)
-
-			if notice.has(state):
-				line += "\n" + String(notice[state])
-
-			split_screen.set_player_status(state, line)
 		return
 
 	var label := _get_qte_label()
-	label.text = "\n".join(lines)
+	label.text = "[center]%s[/center]" % "\n".join(lines)
 	label.visible = not lines.is_empty()
 
 

@@ -44,7 +44,7 @@ var _states: Array[RaceParticipantState] = []
 # affichés dans la vue de chaque joueur.
 var _callouts: Array[Label] = []
 var _callout_ids: Array[int] = []
-var _status_labels: Array[Label] = []
+var _status_labels: Array[RichTextLabel] = []
 
 # Position du joueur, en haut à droite de sa vue (seule info en haut
 # de l'écran, pour ne pas gêner la vue).
@@ -222,7 +222,7 @@ func set_player_status(state: RaceParticipantState, text: String) -> void:
 	if index < 0:
 		return
 
-	_status_labels[index].text = text
+	_status_labels[index].text = "[center]%s[/center]" % text
 	_status_labels[index].visible = not text.is_empty()
 
 
@@ -403,18 +403,15 @@ func _create_callout() -> Label:
 	return label
 
 
-func _create_status_label() -> Label:
-	var label := Label.new()
-	label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
-	label.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	label.grow_vertical = Control.GROW_DIRECTION_BEGIN
+## QTE du stand (texte riche : flèche à faire en gras et en couleur).
+func _create_status_label() -> RichTextLabel:
+	var label := RaceHUD.create_qte_label(34)
+	label.anchor_left = 0.0
+	label.anchor_right = 1.0
+	label.anchor_top = 1.0
+	label.anchor_bottom = 1.0
 	label.offset_bottom = -60.0
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	label.add_theme_font_size_override("font_size", 34)
-	label.add_theme_color_override("font_outline_color", Color.BLACK)
-	label.add_theme_constant_override("outline_size", 10)
-	label.hide()
+	label.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	return label
 
 
