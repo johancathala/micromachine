@@ -30,6 +30,10 @@ var race_rules: RaceRules = RaceRules.CLASSIC
 # Mode élimination : score qui fait gagner la partie.
 var target_score: int = DEFAULT_TARGET_SCORE
 
+# Course classique : une vue par joueur humain (écran splitté)
+# au lieu d'une caméra commune (écran partagé).
+var split_screen: bool = false
+
 # Joueurs humains ayant rejoint le lobby.
 var players: Array[Dictionary] = []
 
@@ -152,6 +156,16 @@ func is_valid() -> bool:
 
 func is_elimination() -> bool:
 	return race_rules == RaceRules.ELIMINATION
+
+
+## L'écran splitté ne s'applique qu'à la course classique,
+## avec au moins deux joueurs humains.
+func uses_split_screen() -> bool:
+	return (
+		split_screen
+		and not is_elimination()
+		and get_human_player_count() >= 2
+	)
 
 
 # ================================================================
@@ -334,6 +348,7 @@ func duplicate_config() -> RaceConfig:
 	copy.lap_count = lap_count
 	copy.race_rules = race_rules
 	copy.target_score = target_score
+	copy.split_screen = split_screen
 
 	copy.players = players.duplicate(true)
 	copy.participants = participants.duplicate(true)

@@ -9,6 +9,9 @@ const CAR_SCENE := preload("res://perso/car/Car.tscn")
 
 var race_config: RaceConfig = null
 
+# Écran splitté (course classique, 2 joueurs humains ou plus).
+var split_screen: SplitScreen = null
+
 
 func _ready() -> void:
 	AudioManager.bind_sound_btt()
@@ -24,6 +27,12 @@ func _ready() -> void:
 
 func _initialize_race() -> void:
 	print("Initialisation de la course")
+
+	# Les vues splittées doivent exister avant le chargement du circuit :
+	# le monde de course est déplacé dans la première vue.
+	if race_config.uses_split_screen():
+		_setup_split_screen()
+
 	if not _load_track():
 		return
 
@@ -33,6 +42,9 @@ func _initialize_race() -> void:
 	_initialize_camera()
 
 	race_controller.initialize(race_config, race_world, pause_overlay)
+
+	if split_screen != null:
+		split_screen.attach_players(race_controller)
 
 	race_hud.initialize(race_controller, race_world)
 
@@ -165,6 +177,20 @@ func _spawn_participant(
 	)
 	
 	return true
+
+
+func _setup_split_screen() -> void:
+	split_screen = SplitScreen.new()
+	split_screen.name = "SplitScreen"
+
+	add_child(split_screen)
+	# Sous le HUD et la pause (CanvasLayer), à la place du monde.
+	move_child(split_screen, race_world.get_index())
+
+	split_screen.build(
+		race_world,
+		race_config.get_human_player_count()
+	)
 
 
 func _initialize_camera() -> void:

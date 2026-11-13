@@ -67,6 +67,13 @@ var elimination_zoom: float = 0.5
 @export_range(0.0, 40.0, 0.5)
 var elimination_center_ahead_meters: float = 10.0
 
+@export_category("Écran splitté")
+
+# Centre de la vue placé devant la voiture suivie, pour voir les
+# virages arriver malgré une vue plus étroite.
+@export_range(0.0, 40.0, 0.5)
+var split_center_ahead_meters: float = 6.0
+
 @export_category("Zoom")
 
 @export_range(0.05, 2.0, 0.01)
@@ -93,6 +100,11 @@ var camera_initialized: bool = false
 # Fourni par Race : donne le classement des participants.
 var race_controller: RaceController = null
 
+# Écran splitté : la caméra suit uniquement cette voiture.
+# use_target_car doit être activé avant l'ajout dans l'arbre.
+var use_target_car: bool = false
+var target_car: Car = null
+
 # Décalage lissé entre le joueur en tête et le point à garder visible.
 var _leader_lookahead_offset: Vector2 = Vector2.ZERO
 var _lookahead_initialized: bool = false
@@ -101,6 +113,10 @@ var _lookahead_initialized: bool = false
 func _ready() -> void:
 	# Nous gérons nous-mêmes le lissage.
 	position_smoothing_enabled = false
+
+	# Caméra d'une vue splittée : pas besoin de la liste des voitures.
+	if use_target_car:
+		return
 
 	cars_root = get_parent().get_node_or_null("Cars") as Node2D
 
@@ -115,6 +131,21 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if not follow_cars:
+		return
+
+	if use_target_car:
+		if target_car == null or not is_instance_valid(target_car):
+			return
+
+		_move_towards(
+			_get_smoothed_lookahead_point(
+				target_car,
+				split_center_ahead_meters,
+				delta
+			),
+			_calculate_solo_zoom(target_car),
+			delta
+		)
 		return
 
 	if cars_root == null:
@@ -162,6 +193,16 @@ func _process(delta: float) -> void:
 
 		target_position = bounds.get_center()
 		target_zoom = _calculate_zoom(bounds)
+
+	_move_towards(target_position, target_zoom, delta)
+
+
+## Déplacement et zoom lissés vers la cible.
+func _move_towards(
+	target_position: Vector2,
+	target_zoom: float,
+	delta: float
+) -> void:
 
 	# Initialisation sans déplacement depuis (0, 0).
 	if not camera_initialized:

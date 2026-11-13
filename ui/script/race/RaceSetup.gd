@@ -40,6 +40,15 @@ var track_catalog: Array
 
 const TARGET_SCORES := [5, 10, 15, 20, 30]
 
+@onready var screen_mode_row: HBoxContainer = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/ScreenModeRow)
+
+@onready var screen_mode_selector: OptionButton = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/ScreenModeRow/ScreenMode)
+
+enum ScreenMode {
+	SHARED,
+	SPLIT
+}
+
 @onready var start_button: Button = ($MarginContainer/VBoxContainer/Footer/StartButton)
 
 @onready var help_label: Label = ($MarginContainer/VBoxContainer/Footer/HelpLabel)
@@ -67,6 +76,9 @@ func set_focus() -> void:
 		lap_selector,
 		game_type_selector
 	]
+
+	if screen_mode_row.visible:
+		settings.append(screen_mode_selector)
 
 	if target_score_row.visible:
 		settings.append(target_score_selector)
@@ -98,8 +110,22 @@ func _setup_settings() -> void:
 	_setup_laps()
 	_setup_tracks()
 	_setup_game_types()
+	_setup_screen_modes()
 	_setup_target_scores()
 	_apply_game_type_ui()
+
+
+func _setup_screen_modes() -> void:
+	screen_mode_selector.clear()
+
+	screen_mode_selector.add_item("Écran partagé", ScreenMode.SHARED)
+	screen_mode_selector.add_item("Écran splitté", ScreenMode.SPLIT)
+
+	screen_mode_selector.select(
+		screen_mode_selector.get_item_index(
+			ScreenMode.SPLIT if race_config.split_screen else ScreenMode.SHARED
+		)
+	)
 
 
 func _setup_game_types() -> void:
@@ -144,6 +170,8 @@ func _apply_game_type_ui() -> void:
 	var elimination := race_config.is_elimination()
 
 	target_score_row.visible = elimination
+	# L'écran splitté ne concerne que la course classique.
+	screen_mode_row.visible = not elimination
 	ai_difficulty.disabled = elimination
 	lap_selector.disabled = elimination
 
@@ -237,6 +265,10 @@ func _connect_signals() -> void:
 
 	target_score_selector.item_selected.connect(
 		_on_target_score_changed
+	)
+
+	screen_mode_selector.item_selected.connect(
+		_on_screen_mode_changed
 	)
 
 	# IMPORTANT :
@@ -441,6 +473,9 @@ func _refresh_join_hint() -> void:
 		ai_count
 	]
 
+	if race_config.split_screen and human_count < 2:
+		help_label.text += " (écran splitté à partir de 2 joueurs)"
+
 
 # ================================================================
 # PARAMÈTRES
@@ -471,6 +506,14 @@ func _on_game_type_changed(index: int) -> void:
 
 	_apply_game_type_ui()
 	_refresh_ui()
+
+
+func _on_screen_mode_changed(index: int) -> void:
+	race_config.split_screen = (
+		screen_mode_selector.get_item_id(index) == ScreenMode.SPLIT
+	)
+
+	_refresh_join_hint()
 
 
 func _on_target_score_changed(index: int) -> void:
