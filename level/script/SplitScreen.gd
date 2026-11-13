@@ -40,6 +40,27 @@ var _cameras: Array[RaceCamera] = []
 var _labels: Array[Label] = []
 var _states: Array[RaceParticipantState] = []
 
+# Message temporaire (ex. « BOX, BOX ») et statut (ex. QTE du stand)
+# affichés dans la vue de chaque joueur.
+var _callouts: Array[Label] = []
+var _callout_ids: Array[int] = []
+var _status_labels: Array[Label] = []
+
+# Position du joueur, en haut à droite de sa vue (seule info en haut
+# de l'écran, pour ne pas gêner la vue).
+var _position_labels: Array[Label] = []
+
+# Minimap : cases vides de la grille (ex. 3 joueurs en 2x2).
+var _minimap_viewports: Array[SubViewport] = []
+var _minimap_cameras: Array[Camera2D] = []
+var _minimap_overlays: Array[MinimapOverlay] = []
+
+# Marge autour du circuit sur la minimap.
+const MINIMAP_MARGIN := 1.08
+
+# Taille des minimaps au dernier cadrage (recadrage si elle change).
+var _minimap_framed_sizes: Array[Vector2i] = []
+
 
 ## Construit les vues et y place le monde de course.
 ## À appeler AVANT de charger le circuit et les voitures.
@@ -103,17 +124,27 @@ func build(race_world: RaceWorld, player_count: int) -> void:
 		var label := _create_player_label()
 		cell.add_child(label)
 
+		var callout := _create_callout()
+		cell.add_child(callout)
+
+		var status := _create_status_label()
+		cell.add_child(status)
+
+		var position_label := _create_position_label()
+		cell.add_child(position_label)
+
 		_viewports.append(viewport)
 		_cameras.append(camera)
 		_labels.append(label)
+		_callouts.append(callout)
+		_callout_ids.append(0)
+		_status_labels.append(status)
+		_position_labels.append(position_label)
 
-	# Les cellules vides (ex. 3 joueurs en 2x2) restent noires.
+	# Cases vides (ex. 3 joueurs en 2x2) : minimap du circuit, vue de
+	# très loin. Rien à 2, 4, 6 ou 8 joueurs (pas de case libre).
 	for i in range(layout.x * layout.y - player_count):
-		var filler := Control.new()
-		filler.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		filler.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		filler.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		grid.add_child(filler)
+		_build_minimap_cell(grid)
 
 	# La caméra partagée n'est plus utilisée.
 	var shared_camera := race_world.race_camera as RaceCamera
@@ -146,6 +177,155 @@ func attach_players(controller: RaceController) -> void:
 		camera.enabled = true
 		camera.make_current()
 
+	for overlay in _minimap_overlays:
+		overlay.states = _states
+
+	_frame_minimaps()
+
+
+func has_minimap() -> bool:
+	return not _minimap_viewports.is_empty()
+
+
+# ------------------------------------------------------------
+# Messages dans la vue d'un joueur
+# ------------------------------------------------------------
+
+## Message temporaire, en grand, dans la vue du joueur.
+func show_player_message(
+	state: RaceParticipantState,
+	text: String,
+	duration: float
+) -> void:
+
+	var index := _states.find(state)
+
+	if index < 0:
+		return
+
+	_callout_ids[index] += 1
+	var id := _callout_ids[index]
+
+	_callouts[index].text = text
+	_callouts[index].show()
+
+	await get_tree().create_timer(duration, false).timeout
+
+	if is_instance_valid(self) and _callout_ids[index] == id:
+		_callouts[index].hide()
+
+
+## Texte permanent dans la vue du joueur ("" pour l'effacer).
+func set_player_status(state: RaceParticipantState, text: String) -> void:
+	var index := _states.find(state)
+
+	if index < 0:
+		return
+
+	_status_labels[index].text = text
+	_status_labels[index].visible = not text.is_empty()
+
+
+# ------------------------------------------------------------
+# Minimap
+# ------------------------------------------------------------
+
+func _build_minimap_cell(grid: GridContainer) -> void:
+	var cell := Control.new()
+	cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cell.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cell.clip_contents = true
+	grid.add_child(cell)
+
+	var container := SubViewportContainer.new()
+	container.stretch = true
+	container.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cell.add_child(container)
+
+	var viewport := SubViewport.new()
+	viewport.name = "Minimap"
+	viewport.handle_input_locally = false
+	viewport.audio_listener_enable_2d = false
+	viewport.world_2d = _viewports[0].world_2d
+	container.add_child(viewport)
+
+	var camera := Camera2D.new()
+	camera.name = "MinimapCamera"
+	camera.ignore_rotation = false
+	viewport.add_child(camera)
+	camera.make_current()
+
+	var overlay := MinimapOverlay.new()
+	overlay.viewport = viewport
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cell.add_child(overlay)
+
+	_minimap_viewports.append(viewport)
+	_minimap_cameras.append(camera)
+	_minimap_overlays.append(overlay)
+	_minimap_framed_sizes.append(Vector2i.ZERO)
+
+
+## Cadre tout le circuit dans chaque minimap. Un circuit en hauteur
+## dans une case en largeur est tourné de 90° pour être plus grand.
+func _frame_minimaps() -> void:
+	var bounds := _get_track_bounds()
+
+	if bounds.size == Vector2.ZERO:
+		return
+
+	for i in range(_minimap_cameras.size()):
+		var camera := _minimap_cameras[i]
+		var view_size := Vector2(_minimap_viewports[i].size)
+
+		if view_size.x <= 16.0 or view_size.y <= 16.0:
+			continue
+
+		var track_size := bounds.size * MINIMAP_MARGIN
+		var rotate := (
+			(track_size.y > track_size.x) != (view_size.y > view_size.x)
+		)
+
+		if rotate:
+			track_size = Vector2(track_size.y, track_size.x)
+			camera.rotation = -PI / 2.0
+		else:
+			camera.rotation = 0.0
+
+		camera.position = bounds.get_center()
+		camera.zoom = Vector2.ONE * minf(
+			view_size.x / track_size.x,
+			view_size.y / track_size.y
+		)
+
+
+## Emprise du circuit : chemins de la course si disponibles,
+## sinon les portes de section.
+func _get_track_bounds() -> Rect2:
+	var points := PackedVector2Array()
+
+	if race_controller != null and race_controller.track_progress != null:
+		var progress := race_controller.track_progress
+
+		for section_id in range(progress.section_count):
+			points.append_array(progress.get_path(section_id))
+	elif race_controller != null:
+		for position in race_controller._section_positions.values():
+			points.append(position)
+
+	if points.is_empty():
+		return Rect2()
+
+	var bounds := Rect2(points[0], Vector2.ZERO)
+
+	for point in points:
+		bounds = bounds.expand(point)
+
+	return bounds
+
 
 func get_camera_for(car: Car) -> RaceCamera:
 	for camera in _cameras:
@@ -156,6 +336,14 @@ func get_camera_for(car: Car) -> RaceCamera:
 
 
 func _process(_delta: float) -> void:
+	# Les cases n'ont leur taille réelle qu'après la mise en page :
+	# on (re)cadre la minimap dès que sa taille change.
+	for i in range(_minimap_viewports.size()):
+		var size := _minimap_viewports[i].size
+
+		if size.x > 16 and size.y > 16 and size != _minimap_framed_sizes[i]:
+			_minimap_framed_sizes[i] = size
+			_frame_minimaps()
 	for i in range(mini(_labels.size(), _states.size())):
 		var state := _states[i]
 
@@ -177,6 +365,57 @@ func _process(_delta: float) -> void:
 			text += "   ARRIVÉ"
 
 		_labels[i].text = text
+
+		if state.race_position > 0:
+			_position_labels[i].text = "%s / %d" % [
+				PLACE.get(state.race_position, str(state.race_position)),
+				race_controller.get_participant_count() if race_controller else _states.size()
+			]
+
+
+func _create_position_label() -> Label:
+	var label := Label.new()
+	label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	label.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	label.offset_right = -16.0
+	label.offset_top = 8.0
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_font_size_override("font_size", 40)
+	label.add_theme_color_override("font_color", Color.WHITE)
+	label.add_theme_color_override("font_outline_color", Color.BLACK)
+	label.add_theme_constant_override("outline_size", 10)
+	return label
+
+
+func _create_callout() -> Label:
+	var label := Label.new()
+	label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	label.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	label.offset_top = 40.0
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_font_size_override("font_size", 44)
+	label.add_theme_color_override("font_color", Color("#ffd54f"))
+	label.add_theme_color_override("font_outline_color", Color.BLACK)
+	label.add_theme_constant_override("outline_size", 12)
+	label.hide()
+	return label
+
+
+func _create_status_label() -> Label:
+	var label := Label.new()
+	label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	label.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	label.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	label.offset_bottom = -60.0
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_font_size_override("font_size", 34)
+	label.add_theme_color_override("font_outline_color", Color.BLACK)
+	label.add_theme_constant_override("outline_size", 10)
+	label.hide()
+	return label
 
 
 func _create_player_label() -> Label:

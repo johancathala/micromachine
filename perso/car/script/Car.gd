@@ -154,20 +154,40 @@ var tire_wear: float = 0.0
 @export_range(1000.0, 1000000.0, 1000.0) var tire_wear_distance: float = 150000.0
 # La glisse use plus vite (x3 en pleine glisse).
 @export_range(0.0, 10.0, 0.1) var tire_wear_slip_factor: float = 2.0
-# Adhérence restante avec des pneus complètement usés (35 %).
-@export_range(0.0, 1.0, 0.01) var worn_tire_grip: float = 0.35
-# Freinage / motricité restants avec des pneus usés.
-@export_range(0.0, 1.0, 0.01) var worn_tire_brake: float = 0.7
-@export_range(0.0, 1.0, 0.01) var worn_tire_traction: float = 0.8
+# Adhérence restante avec des pneus complètement usés (20 %).
+@export_range(0.0, 1.0, 0.01) var worn_tire_grip: float = 0.2
+# Freinage / accélération restants avec des pneus usés (55 %).
+@export_range(0.0, 1.0, 0.01) var worn_tire_brake: float = 0.55
+@export_range(0.0, 1.0, 0.01) var worn_tire_traction: float = 0.55
+# Usure selon la surface : la route use peu, l'herbe davantage,
+# le gravier abîme le plus les pneus.
+@export_range(0.0, 20.0, 0.1) var tire_wear_mul_asphalt: float = 1.0
+@export_range(0.0, 20.0, 0.1) var tire_wear_mul_grass: float = 3.0
+@export_range(0.0, 20.0, 0.1) var tire_wear_mul_gravel: float = 6.0
+# Courbe de l'effet : 1 = linéaire, 2 = très tardif. 1,5 : la perte
+# se fait sentir tôt et devient sévère en fin de vie des pneus.
+@export_range(1.0, 3.0, 0.1) var tire_effect_exponent: float = 1.5
 
 
-## Effet de l'usure, progressif : faible au début, très marqué
-## en fin de vie des pneus (courbe quadratique).
+## Effet de l'usure sur une caractéristique (1 = pneus neufs,
+## worn_value = pneus complètement usés).
 func _tire_effect(worn_value: float) -> float:
 	if not tire_wear_enabled:
 		return 1.0
 
-	return lerpf(1.0, worn_value, tire_wear * tire_wear)
+	return lerpf(1.0, worn_value, pow(tire_wear, tire_effect_exponent))
+
+
+## Multiplicateur d'usure de la surface roulée.
+func _get_surface_wear_multiplier() -> float:
+	if _surface == SurfaceCatalog.ASPHALT:
+		return tire_wear_mul_asphalt
+
+	if _surface == SurfaceCatalog.GRAVEL:
+		return tire_wear_mul_gravel
+
+	# Herbe, terre... (surface par défaut hors piste).
+	return tire_wear_mul_grass
 
 
 func reset_tires() -> void:
@@ -455,11 +475,14 @@ func _process_movement(_delta: float) -> void:
 	# ======================
 	var slip = _compute_slip_intensity(v_lat_scalar, speed)
 
-	# Usure des pneus : distance parcourue, accélérée par la glisse.
+	# Usure des pneus : distance parcourue, selon la surface,
+	# accélérée par la glisse.
 	if tire_wear_enabled and speed > 1.0:
 		tire_wear = minf(
 			tire_wear
-			+ speed * _delta / tire_wear_distance * (1.0 + tire_wear_slip_factor * slip),
+			+ speed * _delta / tire_wear_distance
+			* _get_surface_wear_multiplier()
+			* (1.0 + tire_wear_slip_factor * slip),
 			1.0
 		)
 

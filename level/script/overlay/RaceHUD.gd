@@ -19,6 +19,13 @@ var participant_rows: Dictionary = {}
 var race_controller: RaceController = null
 var race_world: RaceWorld = null
 
+# Écran splitté (fourni par Race) : messages et infos dans la vue
+# de chaque joueur.
+var split_screen: SplitScreen = null
+
+# Écran partagé : messages affichés au-dessus de la voiture du joueur.
+var _car_callouts: Dictionary = {}
+
 var displayed_participant_id: int = -1
 var displayed_car: Car = null
 
@@ -42,13 +49,26 @@ func initialize(
 	_update_static_values()
 	
 	_build_participant_rows()
-	
+
+	# Messages centraux en bas de l'écran : au centre, ils recouvraient
+	# les feux de départ posés sur la piste.
+	message_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	message_label.offset_bottom = -170.0
+
+	# Écran splitté : rien en haut des vues, sauf la position de chaque
+	# joueur (affichée par SplitScreen dans le coin de sa vue).
+	if split_screen != null:
+		$MarginContainer/HBoxContainer/LeftPanel/Top.hide()
+		participant_list.hide()
+
 	start_message()
 
 
 func _process(_delta: float) -> void:
 	if race_controller == null:
 		return
+
+	_update_car_callouts()
 
 	_update_race_time()
 	_update_displayed_car()
@@ -150,13 +170,63 @@ var _qte_label: Label = null
 
 
 func _on_box_requested(state: RaceParticipantState, wear: float) -> void:
-	_show_message(
-		"%s : BOX, BOX ! (pneus usés à %d %%)" % [
-			state.nickname.to_upper(),
-			int(wear * 100.0)
-		],
+	show_player_message(
+		state,
+		"BOX, BOX !\npneus usés à %d %%" % int(wear * 100.0),
 		3.0
 	)
+
+
+## Message destiné à un joueur, affiché sur SON écran : dans sa vue en
+## écran splitté, au-dessus de sa voiture en écran partagé.
+func show_player_message(
+	state: RaceParticipantState,
+	text: String,
+	duration: float
+) -> void:
+
+	if split_screen != null:
+		split_screen.show_player_message(state, text, duration)
+		return
+
+	var label: Label = _car_callouts.get(state)
+
+	if label == null:
+		label = Label.new()
+		label.top_level = true
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		label.add_theme_font_size_override("font_size", 34)
+		label.add_theme_color_override("font_color", Color("#ffd54f"))
+		label.add_theme_color_override("font_outline_color", Color.BLACK)
+		label.add_theme_constant_override("outline_size", 10)
+		add_child(label)
+		_car_callouts[state] = label
+
+	label.text = "%s\n%s" % [state.nickname.to_upper(), text]
+	label.set_meta("hide_at", Time.get_ticks_msec() + int(duration * 1000.0))
+	label.show()
+
+
+func _update_car_callouts() -> void:
+	var canvas := get_viewport().get_canvas_transform()
+
+	for state in _car_callouts:
+		var label: Label = _car_callouts[state]
+
+		if not label.visible:
+			continue
+
+		if Time.get_ticks_msec() >= int(label.get_meta("hide_at", 0)):
+			label.hide()
+			continue
+
+		if not is_instance_valid(state.car):
+			continue
+
+		label.reset_size()
+		var screen: Vector2 = canvas * state.car.global_position
+		label.global_position = screen - Vector2(label.size.x / 2.0, label.size.y + 70.0)
 
 
 func _get_qte_label() -> Label:
@@ -206,6 +276,36 @@ func _refresh_qte_label(notice: Dictionary = {}) -> void:
 
 		lines.append(line)
 
+	# Écran splitté : le QTE s'affiche dans la vue du joueur.
+	if split_screen != null:
+		for state in race_controller.get_participant_states():
+			var qte := race_controller.pit_stops.get_qte(state)
+
+			if qte.is_empty():
+				split_screen.set_player_status(state, "")
+				continue
+
+			var arrows: PackedStringArray = []
+			var sequence: Array = qte["sequence"]
+
+			for i in range(sequence.size()):
+				var symbol: String = PitStopManager.DIRECTION_SYMBOLS[sequence[i]]
+
+				if i < qte["index"]:
+					arrows.append("[%s]" % symbol)
+				elif i == qte["index"]:
+					arrows.append("> %s <" % symbol)
+				else:
+					arrows.append(symbol)
+
+			var line := "STAND :  " + "  ".join(arrows)
+
+			if notice.has(state):
+				line += "\n" + String(notice[state])
+
+			split_screen.set_player_status(state, line)
+		return
+
 	var label := _get_qte_label()
 	label.text = "\n".join(lines)
 	label.visible = not lines.is_empty()
@@ -217,7 +317,7 @@ func _on_pit_changed(state: RaceParticipantState, _sequence: Variant, notice: St
 
 func _on_pit_finished(state: RaceParticipantState) -> void:
 	_refresh_qte_label()
-	_show_message("%s : PNEUS NEUFS !" % state.nickname.to_upper(), 2.0)
+	show_player_message(state, "PNEUS NEUFS !", 2.0)
 
 
 func _on_start_reactions_judged(results: Array) -> void:
@@ -239,6 +339,13 @@ func _on_start_reactions_judged(results: Array) -> void:
 			text += "départ lent"
 
 		parts.append(text)
+
+		# Écran splitté : chacun voit son départ dans sa vue.
+		if split_screen != null:
+			show_player_message(state, text.trim_prefix(state.nickname + " : "), 3.0)
+
+	if split_screen != null:
+		return
 
 	_show_message("\n".join(parts), 3.0)
 

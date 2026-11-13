@@ -46,6 +46,7 @@ func _initialize_race() -> void:
 	if split_screen != null:
 		split_screen.attach_players(race_controller)
 
+	race_hud.split_screen = split_screen
 	race_hud.initialize(race_controller, race_world)
 
 	# Les voitures restent bloquées tant que le compte à rebours
