@@ -121,6 +121,27 @@ var _respawning := false
 # Résistance de l'air (freinage aérodynamique à haute vitesse)
 @export_range(0.0, 0.01, 0.0001) var air_drag: float = 0.0009
 
+# ---------------------------
+# ASPIRATION
+# ---------------------------
+# Derrière une autre voiture, la résistance de l'air diminue :
+# la vitesse de pointe (limitée par la traînée) augmente.
+# Distance maximale d'effet (px, ~34 px/m : 500 px ≈ 15 m).
+@export_range(0.0, 2000.0, 10.0) var slipstream_range: float = 500.0
+# Demi-angle du cône derrière la voiture de devant (degrés).
+@export_range(0.0, 90.0, 1.0) var slipstream_angle_deg: float = 15.0
+# Réduction maximale de la traînée (0.3 = -30 % collé à la voiture).
+@export_range(0.0, 1.0, 0.01) var slipstream_drag_reduction: float = 0.3
+# Vitesse maximale gagnée collé à la voiture de devant (0.1 = +10 %).
+@export_range(0.0, 1.0, 0.01) var slipstream_max_speed_bonus: float = 0.1
+# Vitesse minimale pour profiter de l'aspiration (px/s).
+@export_range(0.0, 2000.0, 10.0) var slipstream_min_speed: float = 300.0
+# Vitesse d'établissement / de perte de l'effet (lissage).
+@export_range(0.1, 20.0, 0.1) var slipstream_smoothing: float = 4.0
+
+# Intensité courante de l'aspiration (0 à 1), lissée.
+var slipstream_factor: float = 0.0
+
 # Grip "de base" (asphalte-like)
 # Adhérence latérale de base (résistance au dérapage à basse vitesse)
 @export_range(0.0, 50.0, 0.1) var lateral_grip: float = 10.0
@@ -331,6 +352,9 @@ func _process_movement(_delta: float) -> void:
 	var v_lat_scalar: float = v.dot(right)
 	var v_long: Vector2 = fwd * v_long_scalar
 	var v_lat: Vector2 = right * v_lat_scalar
+
+	# Aspiration derrière une autre voiture
+	_update_slipstream(_delta, fwd)
 
 	# Forces longitudinales
 	var force_long: float = _calculate_longitudinal_forces(speed, v_long_scalar)
@@ -802,16 +826,64 @@ func _apply_resistances(delta: float, right: Vector2, v_long: Vector2, v_lat_sca
 		var new_len: float = max(v_long.length() - rr, 0.0)
 		v_long = v_long.normalized() * new_len
 
-	# Air drag (global)
+	# Air drag (global), réduite par l'aspiration
 	var v: Vector2 = v_long + v_lat
 	var _speed: float = v.length()
-	v -= v * (air_drag * _speed * delta)
+	var drag: float = air_drag * (
+		1.0 - slipstream_drag_reduction * slipstream_factor
+	)
+	v -= v * (drag * _speed * delta)
 
 	# Recompute lateral component after drag
 	v_lat_scalar = v.dot(right)
 	v_lat = right * v_lat_scalar
 
 	return [v_long, v_lat]
+
+## Cherche une voiture devant, dans un cône étroit et dans le même sens :
+## plus elle est proche, plus l'aspiration est forte.
+func _update_slipstream(delta: float, fwd: Vector2) -> void:
+	var target_factor := 0.0
+
+	var parent := get_parent()
+
+	if parent != null and speed >= slipstream_min_speed:
+		var cos_limit := cos(deg_to_rad(slipstream_angle_deg))
+
+		for node in parent.get_children():
+			var other := node as Car
+
+			if other == null or other == self:
+				continue
+
+			if other._destruction_started or not other.visible:
+				continue
+
+			var to_other: Vector2 = other.global_position - global_position
+			var distance := to_other.length()
+
+			if distance <= 1.0 or distance > slipstream_range:
+				continue
+
+			# Devant nous, dans l'axe.
+			if fwd.dot(to_other / distance) < cos_limit:
+				continue
+
+			# Elle roule dans le même sens que nous.
+			if other.velocity.dot(fwd) < slipstream_min_speed * 0.5:
+				continue
+
+			target_factor = maxf(
+				target_factor,
+				1.0 - distance / slipstream_range
+			)
+
+	slipstream_factor = lerpf(
+		slipstream_factor,
+		target_factor,
+		1.0 - exp(-slipstream_smoothing * delta)
+	)
+
 
 func _apply_lateral_grip(delta: float, _speed: float, grip_mult: float, v_lat: Vector2) -> Vector2:
 	var grip_t: float = inverse_lerp(high_speed_grip_start, high_speed_grip_end, _speed)
@@ -839,15 +911,19 @@ func _clamp_velocity(fwd: Vector2, v_long: Vector2, v_lat: Vector2) -> void:
 	var v: Vector2 = v_long + v_lat
 
 	# Limitation de la vitesse longitudinale
+	# (relevée par l'aspiration)
+	var effective_max_speed: float = max_speed * (
+		1.0 + slipstream_max_speed_bonus * slipstream_factor
+	)
 	var v_long_final: float = v.dot(fwd)
 
-	if v_long_final > max_speed:
-		v -= fwd * (v_long_final - max_speed)
+	if v_long_final > effective_max_speed:
+		v -= fwd * (v_long_final - effective_max_speed)
 	elif v_long_final < -max_reverse_speed:
 		v -= fwd * (v_long_final + max_reverse_speed)
 
 	# Limitation globale de sécurité
-	var v_max_total: float = max_speed * 1.15
+	var v_max_total: float = effective_max_speed * 1.15
 
 	if v.length() > v_max_total:
 		v = v.normalized() * v_max_total
