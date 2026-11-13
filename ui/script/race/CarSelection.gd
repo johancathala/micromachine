@@ -27,6 +27,20 @@ var colors: Array = []
 
 @onready var start_button: Button = $MarginContainer/VBoxContainer/Footer/StartButton
 
+# ------------------------------------------------------------
+# Barres de caractéristiques (relatives à la meilleure voiture
+# du catalogue pour chaque caractéristique).
+# ------------------------------------------------------------
+const STATS := [
+	{"name": "Vitesse", "color": Color("#4fc3f7")},
+	{"name": "Accélération", "color": Color("#81c784")},
+	{"name": "Freinage", "color": Color("#ef5350")},
+	{"name": "Adhérence", "color": Color("#ffd54f")}
+]
+
+var _stat_bars: Array[ProgressBar] = []
+var _stat_max: Array[float] = []
+
 
 func _ready() -> void:
 	race_config = GameManager.get_pending_race_config()
@@ -41,6 +55,8 @@ func _ready() -> void:
 
 	cars = CarCatalog.get_cars()
 	colors = ColorCatalog.get_colors()
+
+	_setup_stat_bars()
 
 	_setup_participant_defaults()
 	_setup_car_grid()
@@ -512,6 +528,84 @@ func _on_color_selected(color_id: String) -> void:
 	_refresh_start_button()
 
 
+## Valeurs brutes des caractéristiques d'une voiture, dans l'ordre STATS.
+static func get_car_stats(car: CarDefinition) -> Array[float]:
+	return [
+		car.max_speed,
+		car.engine_force,
+		car.brake_force,
+		# Adhérence : de base et à haute vitesse (qui compte double).
+		car.lateral_grip + 2.0 * car.lateral_grip_at_high_speed
+	]
+
+
+func _setup_stat_bars() -> void:
+	_stat_max.clear()
+
+	for i in range(STATS.size()):
+		_stat_max.append(0.0)
+
+	for car in cars:
+		var values := get_car_stats(car)
+
+		for i in range(values.size()):
+			_stat_max[i] = maxf(_stat_max[i], values[i])
+
+	var grid := GridContainer.new()
+	grid.name = "StatBars"
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 16)
+	grid.add_theme_constant_override("v_separation", 6)
+
+	# Sous la description, dans le panneau d'aperçu.
+	var preview_box := car_description_label.get_parent()
+	preview_box.add_child(grid)
+	preview_box.move_child(grid, car_description_label.get_index() + 1)
+
+	_stat_bars.clear()
+
+	for stat in STATS:
+		var label := Label.new()
+		label.text = stat["name"]
+		label.add_theme_font_size_override("font_size", 22)
+		grid.add_child(label)
+
+		var bar := ProgressBar.new()
+		bar.min_value = 0.0
+		bar.max_value = 100.0
+		bar.show_percentage = false
+		bar.custom_minimum_size = Vector2(260, 18)
+		bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+		var background := StyleBoxFlat.new()
+		background.bg_color = Color(0, 0, 0, 0.45)
+		background.set_corner_radius_all(4)
+		bar.add_theme_stylebox_override("background", background)
+
+		var fill := StyleBoxFlat.new()
+		fill.bg_color = stat["color"]
+		fill.set_corner_radius_all(4)
+		bar.add_theme_stylebox_override("fill", fill)
+
+		grid.add_child(bar)
+		_stat_bars.append(bar)
+
+
+func _refresh_stat_bars(car: CarDefinition) -> void:
+	if car == null:
+		for bar in _stat_bars:
+			bar.value = 0.0
+		return
+
+	var values := get_car_stats(car)
+
+	for i in range(_stat_bars.size()):
+		# 10 % minimum pour que la barre reste visible.
+		var ratio := values[i] / _stat_max[i] if _stat_max[i] > 0.0 else 0.0
+		_stat_bars[i].value = clampf(ratio, 0.1, 1.0) * 100.0
+
+
 func _refresh_preview() -> void:
 	if selected_participant_index < 0:
 		return
@@ -523,6 +617,8 @@ func _refresh_preview() -> void:
 	var car := CarCatalog.get_car(
 		String(participant.get("car_id", ""))
 	)
+
+	_refresh_stat_bars(car)
 
 	if car == null:
 		car_name_label.text = "Voiture inconnue"
