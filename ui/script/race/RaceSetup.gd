@@ -311,6 +311,7 @@ func _setup_tracks() -> void:
 	track_selector.select(track_selector.get_item_index(first_track.id))
 
 	race_config.track = first_track
+	_refresh_track_preview()
 
 # ================================================================
 # Signaux
@@ -575,8 +576,23 @@ func _on_ai_difficulty_changed(index: int) -> void:
 
 func _on_track_changed(index: int) -> void:
 	race_config.track = track_catalog.get(index)
+	_refresh_track_preview()
 
 	_refresh_start_button()
+
+
+## Aperçu du circuit choisi (vue d'ensemble avec le parcours).
+func _refresh_track_preview() -> void:
+	var preview_box := $MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TrackPreview/PreviewVBox
+	var image := preview_box.get_node("PreviewImage") as TextureRect
+	var label := preview_box.get_node("PreviewLabel") as Label
+
+	var texture := TrackCatalog.get_preview(int(race_config.track.get("id", -1)))
+
+	if texture != null:
+		image.texture = texture
+
+	label.text = String(race_config.track.get("name", ""))
 
 
 func _on_laps_changed(index: int) -> void:

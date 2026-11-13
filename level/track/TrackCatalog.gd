@@ -32,6 +32,16 @@ const TRACKS := [
 	}
 ]
 
+## Aperçu du circuit (généré par tools/track/render_track_previews.gd).
+static func get_preview(track_id: int) -> Texture2D:
+	var path := "res://level/sprite/minia/track_%d.png" % track_id
+
+	if ResourceLoader.exists(path):
+		return load(path) as Texture2D
+
+	return null
+
+
 static func get_tracks() -> Array:
 	return TRACKS
 
