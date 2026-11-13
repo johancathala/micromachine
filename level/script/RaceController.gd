@@ -649,6 +649,11 @@ func _on_quit_race() -> void:
 
 	# On fige le classement final.
 	_update_positions()
+
+	# Contre-la-montre (tours illimités) : on quitte toujours avant la
+	# fin ; les résultats de la session sont figés pour le récapitulatif.
+	if race_config != null and race_config.is_time_trial():
+		GameManager.store_race_results(build_race_results())
 	
 	#pause_overlay.close()
 	
@@ -1110,6 +1115,11 @@ func _finish_lap(
 	participant_lap_completed.emit(
 		state
 	)
+
+	# Contre-la-montre : le meilleur tour est enregistré tout de suite,
+	# il reste acquis même si l'on quitte la course avant la fin.
+	if race_config.is_time_trial() and not state.is_ai:
+		_save_best_lap_now(state)
 
 	# --------------------------------------------------------
 	# Dernier tour de la course.
@@ -1637,6 +1647,24 @@ func _finish_race() -> void:
 	)
 	
 	race_finished.emit()
+
+## Enregistre le meilleur tour d'un joueur dans le tableau des meilleurs
+## temps (seulement s'il améliore son record sur ce circuit avec cette
+## voiture).
+func _save_best_lap_now(state: RaceParticipantState) -> void:
+	if state.best_lap_time <= 0.0 or not is_instance_valid(state.car):
+		return
+
+	var car_id := state.car.definition.id if state.car.definition else ""
+
+	BestTimesManager.save_race_results([{
+		"participant_id": state.participant_id,
+		"nickname": state.nickname,
+		"is_ai": false,
+		"best_lap_time": state.best_lap_time,
+		"car_id": car_id
+	}], race_config)
+
 
 func build_race_results() -> Array[Dictionary]:
 
