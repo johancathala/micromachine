@@ -27,6 +27,8 @@ var colors: Array = []
 
 @onready var start_button: Button = $MarginContainer/VBoxContainer/Footer/StartButton
 
+@onready var help_label: Label = $MarginContainer/VBoxContainer/Footer/HelpLabel
+
 # ------------------------------------------------------------
 # Barres de caractéristiques (relatives à la meilleure voiture
 # du catalogue pour chaque caractéristique).
@@ -56,14 +58,13 @@ var _all_ready_timer: SceneTreeTimer = null
 
 
 func _ready() -> void:
+	# Écran « Joueurs » : vient après l'écran des paramètres (RaceSetup).
 	race_config = GameManager.get_pending_race_config()
 
 	if race_config == null:
-		push_error("CarSelection : aucune RaceConfig en attente.")
-		return
+		race_config = RaceConfig.new()
+		race_config.mode = GameManager.GameMode.SINGLE_RACE
 
-	#if race_config.participants.is_empty():
-	#	race_config.build_participants()
 	race_config.build_participants()
 
 	cars = CarCatalog.get_cars()
@@ -71,90 +72,214 @@ func _ready() -> void:
 
 	_setup_stat_bars()
 
-	_setup_participant_defaults()
-	_setup_car_grid()
-	_setup_color_grid()
-	_refresh_participant_list()
-
-	if race_config.participants.size() > 0:
-		_select_participant(0)
-
-	_setup_player_pickers()
+	# Ancien affichage (liste + choix unique) remplacé par un panneau
+	# par joueur.
+	($MarginContainer/VBoxContainer/MainContent/ParticipantsPanel as Control).hide()
+	($MarginContainer/VBoxContainer/MainContent/SelectionPanel as Control).hide()
+	($MarginContainer/VBoxContainer/Header/Title as Label).text = "JOUEURS"
+	start_button.text = "COMMENCER LA COURSE"
 
 	start_button.pressed.connect(_on_start_pressed)
-	_refresh_start_button()
 	back_button.pressed.connect(_on_back_pressed)
 
+	if not InputManager.gamepad_disconnected.is_connected(_on_lobby_gamepad_disconnected):
+		InputManager.gamepad_disconnected.connect(_on_lobby_gamepad_disconnected)
+
 	AudioManager.bind_sound_btt()
-	
-	focus_manager.set_vertical_navigation([
-		car_grid,
-		color_grid,
-		start_button
-	])
-	
-	focus_manager.set_neighbors(car_grid,null,null,participant_list,participant_list)
-	focus_manager.set_neighbors(participant_list,null,null,car_grid,car_grid)
-	
-	focus_manager.set_neighbors(back_button,null,null,start_button,start_button)
-	focus_manager.set_neighbors(start_button,null,null,back_button,back_button)
 
-	# Panneaux simultanés : les touches des joueurs (flèches comprises)
-	# ne doivent pas déplacer le focus des menus.
-	if not _pickers.is_empty():
-		get_viewport().gui_release_focus()
-		return
+	_rebuild_pickers()
 
-	focus_manager.focus_initial()
+	# Les touches des joueurs (flèches comprises) ne doivent pas
+	# déplacer le focus des menus.
+	get_viewport().gui_release_focus()
+
+
+func _exit_tree() -> void:
+	if InputManager.gamepad_disconnected.is_connected(_on_lobby_gamepad_disconnected):
+		InputManager.gamepad_disconnected.disconnect(_on_lobby_gamepad_disconnected)
 
 
 # ============================================================
 # SÉLECTION SIMULTANÉE (1 à 4 joueurs)
 # ============================================================
 
-func _setup_player_pickers() -> void:
+func _rebuild_pickers() -> void:
+	for picker in _pickers:
+		picker.queue_free()
+
+	_pickers.clear()
+
+	var main_content := $MarginContainer/VBoxContainer/MainContent
+	var grid := main_content.get_node_or_null("PlayerPickers") as GridContainer
+
+	if grid == null:
+		grid = GridContainer.new()
+		grid.name = "PlayerPickers"
+		grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		grid.add_theme_constant_override("h_separation", 8)
+		grid.add_theme_constant_override("v_separation", 8)
+		main_content.add_child(grid)
+
 	var human_indices: Array[int] = []
 
 	for i in range(race_config.participants.size()):
 		if not bool(race_config.participants[i].get("is_ai", false)):
 			human_indices.append(i)
 
-	if human_indices.is_empty() or human_indices.size() > MAX_SIMULTANEOUS_PLAYERS:
-		return
-
-	var selection_panel := $MarginContainer/VBoxContainer/MainContent/SelectionPanel as Control
-	selection_panel.hide()
-
-	var grid := GridContainer.new()
-	grid.name = "PlayerPickers"
 	var count := human_indices.size()
-	grid.columns = 1 if count == 1 else (2 if count < COMPACT_FROM_PLAYERS else 4)
+	grid.columns = 1 if count <= 1 else (2 if count < COMPACT_FROM_PLAYERS else 4)
 
-	# Beaucoup de joueurs : toute la largeur pour les panneaux.
-	if count >= COMPACT_FROM_PLAYERS:
-		($MarginContainer/VBoxContainer/MainContent/ParticipantsPanel as Control).hide()
-	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	grid.size_flags_stretch_ratio = selection_panel.size_flags_stretch_ratio
-	grid.add_theme_constant_override("h_separation", 8)
-	grid.add_theme_constant_override("v_separation", 8)
-	selection_panel.get_parent().add_child(grid)
-	selection_panel.get_parent().move_child(grid, selection_panel.get_index() + 1)
+	# Invitation à rejoindre tant que personne n'est là.
+	var prompt := main_content.get_node_or_null("JoinPrompt") as Label
+
+	if prompt == null:
+		prompt = Label.new()
+		prompt.name = "JoinPrompt"
+		prompt.text = "Appuyez sur E (clavier) ou B (manette) pour rejoindre"
+		prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		prompt.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		prompt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		prompt.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		prompt.add_theme_font_size_override("font_size", 40)
+		main_content.add_child(prompt)
+
+	prompt.visible = count == 0
+	grid.visible = count > 0
 
 	var player_number := 1
 
 	for index in human_indices:
+		_ensure_player_livery(index)
+
 		var picker := PlayerCarPicker.new()
 		grid.add_child(picker)
 		picker.setup(index, player_number, race_config.participants[index], STATS)
 		picker.car_step_requested.connect(_on_picker_car_step)
 		picker.color_step_requested.connect(_on_picker_color_step)
 		picker.ready_toggled.connect(_on_picker_ready_toggled)
+		picker.remove_requested.connect(_on_picker_remove)
+		picker.nickname_changed.connect(_on_picker_nickname)
 		_pickers.append(picker)
 		player_number += 1
 
-	_resolve_ai_liveries()
 	_refresh_pickers()
+
+
+## Voiture et couleur par défaut d'un joueur qui rejoint (livrée libre).
+func _ensure_player_livery(index: int) -> void:
+	var participant := race_config.participants[index]
+
+	if not participant.has("car_id"):
+		participant["car_id"] = cars[0].id
+
+	if not participant.has("color_id"):
+		participant["color_id"] = colors[0]["id"]
+
+	race_config.participants[index] = participant
+	_ensure_unique_livery_vs_humans(index)
+	_store_player_choice(index)
+
+
+## Recopie le choix (voiture, couleur, pseudo) dans la fiche du joueur,
+## qui fait foi quand les participants sont reconstruits.
+func _store_player_choice(index: int) -> void:
+	var participant := race_config.participants[index]
+	var player_id := int(participant.get("player_id", -1))
+
+	for i in range(race_config.players.size()):
+		if int(race_config.players[i].get("player_id", -2)) == player_id:
+			for key in ["car_id", "color_id", "nickname"]:
+				if participant.has(key):
+					race_config.players[i][key] = participant[key]
+
+
+# ------------------------------------------------------------
+# Rejoindre / quitter (E : clavier, B : manette)
+# ------------------------------------------------------------
+
+const KEYBOARD_JOIN_KEY := KEY_E
+const GAMEPAD_JOIN_BUTTON := JOY_BUTTON_B
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if get_viewport().gui_get_focus_owner() is LineEdit:
+		return
+
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.physical_keycode == KEYBOARD_JOIN_KEY:
+			_join("keyboard", -1)
+
+	elif event is InputEventJoypadButton and event.pressed:
+		if event.button_index == GAMEPAD_JOIN_BUTTON and not race_config.has_gamepad_player(event.device):
+			_join("gamepad", event.device)
+
+
+func _max_players() -> int:
+	return 1 if race_config.is_time_trial() else RaceConfig.MAX_HUMAN_PLAYERS
+
+
+func _join(device_type: String, device_id: int) -> void:
+	if race_config.players.size() >= _max_players():
+		return
+
+	if device_type == "keyboard":
+		device_id = race_config.get_free_keyboard_id()
+
+		if device_id < 0:
+			return
+
+	var nickname := ""
+
+	if device_type == "keyboard" and device_id == 0:
+		nickname = SaveManager.get_nickname()
+	else:
+		nickname = SaveManager.get_player_nickname(device_type, device_id)
+
+	if nickname.is_empty():
+		nickname = "Joueur %d" % (race_config.players.size() + 1)
+
+	race_config.players.append({
+		"player_id": race_config.get_next_player_id(),
+		"device_type": device_type,
+		"device_id": device_id,
+		"nickname": nickname
+	})
+
+	race_config.build_participants()
+	AudioManager.play_click()
+	_rebuild_pickers()
+
+
+func _on_picker_remove(picker: PlayerCarPicker) -> void:
+	var participant := race_config.participants[picker.participant_index]
+	race_config.remove_player(int(participant.get("player_id", -1)))
+	race_config.build_participants()
+	_rebuild_pickers()
+
+
+func _on_lobby_gamepad_disconnected(device_id: int) -> void:
+	for player in race_config.players:
+		if String(player.get("device_type", "")) == "gamepad" and int(player.get("device_id", -1)) == device_id:
+			race_config.remove_player(int(player.get("player_id", -1)))
+			race_config.build_participants()
+			_rebuild_pickers()
+			return
+
+
+func _on_picker_nickname(picker: PlayerCarPicker, nickname: String) -> void:
+	var participant := race_config.participants[picker.participant_index]
+	participant["nickname"] = nickname
+	race_config.participants[picker.participant_index] = participant
+	_store_player_choice(picker.participant_index)
+
+	var device_type := String(participant.get("device_type", ""))
+	var device_id := int(participant.get("device_id", -1))
+
+	if device_type == "keyboard" and InputManager.get_keyboard_index(device_id) == 0:
+		SaveManager.set_nickname(nickname)
+	else:
+		SaveManager.set_player_nickname(device_type, device_id, nickname)
 
 
 func _refresh_pickers() -> void:
@@ -171,9 +296,10 @@ func _refresh_pickers() -> void:
 				ratios.append(values[i] / _stat_max[i] if _stat_max[i] > 0.0 else 0.0)
 
 		picker.refresh(car, color_data, ratios)
+		_store_player_choice(picker.participant_index)
 
-	_refresh_participant_list()
 	_refresh_start_button()
+	_refresh_lobby_help()
 
 
 func _on_picker_car_step(picker: PlayerCarPicker, direction: int) -> void:
@@ -226,16 +352,15 @@ func _on_picker_ready_toggled(picker: PlayerCarPicker) -> void:
 
 	# Tout le monde est prêt : départ après un court délai, annulé si
 	# quelqu'un repasse « pas prêt » entre-temps.
+	if not _can_start():
+		return
+
 	_all_ready_timer = get_tree().create_timer(ALL_READY_DELAY)
 	var timer := _all_ready_timer
 	await timer.timeout
 
-	if timer != _all_ready_timer:
+	if timer != _all_ready_timer or not _can_start():
 		return
-
-	for other in _pickers:
-		if not other.is_ready:
-			return
 
 	_on_start_pressed()
 
@@ -392,7 +517,33 @@ func _get_color_ids() -> Array:
 
 
 func _refresh_start_button() -> void:
-	start_button.disabled = not race_config.is_car_selection_valid()
+	start_button.disabled = not _can_start()
+
+
+## Prêt à partir : nombre de joueurs conforme au mode, tous prêts.
+func _can_start() -> bool:
+	if not race_config.is_valid():
+		return false
+
+	for picker in _pickers:
+		if not picker.is_ready:
+			return false
+
+	return not _pickers.is_empty()
+
+
+func _refresh_lobby_help() -> void:
+	var count := race_config.players.size()
+	var text := "E : rejoindre au clavier · B : à la manette"
+
+	if race_config.is_time_trial():
+		text = "Contre-la-montre : un seul joueur" if count != 1 else "Seul contre votre fantôme"
+	elif race_config.is_elimination() and count < RaceConfig.ELIMINATION_MIN_PLAYERS:
+		text += " — élimination : %d joueurs minimum" % RaceConfig.ELIMINATION_MIN_PLAYERS
+	elif count > 0:
+		text += " — tout le monde « prêt » pour partir"
+
+	help_label.text = text
 
 
 func _setup_car_grid() -> void:
@@ -889,8 +1040,18 @@ func _refresh_preview() -> void:
 
 
 func _on_start_pressed() -> void:
+	if not _can_start():
+		return
+
+	# IA engagées selon les paramètres (course classique), livrées
+	# distinctes de celles des joueurs.
+	race_config.build_participants()
+	race_config.enable_ai(_get_color_ids())
+
 	if not race_config.is_car_selection_valid():
 		return
+
+	GameManager.set_pending_race_config(race_config)
 
 	if not GameManager.start_race():
 		return
@@ -901,4 +1062,6 @@ func _on_start_pressed() -> void:
 
 
 func _on_back_pressed() -> void:
+	# Retour aux paramètres en gardant les joueurs et leurs voitures.
+	GameManager.set_pending_race_config(race_config.duplicate_config())
 	NavigationManager.go_back()

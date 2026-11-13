@@ -40,6 +40,9 @@ var split_screen: bool = false
 # Course classique : usure des pneus et arrêts au stand.
 var tire_wear: bool = false
 
+# Course classique : nombre d'IA engagées (choisi dans les paramètres).
+var ai_count: int = 0
+
 # Contre-la-montre : fantômes affichés (GhostManager.GhostMode :
 # 0 = les deux, 1 = le meilleur, 2 = celui du joueur).
 var ghost_mode: int = 0
@@ -225,7 +228,10 @@ func build_participants() -> void:
 			false
 		)
 
-		if not old.is_empty():
+		# La voiture choisie par le joueur est conservée dans sa fiche ;
+		# l'ancien participant ne sert que s'il n'en a pas (sinon un
+		# départ de joueur décalerait les voitures des autres).
+		if not old.is_empty() and not participant.has("car_id"):
 			if old.has("car_id"):
 				participant["car_id"] = old["car_id"]
 
@@ -406,6 +412,47 @@ func has_duplicate_liveries() -> bool:
 	return false
 
 
+## Engage les `ai_count` premières IA (course classique) et leur
+## attribue des livrées distinctes de celles des joueurs (et entre
+## elles en écran commun).
+func enable_ai(color_ids: Array) -> void:
+	var cars := CarCatalog.get_cars()
+	var engaged := 0
+
+	for i in range(participants.size()):
+		var participant := participants[i]
+
+		if not bool(participant.get("is_ai", false)):
+			continue
+
+		var enabled := is_classic() and engaged < ai_count
+		participant["enabled"] = enabled
+		participants[i] = participant
+
+		if not enabled:
+			continue
+
+		engaged += 1
+
+		var taken := requires_unique_liveries() and is_livery_taken(
+			String(participant.get("car_id", "")), String(participant.get("color_id", "")), i
+		)
+
+		if participant.has("car_id") and participant.has("color_id") and not taken:
+			continue
+
+		# Première livrée libre, en parcourant les modèles.
+		for car in cars:
+			var free := find_free_color(car.id, i, color_ids)
+
+			if not free.is_empty():
+				participant["car_id"] = car.id
+				participant["color_id"] = free
+				break
+
+		participants[i] = participant
+
+
 func is_car_selection_valid() -> bool:
 	if requires_unique_liveries() and has_duplicate_liveries():
 		return false
@@ -455,6 +502,7 @@ func duplicate_config() -> RaceConfig:
 	copy.split_screen = split_screen
 	copy.tire_wear = tire_wear
 	copy.ghost_mode = ghost_mode
+	copy.ai_count = ai_count
 
 	copy.players = players.duplicate(true)
 	copy.participants = participants.duplicate(true)

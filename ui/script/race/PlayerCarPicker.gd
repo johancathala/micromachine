@@ -13,6 +13,8 @@ class_name PlayerCarPicker
 signal car_step_requested(picker: PlayerCarPicker, direction: int)
 signal color_step_requested(picker: PlayerCarPicker, direction: int)
 signal ready_toggled(picker: PlayerCarPicker)
+signal remove_requested(picker: PlayerCarPicker)
+signal nickname_changed(picker: PlayerCarPicker, nickname: String)
 
 const INPUT_THRESHOLD := 0.5
 const READY_COLOR := Color("#81c784")
@@ -26,6 +28,7 @@ var is_ready := false
 var _previous := {"left": false, "right": false, "up": false, "down": false, "ready": false}
 
 var _title: Label
+var _nickname: LineEdit
 var _car_label: Label
 var _preview: TextureRect
 var _color_label: Label
@@ -51,7 +54,29 @@ func setup(index: int, player_number: int, participant: Dictionary, stats: Array
 	box.add_theme_constant_override("separation", 6)
 	margin.add_child(box)
 
-	_title = _label(box, "J%d — %s" % [player_number, participant.get("nickname", "")], 28, ACCENT_COLOR)
+	# En-tête : numéro, pseudo modifiable, bouton pour quitter.
+	var header := HBoxContainer.new()
+	box.add_child(header)
+
+	_title = _label(header, "J%d" % player_number, 28, ACCENT_COLOR)
+
+	_nickname = LineEdit.new()
+	_nickname.text = String(participant.get("nickname", ""))
+	_nickname.placeholder_text = "Pseudo"
+	_nickname.max_length = 20
+	_nickname.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_nickname.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_nickname.add_theme_font_size_override("font_size", 24)
+	_nickname.text_submitted.connect(func(text): _submit_nickname(text))
+	_nickname.focus_exited.connect(func(): _submit_nickname(_nickname.text))
+	header.add_child(_nickname)
+
+	var remove := Button.new()
+	remove.text = "✕"
+	remove.tooltip_text = "Quitter la partie"
+	remove.focus_mode = Control.FOCUS_NONE
+	remove.pressed.connect(func(): remove_requested.emit(self))
+	header.add_child(remove)
 
 	_label(box, _controls_hint(), 18, Color(1, 1, 1, 0.7))
 
@@ -126,7 +151,23 @@ func refresh(car: CarDefinition, color_data: Dictionary, stat_ratios: Array) -> 
 		_status.remove_theme_color_override("font_color")
 
 
+func _submit_nickname(text: String) -> void:
+	var clean := text.strip_edges()
+	var regex := RegEx.new()
+	regex.compile("^[A-Za-z0-9 _-]{1,20}$")
+
+	if regex.search(clean) == null:
+		return
+
+	nickname_changed.emit(self, clean)
+	_nickname.release_focus()
+
+
 func _process(_delta: float) -> void:
+	# Saisie d'un pseudo en cours : les touches ne pilotent pas le panneau.
+	if get_viewport().gui_get_focus_owner() is LineEdit:
+		return
+
 	var input := InputManager.get_player_input(device_type, device_id)
 
 	var now := {

@@ -52,6 +52,10 @@ const TARGET_SCORES := [5, 10, 15, 20, 30]
 
 @onready var ghost_selector: OptionButton = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/GhostRow/GhostMode)
 
+@onready var ai_count_row: HBoxContainer = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/AICountRow)
+
+@onready var ai_count_selector: OptionButton = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/AICountRow/AICount)
+
 enum ScreenMode {
 	SHARED,
 	SPLIT
@@ -72,18 +76,28 @@ func _ready() -> void:
 		race_config = RaceConfig.new()
 		race_config.mode = GameManager.GameMode.SINGLE_RACE
 
+	# Écran « Paramètres » : vient en premier ; les joueurs rejoignent
+	# et choisissent leur voiture sur l'écran suivant (CarSelection).
+	($MarginContainer/VBoxContainer/MainContent/PlayersPanel as Control).hide()
+	start_button.text = "JOUEURS ›"
+
 	_setup_settings()
 	_connect_signals()
 	_refresh_ui()
 
 
 func set_focus() -> void:
-	var settings: Array[Control] = [
+	var settings: Array[Control] = []
+
+	if ai_count_row.visible:
+		settings.append(ai_count_selector)
+
+	settings.append_array([
 		ai_difficulty,
 		track_selector,
 		lap_selector,
 		game_type_selector
-	]
+	])
 
 	if screen_mode_row.visible:
 		settings.append(screen_mode_selector)
@@ -127,8 +141,19 @@ func _setup_settings() -> void:
 	_setup_screen_modes()
 	_setup_tire_wear()
 	_setup_ghost_modes()
+	_setup_ai_count()
 	_setup_target_scores()
 	_apply_game_type_ui()
+
+
+## Nombre d'IA (course classique) : jusqu'à 7 (au moins un joueur).
+func _setup_ai_count() -> void:
+	ai_count_selector.clear()
+
+	for count in range(RaceConfig.TOTAL_RACE_SLOTS):
+		ai_count_selector.add_item(str(count), count)
+
+	ai_count_selector.select(ai_count_selector.get_item_index(clampi(race_config.ai_count, 0, RaceConfig.TOTAL_RACE_SLOTS - 1)))
 
 
 func _setup_ghost_modes() -> void:
@@ -215,6 +240,7 @@ func _apply_game_type_ui() -> void:
 	screen_mode_row.visible = classic
 	tire_wear_row.visible = classic
 	ghost_row.visible = race_config.is_time_trial()
+	ai_count_row.visible = classic
 	# Pas d'IA hors course classique ; tours illimités (∞, grisé) en
 	# élimination et en contre-la-montre.
 	ai_difficulty.disabled = not classic
@@ -245,9 +271,8 @@ func _setup_ai_difficulty() -> void:
 	ai_difficulty.add_item("Moyen", AIDifficulty.MEDIUM)
 	ai_difficulty.add_item("Expert", AIDifficulty.EXPERT)
 
-	ai_difficulty.select(AIDifficulty.NOVICE)
-
-	race_config.ai_difficulty = AIDifficulty.NOVICE
+	# Réglage en cours conservé (retour depuis l'écran des joueurs).
+	ai_difficulty.select(ai_difficulty.get_item_index(race_config.ai_difficulty))
 
 
 func _setup_laps() -> void:
@@ -268,10 +293,14 @@ func _setup_laps() -> void:
 	for laps in lap_counts:
 		lap_selector.add_item(str(laps), laps)
 
-	# 3 tours
-	lap_selector.select(2)
+	# Nombre de tours en cours (3 par défaut).
+	var lap_index := lap_selector.get_item_index(race_config.lap_count)
 
-	race_config.lap_count = 3
+	if lap_index < 0:
+		race_config.lap_count = 3
+		lap_index = lap_selector.get_item_index(3)
+
+	lap_selector.select(lap_index)
 
 
 ## Sélecteur de tours : « ∞ » grisé hors course classique, sinon le
@@ -307,10 +336,11 @@ func _setup_tracks() -> void:
 	for track: Dictionary in track_catalog:
 		track_selector.add_item(track.name, track.id)
 	
-	var first_track: Dictionary = track_catalog.get(0)
-	track_selector.select(track_selector.get_item_index(first_track.id))
+	# Circuit en cours, sinon le premier.
+	if race_config.track.is_empty() or track_selector.get_item_index(int(race_config.track.get("id", -1))) < 0:
+		race_config.track = track_catalog.get(0)
 
-	race_config.track = first_track
+	track_selector.select(track_selector.get_item_index(int(race_config.track.id)))
 	_refresh_track_preview()
 
 # ================================================================
@@ -348,6 +378,12 @@ func _connect_signals() -> void:
 		_on_tire_wear_changed
 	)
 
+	ai_count_selector.item_selected.connect(
+		func(index):
+			race_config.ai_count = ai_count_selector.get_item_id(index)
+			_refresh_join_hint()
+	)
+
 	ghost_selector.item_selected.connect(
 		func(index): race_config.ghost_mode = ghost_selector.get_item_id(index)
 	)
@@ -367,6 +403,8 @@ func _connect_signals() -> void:
 # JOIN
 # ================================================================
 func _unhandled_input(event: InputEvent) -> void:
+	# On rejoint la partie sur l'écran des joueurs.
+	return
 
 	# ------------------------------------------------------------
 	# Clavier
@@ -517,52 +555,19 @@ func _refresh_players() -> void:
 
 
 func _refresh_start_button() -> void:
-	start_button.disabled = not race_config.is_valid()
+	# Les joueurs sont choisis à l'écran suivant : seuls les réglages
+	# comptent ici.
+	start_button.disabled = race_config.track.is_empty() or race_config.lap_count <= 0
 
 
+## Résumé du mode choisi (les joueurs rejoignent à l'écran suivant).
 func _refresh_join_hint() -> void:
-
-	var human_count := race_config.get_human_player_count()
-	var ai_count := race_config.get_ai_count()
-
-
-	if human_count == 0:
-		join_hint.text = ("Appuyer pour rejoindre (Touche E : clavier, 4 joueurs max / B : manette)")
-		help_label.text = "Aucun joueur dans la partie"
-		return
-
-
-	if human_count >= MAX_HUMAN_PLAYERS:
-		join_hint.text = "%d joueurs" % human_count
-		help_label.text = "Le maximum de %d joueurs est atteint" % human_count
-		return
-
-
-	join_hint.text = "Appuyer pour rejoindre (Touche E : clavier, 4 joueurs max / B : manette)"
-
 	if race_config.is_time_trial():
-		if human_count != 1:
-			help_label.text = "Contre-la-montre : un seul joueur"
-		else:
-			help_label.text = "Seul contre votre fantôme"
-		return
-
-	if race_config.is_elimination():
-		if human_count < RaceConfig.ELIMINATION_MIN_PLAYERS:
-			help_label.text = "Élimination : %d joueurs minimum" % (
-				RaceConfig.ELIMINATION_MIN_PLAYERS
-			)
-		else:
-			help_label.text = "%d joueurs, sans IA" % human_count
-		return
-
-	help_label.text = ("%d joueurs / %d IA") % [
-		human_count,
-		ai_count
-	]
-
-	if race_config.split_screen and human_count < 2:
-		help_label.text += " (écran splitté à partir de 2 joueurs)"
+		help_label.text = "Contre-la-montre : un seul joueur, contre votre fantôme"
+	elif race_config.is_elimination():
+		help_label.text = "Élimination : %d joueurs minimum, sans IA" % RaceConfig.ELIMINATION_MIN_PLAYERS
+	else:
+		help_label.text = "Course classique : %d IA" % race_config.ai_count
 
 
 # ================================================================
@@ -706,22 +711,11 @@ func _on_gamepad_disconnected(device_id: int) -> void:
 # NAVIGATION
 # ================================================================
 func _on_back_pressed() -> void:
+	GameManager.clear_pending_race_config()
 	NavigationManager.go_back_menu()
 
 
 func _on_start_pressed() -> void:
-
-	if not race_config.is_valid():
-		return
-
-	# On conserve une copie indépendante.
-	#
-	# RaceSetup ne choisit PAS les voitures.
-	# CarSelection complètera cette configuration.
-	GameManager.set_pending_race_config(
-		race_config.duplicate_config()
-	)
-
-	NavigationManager.go(
-		"CarSelection"
-	)
+	# Écran suivant : les joueurs (et leurs voitures).
+	GameManager.set_pending_race_config(race_config.duplicate_config())
+	NavigationManager.go("CarSelection")

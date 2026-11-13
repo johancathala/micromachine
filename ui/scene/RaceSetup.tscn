@@ -128,6 +128,19 @@ popup/item_1/id = 1
 popup/item_2/text = "Difficile"
 popup/item_2/id = 2
 
+[node name="AICountRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/AICountRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Nombre d'IA"
+horizontal_alignment = 1
+
+[node name="AICount" type="OptionButton" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/AICountRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
 [node name="TrackRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox" unique_id=829994446]
 layout_mode = 2
 
