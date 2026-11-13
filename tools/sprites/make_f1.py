@@ -74,12 +74,24 @@ def left_half(d):
     d.polygon([(33, 90), (39, 90), (39, 127), (36, 127), (34, 110)], fill=ORANGE)
     rect(d, 38, 92, 39, 126, ORANGE_HI)
     rect(d, 34, 104, 35, 112, ORANGE_LO)
-    # ---- Aileron avant ----
-    rect(d, 6, 122, 9, 137, DARK)         # dérive
-    rect(d, 10, 126, 39, 133, ORANGE)
-    rect(d, 10, 126, 39, 126, ORANGE_HI)
-    rect(d, 10, 130, 39, 130, ORANGE_LO)
-    rect(d, 10, 133, 39, 133, ORANGE_LO)
+    # ---- Aileron avant profilé ----
+    # Bord d'attaque courbe : le centre (contre le nez) est le plus en
+    # avant, les extrémités sont repoussées vers l'arrière (vers le haut
+    # du sprite), avec 3 éléments étagés qui suivent la courbe.
+    def sweep(x):
+        t = (39 - x) / 29.0          # 0 au centre, 1 à l'extrémité
+        return round(t * t * t * 4)  # centre presque droit, bouts relevés
+    for x in range(10, 40):
+        o = sweep(x)
+        base = 135 - o               # bord d'attaque
+        rect(d, x, base - 1, x, base, ORANGE_HI)      # élément principal
+        rect(d, x, base - 3, x, base - 2, ORANGE)     # 2e élément
+        if x < 34:
+            rect(d, x, base - 5, x, base - 4, ORANGE_LO)  # 3e élément (volet)
+        rect(d, x, base - 6 if x < 34 else base - 4, x, base - 6 if x < 34 else base - 4, EDGE)
+    # Dérives (endplates) inclinées aux extrémités
+    d.polygon([(7, 124), (9, 124), (10, 135), (8, 135)], fill=DARK)
+    rect(d, 8, 125, 8, 128, EDGE)
     rect(d, 36, 124, 39, 129, EDGE)       # pointe du nez
 
 
