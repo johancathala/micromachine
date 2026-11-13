@@ -1114,9 +1114,10 @@ func _finish_lap(
 	# --------------------------------------------------------
 	# Dernier tour de la course.
 	# --------------------------------------------------------
-	# En élimination, la partie se termine au score, pas aux tours.
+	# Tours illimités (élimination, contre-la-montre) : pas de fin
+	# aux tours.
 	if (
-		not is_elimination_mode()
+		not race_config.has_infinite_laps()
 		and state.current_lap >= race_config.lap_count
 	):
 		_finish_participant(
@@ -1717,11 +1718,22 @@ func get_participant_count() -> int:
 	return participants.size()
 
 
+## Nombre de tours de la course (0 = illimité).
 func get_lap_count() -> int:
-	if race_config == null:
+	if race_config == null or race_config.has_infinite_laps():
 		return 0
 
 	return race_config.lap_count
+
+
+## « 3/5 », ou « 3 » si les tours sont illimités.
+func format_lap(current_lap: int) -> String:
+	var lap_count := get_lap_count()
+
+	if lap_count <= 0:
+		return str(current_lap)
+
+	return "%d/%d" % [current_lap, lap_count]
 
 
 # ============================================================

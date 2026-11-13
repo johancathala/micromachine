@@ -8,7 +8,7 @@ const MAX_HUMAN_PLAYERS := 8
 enum RaceRules {
 	# Course classique au nombre de tours.
 	CLASSIC,
-	# Élimination hors écran (écran partagé, humains uniquement) :
+	# Élimination (écran partagé, humains uniquement) :
 	# un joueur qui sort de l'écran explose. Quand il ne reste qu'un
 	# joueur, la manche est terminée, les points sont distribués et
 	# la course repart en grille inversée à la position du leader.
@@ -178,6 +178,12 @@ func is_time_trial() -> bool:
 
 func is_classic() -> bool:
 	return race_rules == RaceRules.CLASSIC
+
+
+## Tours illimités : élimination (fin au score) et contre-la-montre
+## (on enchaîne les tours jusqu'à quitter la course).
+func has_infinite_laps() -> bool:
+	return not is_classic()
 
 
 ## L'usure des pneus ne concerne que la course classique

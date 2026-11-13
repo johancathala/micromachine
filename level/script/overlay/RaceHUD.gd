@@ -563,15 +563,7 @@ func _update_first_participant_values(state: RaceParticipantState) -> void:
 	
 	var current_lap = state.current_lap
 
-	var lap_count : int = race_controller.get_lap_count()
-
-	lap_label.text = (
-		"Tour %d/%d"
-		% [
-			current_lap,
-			lap_count
-		]
-	)
+	lap_label.text = "Tour " + race_controller.format_lap(current_lap)
 	
 	first_participant_label.text = "Leader de la course : "+state.nickname
 
@@ -639,9 +631,7 @@ func _update_static_values() -> void:
 	if race_controller == null:
 		return
 
-	var lap_count : int = race_controller.get_lap_count()
-
-	lap_label.text = "Tour 0/%d" % lap_count
+	lap_label.text = "Tour " + race_controller.format_lap(0)
 
 	if race_controller.is_elimination_mode():
 		lap_label.text = "Élimination : %d points pour gagner" % (

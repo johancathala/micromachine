@@ -172,7 +172,7 @@ func _setup_game_types() -> void:
 		RaceConfig.RaceRules.CLASSIC
 	)
 	game_type_selector.add_item(
-		"Élimination hors écran",
+		"Élimination",
 		RaceConfig.RaceRules.ELIMINATION
 	)
 	game_type_selector.add_item(
@@ -215,9 +215,10 @@ func _apply_game_type_ui() -> void:
 	screen_mode_row.visible = classic
 	tire_wear_row.visible = classic
 	ghost_row.visible = race_config.is_time_trial()
-	# Pas d'IA hors course classique ; pas de tours en élimination.
+	# Pas d'IA hors course classique ; tours illimités (∞, grisé) en
+	# élimination et en contre-la-montre.
 	ai_difficulty.disabled = not classic
-	lap_selector.disabled = elimination
+	_show_infinite_laps(not classic)
 
 func _setup_settings_from_config() -> void:
 	_setup_settings()
@@ -271,6 +272,33 @@ func _setup_laps() -> void:
 	lap_selector.select(2)
 
 	race_config.lap_count = 3
+
+
+## Sélecteur de tours : « ∞ » grisé hors course classique, sinon le
+## nombre de tours choisi (conservé dans la configuration).
+const INFINITE_LAPS_ID := 9999
+
+func _show_infinite_laps(infinite: bool) -> void:
+	var infinite_index := lap_selector.get_item_index(INFINITE_LAPS_ID)
+
+	if infinite:
+		if infinite_index < 0:
+			lap_selector.add_item("∞", INFINITE_LAPS_ID)
+			infinite_index = lap_selector.get_item_index(INFINITE_LAPS_ID)
+
+		lap_selector.select(infinite_index)
+		lap_selector.disabled = true
+		return
+
+	if infinite_index >= 0:
+		lap_selector.remove_item(infinite_index)
+
+	lap_selector.disabled = false
+
+	var lap_index := lap_selector.get_item_index(race_config.lap_count)
+
+	if lap_index >= 0:
+		lap_selector.select(lap_index)
 
 
 func _setup_tracks() -> void:

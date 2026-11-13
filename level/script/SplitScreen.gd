@@ -374,10 +374,7 @@ func _process(_delta: float) -> void:
 			text += "   %s" % PLACE.get(state.race_position, "")
 
 		if race_controller != null:
-			text += "   Tour %d/%d" % [
-				state.current_lap,
-				race_controller.get_lap_count()
-			]
+			text += "   Tour " + race_controller.format_lap(state.current_lap)
 
 		if race_controller != null and race_controller.pit_stops != null:
 			text += "   Pneus %d %%" % int(state.car.tire_wear * 100.0)
