@@ -772,8 +772,9 @@ func request_respawn(car: Car) -> void:
 		print("respawn: voiture a fini la course")
 		return
 
-	# Un joueur éliminé attend le restart de la manche.
-	if state.eliminated:
+	# Élimination : jamais de réapparition (accident = élimination,
+	# le joueur attend le restart de la manche).
+	if is_elimination_mode():
 		return
 
 	if not state.has_respawn_point:

@@ -104,6 +104,9 @@ func start_round() -> void:
 	for state in controller.participants:
 		state.eliminated = false
 
+		if is_instance_valid(state.car):
+			state.car.manual_respawn_enabled = false
+
 	round_started.emit()
 
 
@@ -122,11 +125,28 @@ func _physics_process(delta: float) -> void:
 	if not round_active:
 		return
 
+	# Un accident (explosion, chute dans l'eau...) élimine directement :
+	# pas de réapparition, le joueur serait de toute façon trop loin.
+	_check_crashed_players()
+
 	if _grace_time > 0.0:
 		_grace_time -= delta
-		return
+	else:
+		_check_offscreen_players()
 
-	_check_offscreen_players()
+	if get_alive_states().size() <= 1:
+		_end_round()
+
+
+func _check_crashed_players() -> void:
+	for state in get_alive_states():
+		if get_alive_states().size() <= 1:
+			break
+
+		var car := state.car
+
+		if car._destruction_started and not car._respawning:
+			_eliminate(state)
 
 
 func _check_offscreen_players() -> void:
@@ -150,9 +170,6 @@ func _check_offscreen_players() -> void:
 
 		if not view.has_point(car.global_position):
 			_eliminate(state)
-
-	if get_alive_states().size() <= 1:
-		_end_round()
 
 
 func _eliminate(state: RaceParticipantState) -> void:

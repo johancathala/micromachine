@@ -78,6 +78,9 @@ var last_collision_time: float = 0.0
 # Coefficient de rebond (0 = pas de rebond, 1 = rebond parfait)
 @export_range(0.0, 3.0, 0.01) var bounce_factor: float = 0.8
 
+# Rebond sur les pneus et sacs de sable (jamais d'explosion).
+@export_range(0.0, 3.0, 0.01) var tire_bounce_factor: float = 0.7
+
 # Vitesse minimale de l'impact, mesurée sur l'axe de collision,
 # pour déclencher l'explosion. Unité : pixels/seconde.
 @export_range(0.0, 3000.0, 10.0) var explosion_impact_speed: float = 700.0
@@ -85,6 +88,9 @@ var last_collision_time: float = 0.0
 # Vélocité juste avant move_and_slide(), nécessaire pour mesurer
 # la vitesse réelle de l'impact après résolution physique.
 var _velocity_before_move: Vector2 = Vector2.ZERO
+
+# Touche de réapparition active (désactivée en mode élimination).
+var manual_respawn_enabled: bool = true
 
 # ---------------------------
 # ANIMATIONS
@@ -287,7 +293,8 @@ func _physics_process(delta: float) -> void:
 		_process_human_input(delta)
 
 	# Le respawn est déclenché une seule fois par appui.
-	if not is_ai:
+	# Désactivé en mode élimination (le joueur serait trop loin).
+	if not is_ai and manual_respawn_enabled:
 		if respawn and not _respawn_was_pressed:
 			explosion()
 
@@ -408,11 +415,13 @@ func _handle_car_collision(
 	if _destruction_started or _respawning:
 		return
 
+	# Les contacts entre voitures ne provoquent plus d'explosion :
+	# elles se poussent simplement.
 	var other_velocity := other_car.velocity
 	var impact_speed := _get_impact_speed(collision, other_velocity)
 
-	if impact_speed >= explosion_impact_speed:
-		explosion()
+	if impact_speed > 100.0:
+		_play_collision_sound()
 
 
 
@@ -436,11 +445,26 @@ func _handle_obstacle_collision(collision: KinematicCollision2D) -> void:
 		explosion()
 		return
 
+	var impact_speed := _get_impact_speed(collision)
+
+	# --------------------------------------------------------
+	# PNEUS / SACS : rebond, jamais d'explosion
+	# --------------------------------------------------------
+	var bouncy := (
+		collider is Node
+		and (collider as Node).is_in_group("bouncy_obstacle")
+	)
+
+	if bouncy:
+		if impact_speed <= 30.0:
+			return
+
+		_bounce(collision, tire_bounce_factor, true)
+		return
+
 	# --------------------------------------------------------
 	# OBSTACLE CLASSIQUE
 	# --------------------------------------------------------
-	var impact_speed := _get_impact_speed(collision)
-
 	if impact_speed >= explosion_impact_speed:
 		explosion()
 		return
@@ -449,14 +473,30 @@ func _handle_obstacle_collision(collision: KinematicCollision2D) -> void:
 	if impact_speed <= 100.0:
 		return
 
+	_bounce(collision, bounce_factor)
+
+
+## Renvoie la voiture symétriquement à la surface touchée.
+## from_impact_velocity : part de la vitesse d'avant l'impact
+## (move_and_slide() a pu annuler la composante vers l'obstacle),
+## pour un vrai rebond même en choc frontal.
+func _bounce(
+	collision: KinematicCollision2D,
+	factor: float,
+	from_impact_velocity: bool = false
+) -> void:
+
 	var normal: Vector2 = collision.get_normal()
-	var velocity_into_surface: float = velocity.dot(normal)
+	var base_velocity: Vector2 = (
+		_velocity_before_move if from_impact_velocity else velocity
+	)
+	var velocity_into_surface: float = base_velocity.dot(normal)
 
 	if velocity_into_surface >= 0.0:
 		return
 
-	velocity = velocity - 2.0 * velocity_into_surface * normal
-	velocity *= bounce_factor
+	velocity = base_velocity - 2.0 * velocity_into_surface * normal
+	velocity *= factor
 
 	_play_collision_sound()
 
