@@ -35,12 +35,30 @@ func is_full() -> bool:
 	return get_human_player_count() >= MAX_HUMAN_PLAYERS
 
 
-func has_keyboard_player() -> bool:
+func has_keyboard_player(device_id: int = -1) -> bool:
 	for player in players:
-		if str(player.get("device_type", "")) == "keyboard":
+		if str(player.get("device_type", "")) != "keyboard":
+			continue
+
+		# -1 : n'importe quel joueur clavier.
+		if device_id < 0:
+			return true
+
+		if InputManager.get_keyboard_index(
+			int(player.get("device_id", 0))
+		) == device_id:
 			return true
 
 	return false
+
+
+## Premier emplacement clavier libre (0 ou 1), -1 si tous sont pris.
+func get_free_keyboard_id() -> int:
+	for keyboard_id in range(InputManager.KEYBOARD_PLAYER_COUNT):
+		if not has_keyboard_player(keyboard_id):
+			return keyboard_id
+
+	return -1
 
 
 func has_gamepad_player(device_id: int) -> bool:

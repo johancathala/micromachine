@@ -18,6 +18,10 @@ const ACTIONS := [
 
 signal quit_control()
 
+# Identifiants des entrées de device_option :
+# 0..N-1 = joueurs clavier, GAMEPAD_ITEM_OFFSET + device_id = manettes.
+const GAMEPAD_ITEM_OFFSET := 100
+
 @onready var back_button: Button = \
 	$MarginContainer/VBoxContainer/Footer/BackButton
 
@@ -34,7 +38,7 @@ signal quit_control()
 #var opened_from_pause := false
 
 var selected_device_type := "keyboard"
-var selected_device_id := -1
+var selected_device_id := 0
 
 var waiting_for_binding := false
 var waiting_action := ""
@@ -76,16 +80,31 @@ func set_focus() -> void:
 func _setup_devices() -> void:
 	device_option.clear()
 
-	device_option.add_item(
-		"Clavier",
-		0
-	)
+	for keyboard_id in range(InputManager.KEYBOARD_PLAYER_COUNT):
+		device_option.add_item(
+			"Clavier %d" % (keyboard_id + 1),
+			keyboard_id
+		)
 
 	for device_id in Input.get_connected_joypads():
 		device_option.add_item(
 			"Manette %d" % (device_id + 1),
-			device_id + 1
+			GAMEPAD_ITEM_OFFSET + device_id
 		)
+
+	_select_current_device_item()
+
+
+func _select_current_device_item() -> void:
+	var item_id := selected_device_id
+
+	if selected_device_type == "gamepad":
+		item_id = GAMEPAD_ITEM_OFFSET + selected_device_id
+
+	var index := device_option.get_item_index(item_id)
+
+	if index >= 0:
+		device_option.select(index)
 
 
 func _refresh_controls() -> void:
@@ -97,6 +116,16 @@ func _refresh_controls() -> void:
 		child.queue_free()
 
 	for action in ACTIONS:
+		# Le clavier 2 n'a que les actions de conduite.
+		if (
+			selected_device_type == "keyboard"
+			and not InputManager.has_keyboard_action(
+				action["id"],
+				selected_device_id
+			)
+		):
+			continue
+
 		var row: ControlBindingRow = \
 			BINDING_ROW_SCENE.instantiate()
 
@@ -125,12 +154,12 @@ func _refresh_controls() -> void:
 func _on_device_selected(index: int) -> void:
 	var value: int = device_option.get_item_id(index)
 
-	if value == 0:
+	if value < GAMEPAD_ITEM_OFFSET:
 		selected_device_type = "keyboard"
-		selected_device_id = -1
+		selected_device_id = value
 	else:
 		selected_device_type = "gamepad"
-		selected_device_id = value - 1
+		selected_device_id = value - GAMEPAD_ITEM_OFFSET
 
 	_refresh_controls()
 
@@ -151,8 +180,6 @@ func _on_gamepad_disconnected(
 	device_id: int
 ) -> void:
 
-	_setup_devices()
-
 	# Si la manette actuellement sélectionnée
 	# vient d'être débranchée, revenir au clavier.
 	if (
@@ -160,7 +187,9 @@ func _on_gamepad_disconnected(
 		and selected_device_id == device_id
 	):
 		selected_device_type = "keyboard"
-		selected_device_id = -1
+		selected_device_id = 0
+
+	_setup_devices()
 
 	_refresh_controls()
 
@@ -171,13 +200,19 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_pressed():
 		return
 
-	if event is InputEventKey:
+	# La touche est enregistrée pour le périphérique sélectionné
+	# (clavier 1, clavier 2 ou manette) ; les autres entrées sont ignorées.
+	if event is InputEventKey and selected_device_type == "keyboard":
 		InputManager.set_keyboard_binding(
 			waiting_action,
-			event
+			event,
+			selected_device_id
 		)
 
-	elif event is InputEventJoypadButton:
+	elif (
+		event is InputEventJoypadButton
+		and selected_device_type == "gamepad"
+	):
 		InputManager.set_gamepad_binding(
 			selected_device_id,
 			waiting_action,

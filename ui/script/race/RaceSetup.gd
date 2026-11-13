@@ -19,9 +19,6 @@ enum AIDifficulty {
 var race_config: RaceConfig
 var track_catalog: Array
 
-# Une seule personne peut utiliser le clavier.
-var keyboard_player_joined := false
-
 
 @onready var back_button: Button = ($MarginContainer/VBoxContainer/Footer/BackButton)
 
@@ -217,36 +214,45 @@ func _unhandled_input(event: InputEvent) -> void:
 # ================================================================
 # JOIN CLAVIER
 # ================================================================
+# Jusqu'à InputManager.KEYBOARD_PLAYER_COUNT joueurs partagent le clavier :
+# chaque appui sur la touche de JOIN ajoute le joueur clavier suivant.
 func _try_join_keyboard() -> void:
-
-	if keyboard_player_joined:
-		return
 
 	if race_config.is_full():
 		return
 
-	if race_config.has_keyboard_player():
-		keyboard_player_joined = true
+	var keyboard_id := race_config.get_free_keyboard_id()
+
+	if keyboard_id < 0:
 		return
 
 	AudioManager.play_click()
 	var player_id := race_config.get_next_player_id()
 
-	var nickname : String = SaveManager.get_nickname()
+	var nickname : String
+
+	if keyboard_id == 0:
+		# Le clavier 1 correspond au profil principal.
+		nickname = SaveManager.get_nickname()
+	else:
+		nickname = SaveManager.get_player_nickname(
+			"keyboard",
+			keyboard_id
+		)
 
 	if nickname.is_empty():
-		nickname = "Joueur 1"
+		nickname = "Joueur %d" % (
+			race_config.get_human_player_count() + 1
+		)
 
 	var player := {
 		"player_id": player_id,
 		"device_type": "keyboard",
-		"device_id": -1,
+		"device_id": keyboard_id,
 		"nickname": nickname
 	}
 
 	race_config.players.append(player)
-
-	keyboard_player_joined = true
 
 	_refresh_ui()
 
@@ -335,7 +341,7 @@ func _refresh_join_hint() -> void:
 
 
 	if human_count == 0:
-		join_hint.text = ("Appuyer pour rejoindre (Touche E : clavier / B : manette)")
+		join_hint.text = ("Appuyer pour rejoindre (Touche E : clavier, 2 joueurs max / B : manette)")
 		help_label.text = "Aucun joueur dans la partie"
 		return
 
@@ -346,7 +352,7 @@ func _refresh_join_hint() -> void:
 		return
 
 
-	join_hint.text = "Appuyer pour rejoindre (Touche E : clavier / B : manette)"
+	join_hint.text = "Appuyer pour rejoindre (Touche E : clavier, 2 joueurs max / B : manette)"
 	help_label.text = ("%d joueurs / %d IA") % [
 		human_count,
 		ai_count
@@ -393,8 +399,11 @@ func _on_player_nickname_changed(
 			player.get("device_id", -1)
 		)
 
-		if device_type == "keyboard":
-			# Le joueur clavier correspond au profil principal.
+		if (
+			device_type == "keyboard"
+			and InputManager.get_keyboard_index(device_id) == 0
+		):
+			# Le joueur clavier 1 correspond au profil principal.
 			SaveManager.set_nickname(new_nickname)
 		else:
 			SaveManager.set_player_nickname(
@@ -414,9 +423,6 @@ func _on_player_remove_requested(player_id: int) -> void:
 
 	if player.is_empty():
 		return
-
-	if str(player.get("device_type", "")) == "keyboard":
-		keyboard_player_joined = false
 
 	race_config.remove_player(player_id)
 

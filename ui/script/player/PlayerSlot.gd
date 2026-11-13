@@ -48,7 +48,20 @@ func _update_display(display_number: int) -> void:
 	player_label.text = "Joueur %d" % display_number
 
 	if device_type == "keyboard":
-		device_label.text = "Clavier"
+		# Ex. « Clavier 2 (Z Q S D) », d'après les touches configurées.
+		var keys: PackedStringArray = []
+
+		for action in ["accelerate", "left", "brake", "right"]:
+			keys.append(InputManager.get_binding_display_name(
+				"keyboard",
+				device_id,
+				action
+			))
+
+		device_label.text = "Clavier %d (%s)" % [
+			InputManager.get_keyboard_index(device_id) + 1,
+			" ".join(keys)
+		]
 	else:
 		device_label.text = "Manette %d" % (device_id + 1)
 

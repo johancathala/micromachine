@@ -208,7 +208,9 @@ func get_player_nickname(
 	_ensure_player_nicknames_structure()
 
 	if device_type == "keyboard":
-		return str(player_nicknames.get("keyboard", ""))
+		return str(player_nicknames.get(
+			_keyboard_key(device_id), ""
+		))
 
 	if device_type == "gamepad":
 		var gamepads: Dictionary = player_nicknames["gamepads"]
@@ -225,7 +227,7 @@ func set_player_nickname(
 	_ensure_player_nicknames_structure()
 
 	if device_type == "keyboard":
-		player_nicknames["keyboard"] = nickname
+		player_nicknames[_keyboard_key(device_id)] = nickname
 
 	elif device_type == "gamepad":
 		var gamepads: Dictionary = player_nicknames["gamepads"]
@@ -336,27 +338,60 @@ func _ensure_audio_structure() -> void:
 # CONTROLES
 # ============================================================
 
-func get_keyboard_binding(action: String, default_value = null):
+## Clé de sauvegarde d'un joueur clavier :
+## "keyboard" pour le clavier 1 (format historique),
+## "keyboard_2" pour le clavier 2.
+func _keyboard_key(keyboard_index: int) -> String:
+	if keyboard_index >= 1:
+		return "keyboard_%d" % (keyboard_index + 1)
+
+	return "keyboard"
+
+
+func get_keyboard_binding(
+	action: String,
+	default_value = null,
+	keyboard_index: int = 0
+):
 	_ensure_control_structure()
 
-	return control_settings["keyboard"].get(
+	var key := _keyboard_key(keyboard_index)
+
+	if not control_settings.get(key) is Dictionary:
+		return default_value
+
+	return control_settings[key].get(
 		action,
 		default_value
 	)
 
 
-func set_keyboard_binding(action: String, event_data) -> void:
+func set_keyboard_binding(
+	action: String,
+	event_data,
+	keyboard_index: int = 0
+) -> void:
 	_ensure_control_structure()
 
-	control_settings["keyboard"][action] = event_data
+	var key := _keyboard_key(keyboard_index)
+
+	if not control_settings.get(key) is Dictionary:
+		control_settings[key] = {}
+
+	control_settings[key][action] = event_data
 
 	save_profile()
 
 
-func reset_keyboard_bindings(default_bindings: Dictionary) -> void:
+func reset_keyboard_bindings(
+	default_bindings: Dictionary,
+	keyboard_index: int = 0
+) -> void:
 	_ensure_control_structure()
 
-	control_settings["keyboard"] = default_bindings.duplicate(true)
+	control_settings[_keyboard_key(keyboard_index)] = (
+		default_bindings.duplicate(true)
+	)
 
 	save_profile()
 
