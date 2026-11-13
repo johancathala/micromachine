@@ -54,6 +54,19 @@ var leader_direction_min_speed: float = 120.0
 @export_range(0.1, 20.0, 0.1)
 var leader_lookahead_smoothing_speed: float = 4.0
 
+@export_category("Mode élimination")
+
+# Zoom fixe : la caméra suit le leader sans dézoomer pour cadrer
+# les autres (sinon personne ne sortirait de l'écran).
+# À 0.5, l'écran couvre ~113 m x 64 m.
+@export_range(0.1, 2.0, 0.01)
+var elimination_zoom: float = 0.5
+
+# Le centre de l'écran est placé devant le leader : il voit loin
+# devant lui, les poursuivants disparaissent par l'arrière.
+@export_range(0.0, 40.0, 0.5)
+var elimination_center_ahead_meters: float = 10.0
+
 @export_category("Zoom")
 
 @export_range(0.05, 2.0, 0.01)
@@ -117,7 +130,21 @@ func _process(delta: float) -> void:
 	var target_position: Vector2
 	var target_zoom: float
 
-	if cars.size() == 1:
+	if _is_elimination_mode():
+		var leader_state := race_controller.elimination_rules.get_leader_state()
+
+		# Leader en cours d'explosion / réapparition : on ne bouge pas.
+		if leader_state == null:
+			return
+
+		target_position = _get_smoothed_lookahead_point(
+			leader_state.car,
+			elimination_center_ahead_meters,
+			delta
+		)
+		target_zoom = elimination_zoom
+
+	elif cars.size() == 1:
 		var car := cars[0] as Car
 
 		target_position = _calculate_solo_target(car)
@@ -240,9 +267,24 @@ func _get_leader_lookahead_point(
 		_lookahead_initialized = false
 		return null
 
+	return _get_smoothed_lookahead_point(
+		leader,
+		leader_lookahead_meters,
+		delta
+	)
+
+
+## Point situé `meters` devant la voiture, dans sa direction de
+## déplacement, avec un décalage lissé.
+func _get_smoothed_lookahead_point(
+	leader: Car,
+	meters: float,
+	delta: float
+) -> Vector2:
+
 	var target_offset: Vector2 = (
 		_get_travel_direction(leader)
-		* leader_lookahead_meters
+		* meters
 		* pixels_per_meter
 	)
 
@@ -301,6 +343,23 @@ func _get_travel_direction(car: Car) -> Vector2:
 		return car.velocity.normalized()
 
 	return Vector2.RIGHT.rotated(car.global_rotation)
+
+
+func _is_elimination_mode() -> bool:
+	return (
+		race_controller != null
+		and race_controller.is_elimination_mode()
+	)
+
+
+## Zone du monde actuellement visible à l'écran.
+func get_visible_world_rect() -> Rect2:
+	var size: Vector2 = get_viewport_rect().size / zoom
+
+	return Rect2(
+		get_screen_center_position() - size / 2.0,
+		size
+	)
 
 
 func _calculate_bounds(cars: Array[Node2D]) -> Rect2:

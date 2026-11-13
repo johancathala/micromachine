@@ -27,6 +27,10 @@ var has_started_lap: bool = false
 var race_position: int = 0
 var last_progress_time: float = 0.0
 
+# Mode élimination.
+var points: int = 0
+var eliminated: bool = false
+
 
 # ============================================================
 # CHRONOMÉTRAGE DU TOUR COURANT

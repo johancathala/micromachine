@@ -91,6 +91,12 @@ var pause_end_usec: int = 0
 
 var start_lights: RaceStartLights = null
 
+# ============================================================
+# MODE ÉLIMINATION
+# ============================================================
+# Créé uniquement si race_config.is_elimination().
+var elimination_rules: EliminationRules = null
+
 const RACE_END_DELAY := 30.0
 
 
@@ -145,7 +151,36 @@ func initialize(
 	if not _initialize_participants():
 		return false
 
+	if race_config.is_elimination():
+		_initialize_elimination()
+
 	return true
+
+
+func _initialize_elimination() -> void:
+	elimination_rules = EliminationRules.new()
+	elimination_rules.name = "EliminationRules"
+	add_child(elimination_rules)
+
+	elimination_rules.setup(
+		self,
+		race_world.race_camera as RaceCamera,
+		race_config.target_score
+	)
+
+	# Le classement affiché suit les points.
+	elimination_rules.round_finished.connect(
+		func(_ranking, _awarded): _update_positions()
+	)
+
+
+func is_elimination_mode() -> bool:
+	return elimination_rules != null
+
+
+## Fin de partie en mode élimination (score cible atteint).
+func finish_elimination_race() -> void:
+	_finish_race()
 
 
 # ============================================================
@@ -575,6 +610,9 @@ func _start_race() -> void:
 				true
 			)
 
+	if is_elimination_mode():
+		elimination_rules.start_round()
+
 
 # ============================================================
 # TEMPS DE COURSE
@@ -734,6 +772,10 @@ func request_respawn(car: Car) -> void:
 		print("respawn: voiture a fini la course")
 		return
 
+	# Un joueur éliminé attend le restart de la manche.
+	if state.eliminated:
+		return
+
 	if not state.has_respawn_point:
 		push_warning(
 			"Respawn impossible : aucun point enregistré pour %s."
@@ -848,7 +890,11 @@ func _finish_lap(
 	# --------------------------------------------------------
 	# Dernier tour de la course.
 	# --------------------------------------------------------
-	if state.current_lap >= race_config.lap_count:
+	# En élimination, la partie se termine au score, pas aux tours.
+	if (
+		not is_elimination_mode()
+		and state.current_lap >= race_config.lap_count
+	):
 		_finish_participant(
 			state,
 			current_time
@@ -1082,6 +1128,12 @@ func _compare_participants(
 	b: RaceParticipantState
 ) -> bool:
 	# --------------------------------------------------------
+	# Élimination : classement aux points.
+	# --------------------------------------------------------
+	if is_elimination_mode() and a.points != b.points:
+		return a.points > b.points
+
+	# --------------------------------------------------------
 	# Les participants arrivés sont devant ceux qui courent.
 	# --------------------------------------------------------
 	if a.finished != b.finished:
@@ -1180,6 +1232,8 @@ func build_race_results() -> Array[Dictionary]:
 			),
 
 			"finish_time": state.finish_time,
+
+			"points": state.points,
 
 			"lap_count": state.lap_records.size()
 		})

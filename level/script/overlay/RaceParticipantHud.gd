@@ -74,6 +74,16 @@ func refresh() -> void:
 		% participant.current_lap
 	)
 
+	# Mode élimination : points et état dans la manche.
+	if race_controller.is_elimination_mode():
+		lap_label.text = " | %d PTS" % participant.points
+		lap_time_label.text = (
+			" | ÉLIMINÉ" if participant.eliminated else " | EN PISTE"
+		)
+		delta_label.text = ""
+		best_lap_label.text = ""
+		return
+
 
 	# ============================================================
 	# TEMPS DU TOUR EN COURS

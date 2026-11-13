@@ -4,12 +4,31 @@ class_name RaceConfig
 const TOTAL_RACE_SLOTS := 8
 const MAX_HUMAN_PLAYERS := 8
 
+# Règles de la partie.
+enum RaceRules {
+	# Course classique au nombre de tours.
+	CLASSIC,
+	# Élimination hors écran (écran partagé, humains uniquement) :
+	# un joueur qui sort de l'écran explose. Quand il ne reste qu'un
+	# joueur, la manche est terminée, les points sont distribués et
+	# la course repart en grille inversée à la position du leader.
+	ELIMINATION
+}
+
+const ELIMINATION_MIN_PLAYERS := 2
+const DEFAULT_TARGET_SCORE := 10
+
 
 var mode: GameManager.GameMode = GameManager.GameMode.SINGLE_RACE
 
 var ai_difficulty: int = 0
 var track: Dictionary = {}
 var lap_count: int = 3
+
+var race_rules: RaceRules = RaceRules.CLASSIC
+
+# Mode élimination : score qui fait gagner la partie.
+var target_score: int = DEFAULT_TARGET_SCORE
 
 # Joueurs humains ayant rejoint le lobby.
 var players: Array[Dictionary] = []
@@ -28,6 +47,9 @@ func get_human_player_count() -> int:
 
 
 func get_ai_count() -> int:
+	if is_elimination():
+		return 0
+
 	return TOTAL_RACE_SLOTS - get_human_player_count()
 
 
@@ -118,7 +140,18 @@ func is_valid() -> bool:
 	if lap_count <= 0:
 		return false
 
+	if is_elimination():
+		if players.size() < ELIMINATION_MIN_PLAYERS:
+			return false
+
+		if target_score <= 0:
+			return false
+
 	return true
+
+
+func is_elimination() -> bool:
+	return race_rules == RaceRules.ELIMINATION
 
 
 # ================================================================
@@ -154,6 +187,10 @@ func build_participants() -> void:
 		participants.append(participant)
 
 	var ai_count := TOTAL_RACE_SLOTS - players.size()
+
+	# Pas d'IA en élimination : la caméra ne suit que les humains.
+	if is_elimination():
+		ai_count = 0
 
 	for i in range(ai_count):
 		var participant_id := players.size() + i
@@ -295,6 +332,8 @@ func duplicate_config() -> RaceConfig:
 	copy.ai_difficulty = ai_difficulty
 	copy.track = track
 	copy.lap_count = lap_count
+	copy.race_rules = race_rules
+	copy.target_score = target_score
 
 	copy.players = players.duplicate(true)
 	copy.participants = participants.duplicate(true)

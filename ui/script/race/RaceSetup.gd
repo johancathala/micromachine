@@ -32,6 +32,14 @@ var track_catalog: Array
 
 @onready var lap_selector: OptionButton = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/LapCountRow/LapCount)
 
+@onready var game_type_selector: OptionButton = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/GameTypeRow/GameType)
+
+@onready var target_score_row: HBoxContainer = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TargetScoreRow)
+
+@onready var target_score_selector: OptionButton = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TargetScoreRow/TargetScore)
+
+const TARGET_SCORES := [5, 10, 15, 20, 30]
+
 @onready var start_button: Button = ($MarginContainer/VBoxContainer/Footer/StartButton)
 
 @onready var help_label: Label = ($MarginContainer/VBoxContainer/Footer/HelpLabel)
@@ -53,15 +61,23 @@ func _ready() -> void:
 
 
 func set_focus() -> void:
-	focus_manager.set_vertical_navigation([
+	var settings: Array[Control] = [
 		ai_difficulty,
 		track_selector,
-		lap_selector
-	])
-	
-	focus_manager.set_neighbors(lap_selector,track_selector,back_button)
-	focus_manager.set_neighbors(back_button,lap_selector,ai_difficulty,start_button,start_button)
-	focus_manager.set_neighbors(start_button,lap_selector,ai_difficulty,back_button,back_button)
+		lap_selector,
+		game_type_selector
+	]
+
+	if target_score_row.visible:
+		settings.append(target_score_selector)
+
+	focus_manager.set_vertical_navigation(settings)
+
+	var last_setting: Control = settings[settings.size() - 1]
+
+	focus_manager.set_neighbors(last_setting,settings[settings.size() - 2],back_button)
+	focus_manager.set_neighbors(back_button,last_setting,ai_difficulty,start_button,start_button)
+	focus_manager.set_neighbors(start_button,last_setting,ai_difficulty,back_button,back_button)
 
 
 
@@ -81,6 +97,55 @@ func _setup_settings() -> void:
 	_setup_ai_difficulty()
 	_setup_laps()
 	_setup_tracks()
+	_setup_game_types()
+	_setup_target_scores()
+	_apply_game_type_ui()
+
+
+func _setup_game_types() -> void:
+	game_type_selector.clear()
+
+	game_type_selector.add_item(
+		"Course classique",
+		RaceConfig.RaceRules.CLASSIC
+	)
+	game_type_selector.add_item(
+		"Élimination hors écran",
+		RaceConfig.RaceRules.ELIMINATION
+	)
+
+	game_type_selector.select(
+		game_type_selector.get_item_index(race_config.race_rules)
+	)
+
+
+func _setup_target_scores() -> void:
+	target_score_selector.clear()
+
+	for score in TARGET_SCORES:
+		target_score_selector.add_item("%d points" % score, score)
+
+	var index := target_score_selector.get_item_index(
+		race_config.target_score
+	)
+
+	if index < 0:
+		index = target_score_selector.get_item_index(
+			RaceConfig.DEFAULT_TARGET_SCORE
+		)
+		race_config.target_score = RaceConfig.DEFAULT_TARGET_SCORE
+
+	target_score_selector.select(index)
+
+
+## En élimination : pas d'IA et pas de limite de tours,
+## mais un score à atteindre.
+func _apply_game_type_ui() -> void:
+	var elimination := race_config.is_elimination()
+
+	target_score_row.visible = elimination
+	ai_difficulty.disabled = elimination
+	lap_selector.disabled = elimination
 
 func _setup_settings_from_config() -> void:
 	_setup_settings()
@@ -164,6 +229,14 @@ func _connect_signals() -> void:
 
 	lap_selector.item_selected.connect(
 		_on_laps_changed
+	)
+
+	game_type_selector.item_selected.connect(
+		_on_game_type_changed
+	)
+
+	target_score_selector.item_selected.connect(
+		_on_target_score_changed
 	)
 
 	# IMPORTANT :
@@ -353,6 +426,16 @@ func _refresh_join_hint() -> void:
 
 
 	join_hint.text = "Appuyer pour rejoindre (Touche E : clavier, 4 joueurs max / B : manette)"
+
+	if race_config.is_elimination():
+		if human_count < RaceConfig.ELIMINATION_MIN_PLAYERS:
+			help_label.text = "Élimination : %d joueurs minimum" % (
+				RaceConfig.ELIMINATION_MIN_PLAYERS
+			)
+		else:
+			help_label.text = "%d joueurs, sans IA" % human_count
+		return
+
 	help_label.text = ("%d joueurs / %d IA") % [
 		human_count,
 		ai_count
@@ -376,6 +459,22 @@ func _on_track_changed(index: int) -> void:
 
 func _on_laps_changed(index: int) -> void:
 	race_config.lap_count = lap_selector.get_item_id(index)
+
+	_refresh_start_button()
+
+
+func _on_game_type_changed(index: int) -> void:
+	race_config.race_rules = (
+		game_type_selector.get_item_id(index)
+		as RaceConfig.RaceRules
+	)
+
+	_apply_game_type_ui()
+	_refresh_ui()
+
+
+func _on_target_score_changed(index: int) -> void:
+	race_config.target_score = target_score_selector.get_item_id(index)
 
 	_refresh_start_button()
 

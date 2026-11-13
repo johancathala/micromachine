@@ -184,6 +184,32 @@ popup/item_8/id = 8
 popup/item_9/text = "10"
 popup/item_9/id = 9
 
+[node name="GameTypeRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/GameTypeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Mode de jeu"
+horizontal_alignment = 1
+
+[node name="GameType" type="OptionButton" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/GameTypeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TargetScoreRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TargetScoreRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Score à atteindre"
+horizontal_alignment = 1
+
+[node name="TargetScore" type="OptionButton" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TargetScoreRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
 [node name="TrackPreview" type="PanelContainer" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox" unique_id=758373392]
 layout_mode = 2
 size_flags_vertical = 3

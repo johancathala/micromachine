@@ -25,6 +25,9 @@ var displayed_car: Car = null
 var race_started: bool = false
 var best_lap : float = 0.0
 
+# Évite qu'un ancien message masque un message plus récent.
+var _message_id: int = 0
+
 func initialize(
 	controller: RaceController,
 	world: RaceWorld
@@ -97,6 +100,64 @@ func _connect_controller_signals() -> void:
 	):
 		race_controller.race_finished.connect(
 			_on_race_finished
+	)
+
+	if race_controller.is_elimination_mode():
+		var rules := race_controller.elimination_rules
+
+		rules.player_eliminated.connect(_on_player_eliminated)
+		rules.round_finished.connect(_on_round_finished)
+		rules.round_restarting.connect(_on_round_restarting)
+		rules.winner_found.connect(_on_winner_found)
+
+
+# ------------------------------------------------------------------
+# MODE ÉLIMINATION
+# ------------------------------------------------------------------
+func _show_message(text: String, duration: float = 0.0) -> void:
+	_message_id += 1
+	var id := _message_id
+
+	message_label.text = text
+	message_label.show()
+
+	if duration <= 0.0:
+		return
+
+	await get_tree().create_timer(duration, false).timeout
+
+	if id == _message_id:
+		message_label.hide()
+
+
+func _on_player_eliminated(state: RaceParticipantState) -> void:
+	_show_message("%s ÉLIMINÉ !" % state.nickname.to_upper(), 1.5)
+
+
+func _on_round_finished(ranking: Array, awarded_points: Array) -> void:
+	var parts: PackedStringArray = []
+
+	for i in range(ranking.size()):
+		parts.append("%s +%d" % [ranking[i].nickname, awarded_points[i]])
+
+	_show_message(
+		"MANCHE %d : %s" % [
+			race_controller.elimination_rules.round_number,
+			"  ·  ".join(parts)
+		]
+	)
+
+
+func _on_round_restarting() -> void:
+	_show_message("RESTART : GRILLE INVERSÉE !", 2.0)
+
+
+func _on_winner_found(state: RaceParticipantState) -> void:
+	_show_message(
+		"%s GAGNE AVEC %d POINTS !" % [
+			state.nickname.to_upper(),
+			state.points
+		]
 	)
 
 
@@ -212,6 +273,15 @@ func _update_first_participant_values(state: RaceParticipantState) -> void:
 	
 	first_participant_label.text = "Leader de la course : "+state.nickname
 
+	if race_controller.is_elimination_mode():
+		lap_label.text = "Élimination : %d points pour gagner" % (
+			race_controller.elimination_rules.target_score
+		)
+		first_participant_label.text = "En tête aux points : %s (%d)" % [
+			state.nickname,
+			state.points
+		]
+
 func _update_best_lap(state: RaceParticipantState) -> void:
 	if race_controller == null:
 		return
@@ -250,6 +320,11 @@ func _on_participant_lap_completed(state: RaceParticipantState) -> void:
 
 func _on_race_finished() -> void:
 	race_started = false
+
+	# En élimination, le message du vainqueur reste affiché.
+	if race_controller.is_elimination_mode():
+		return
+
 	message_label.text = "FIN DE LA COURSE !"
 	message_label.show()
 
@@ -265,6 +340,11 @@ func _update_static_values() -> void:
 	var lap_count : int = race_controller.get_lap_count()
 
 	lap_label.text = "Tour 0/%d" % lap_count
+
+	if race_controller.is_elimination_mode():
+		lap_label.text = "Élimination : %d points pour gagner" % (
+			race_controller.elimination_rules.target_score
+		)
 	race_time_label.text = "Temps de course : 0.00"
 
 

@@ -911,6 +911,26 @@ func respawn_at(target: Transform2D) -> void:
 	_destruction_started = false
 	set_can_move(true)
 
+## Replace la voiture (visible, collisions actives) pour un nouveau
+## départ. Elle reste immobilisée jusqu'à set_can_move(true).
+func place_for_restart(target: Transform2D) -> void:
+	_respawning = false
+	_destruction_started = false
+	_velocity_before_move = Vector2.ZERO
+
+	set_can_move(false)
+	velocity = Vector2.ZERO
+	speed = 0.0
+	acceleration = 0.0
+	previous_speed = 0.0
+
+	global_position = target.origin
+	global_rotation = target.get_rotation()
+
+	show()
+	set_colision(true)
+
+
 func explosion() -> void:
 	if _destruction_started or _respawning:
 		return
