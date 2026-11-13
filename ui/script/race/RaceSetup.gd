@@ -48,6 +48,10 @@ const TARGET_SCORES := [5, 10, 15, 20, 30]
 
 @onready var tire_wear_selector: OptionButton = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TireWearRow/TireWear)
 
+@onready var ghost_row: HBoxContainer = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/GhostRow)
+
+@onready var ghost_selector: OptionButton = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/GhostRow/GhostMode)
+
 enum ScreenMode {
 	SHARED,
 	SPLIT
@@ -87,6 +91,9 @@ func set_focus() -> void:
 	if tire_wear_row.visible:
 		settings.append(tire_wear_selector)
 
+	if ghost_row.visible:
+		settings.append(ghost_selector)
+
 	if target_score_row.visible:
 		settings.append(target_score_selector)
 
@@ -119,8 +126,20 @@ func _setup_settings() -> void:
 	_setup_game_types()
 	_setup_screen_modes()
 	_setup_tire_wear()
+	_setup_ghost_modes()
 	_setup_target_scores()
 	_apply_game_type_ui()
+
+
+func _setup_ghost_modes() -> void:
+	ghost_selector.clear()
+
+	# Identifiants = GhostManager.GhostMode.
+	ghost_selector.add_item("Les deux", 0)
+	ghost_selector.add_item("Le meilleur", 1)
+	ghost_selector.add_item("Le mien", 2)
+
+	ghost_selector.select(ghost_selector.get_item_index(race_config.ghost_mode))
 
 
 func _setup_tire_wear() -> void:
@@ -156,6 +175,10 @@ func _setup_game_types() -> void:
 		"Élimination hors écran",
 		RaceConfig.RaceRules.ELIMINATION
 	)
+	game_type_selector.add_item(
+		"Contre-la-montre",
+		RaceConfig.RaceRules.TIME_TRIAL
+	)
 
 	game_type_selector.select(
 		game_type_selector.get_item_index(race_config.race_rules)
@@ -185,13 +208,15 @@ func _setup_target_scores() -> void:
 ## mais un score à atteindre.
 func _apply_game_type_ui() -> void:
 	var elimination := race_config.is_elimination()
+	var classic := race_config.is_classic()
 
 	target_score_row.visible = elimination
-	# L'écran splitté ne concerne que la course classique.
-	screen_mode_row.visible = not elimination
-	# Usure des pneus : course classique uniquement.
-	tire_wear_row.visible = not elimination
-	ai_difficulty.disabled = elimination
+	# Écran splitté et usure des pneus : course classique uniquement.
+	screen_mode_row.visible = classic
+	tire_wear_row.visible = classic
+	ghost_row.visible = race_config.is_time_trial()
+	# Pas d'IA hors course classique ; pas de tours en élimination.
+	ai_difficulty.disabled = not classic
 	lap_selector.disabled = elimination
 
 func _setup_settings_from_config() -> void:
@@ -292,6 +317,10 @@ func _connect_signals() -> void:
 
 	tire_wear_selector.item_selected.connect(
 		_on_tire_wear_changed
+	)
+
+	ghost_selector.item_selected.connect(
+		func(index): race_config.ghost_mode = ghost_selector.get_item_id(index)
 	)
 
 	# IMPORTANT :
@@ -481,6 +510,13 @@ func _refresh_join_hint() -> void:
 
 
 	join_hint.text = "Appuyer pour rejoindre (Touche E : clavier, 4 joueurs max / B : manette)"
+
+	if race_config.is_time_trial():
+		if human_count != 1:
+			help_label.text = "Contre-la-montre : un seul joueur"
+		else:
+			help_label.text = "Seul contre votre fantôme"
+		return
 
 	if race_config.is_elimination():
 		if human_count < RaceConfig.ELIMINATION_MIN_PLAYERS:

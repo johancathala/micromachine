@@ -12,7 +12,10 @@ enum RaceRules {
 	# un joueur qui sort de l'écran explose. Quand il ne reste qu'un
 	# joueur, la manche est terminée, les points sont distribués et
 	# la course repart en grille inversée à la position du leader.
-	ELIMINATION
+	ELIMINATION,
+	# Contre-la-montre : un seul joueur, sans IA, contre le fantôme de
+	# son meilleur tour (un fantôme par circuit et par voiture).
+	TIME_TRIAL
 }
 
 const ELIMINATION_MIN_PLAYERS := 2
@@ -37,6 +40,10 @@ var split_screen: bool = false
 # Course classique : usure des pneus et arrêts au stand.
 var tire_wear: bool = false
 
+# Contre-la-montre : fantômes affichés (GhostManager.GhostMode :
+# 0 = les deux, 1 = le meilleur, 2 = celui du joueur).
+var ghost_mode: int = 0
+
 # Joueurs humains ayant rejoint le lobby.
 var players: Array[Dictionary] = []
 
@@ -54,7 +61,7 @@ func get_human_player_count() -> int:
 
 
 func get_ai_count() -> int:
-	if is_elimination():
+	if not is_classic():
 		return 0
 
 	return TOTAL_RACE_SLOTS - get_human_player_count()
@@ -154,6 +161,10 @@ func is_valid() -> bool:
 		if target_score <= 0:
 			return false
 
+	# Contre-la-montre : un seul joueur.
+	if is_time_trial() and players.size() != 1:
+		return false
+
 	return true
 
 
@@ -161,10 +172,18 @@ func is_elimination() -> bool:
 	return race_rules == RaceRules.ELIMINATION
 
 
+func is_time_trial() -> bool:
+	return race_rules == RaceRules.TIME_TRIAL
+
+
+func is_classic() -> bool:
+	return race_rules == RaceRules.CLASSIC
+
+
 ## L'usure des pneus ne concerne que la course classique
 ## (écran partagé ou splitté).
 func uses_tire_wear() -> bool:
-	return tire_wear and not is_elimination()
+	return tire_wear and is_classic()
 
 
 ## L'écran splitté ne s'applique qu'à la course classique,
@@ -172,7 +191,7 @@ func uses_tire_wear() -> bool:
 func uses_split_screen() -> bool:
 	return (
 		split_screen
-		and not is_elimination()
+		and is_classic()
 		and get_human_player_count() >= 2
 	)
 
@@ -211,8 +230,9 @@ func build_participants() -> void:
 
 	var ai_count := TOTAL_RACE_SLOTS - players.size()
 
-	# Pas d'IA en élimination : la caméra ne suit que les humains.
-	if is_elimination():
+	# Pas d'IA en élimination (la caméra ne suit que les humains) ni en
+	# contre-la-montre (seul contre son fantôme).
+	if not is_classic():
 		ai_count = 0
 
 	for i in range(ai_count):
@@ -428,6 +448,7 @@ func duplicate_config() -> RaceConfig:
 	copy.target_score = target_score
 	copy.split_screen = split_screen
 	copy.tire_wear = tire_wear
+	copy.ghost_mode = ghost_mode
 
 	copy.players = players.duplicate(true)
 	copy.participants = participants.duplicate(true)

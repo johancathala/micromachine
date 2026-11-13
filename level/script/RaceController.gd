@@ -162,6 +162,9 @@ var elimination_rules: EliminationRules = null
 # Usure des pneus et arrêts au stand (option de course classique).
 var pit_stops: PitStopManager = null
 
+# Fantôme (mode contre-la-montre).
+var ghost_manager: GhostManager = null
+
 const RACE_END_DELAY := 30.0
 
 
@@ -218,6 +221,12 @@ func initialize(
 
 	if race_config.is_elimination():
 		_initialize_elimination()
+
+	if race_config.is_time_trial():
+		ghost_manager = GhostManager.new()
+		ghost_manager.name = "GhostManager"
+		add_child(ghost_manager)
+		ghost_manager.setup(self, race_config.ghost_mode)
 
 	if race_config.uses_tire_wear():
 		pit_stops = PitStopManager.new()

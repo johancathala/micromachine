@@ -133,6 +133,10 @@ func _connect_controller_signals() -> void:
 		_on_start_reactions_judged
 	)
 
+	if race_controller.ghost_manager != null:
+		race_controller.ghost_manager.new_record.connect(_on_ghost_record)
+		race_controller.race_started.connect(_announce_ghost)
+
 	race_controller.shortcut_detected.connect(
 		func(state, _missed): show_player_message(state, "RACCOURCI !", 2.5)
 	)
@@ -172,6 +176,44 @@ func _show_message(text: String, duration: float = 0.0) -> void:
 
 	if id == _message_id:
 		message_label.hide()
+
+
+# ------------------------------------------------------------------
+# CONTRE-LA-MONTRE : FANTÔME
+# ------------------------------------------------------------------
+func _announce_ghost() -> void:
+	var ghosts := race_controller.ghost_manager
+
+	if ghosts.state == null:
+		return
+
+	var lines: PackedStringArray = []
+
+	if not ghosts.best_ghost.is_empty():
+		lines.append("Record : %s (%s)" % [
+			GhostManager._format_time(float(ghosts.best_ghost["lap_time"])),
+			ghosts.best_ghost["nickname"]
+		])
+
+	if not ghosts.own_ghost.is_empty():
+		lines.append("Votre record : %s" % GhostManager._format_time(float(ghosts.own_ghost["lap_time"])))
+
+	if lines.is_empty():
+		lines.append("Premier tour : il deviendra votre fantôme")
+
+	show_player_message(ghosts.state, "\n".join(lines), 5.0)
+
+
+func _on_ghost_record(state: RaceParticipantState, lap_time: float, previous_time: float, absolute: bool) -> void:
+	var text := "NOUVEAU RECORD %s ! %s" % [
+		"ABSOLU" if absolute else "PERSO",
+		GhostManager._format_time(lap_time)
+	]
+
+	if previous_time < INF:
+		text += "\n-%.2f s" % (previous_time - lap_time)
+
+	show_player_message(state, text, 4.0)
 
 
 # ------------------------------------------------------------------
