@@ -1,0 +1,283 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://level/scene/RaceStartLightsMap.tscn" id="1_56q13"]
+[ext_resource type="PackedScene" path="res://level/track/Track01.tscn" id="2_qac7o"]
+[ext_resource type="Script" path="res://level/script/RaceSection.gd" id="3_n6ltc"]
+[ext_resource type="Script" path="res://level/script/PitStop.gd" id="4_ju2or"]
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_wmbff"]
+a = Vector2(264, 0)
+b = Vector2(-272, 0)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_6omuk"]
+a = Vector2(37.888916, -29.469238)
+b = Vector2(-44.203735, 34.38086)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_s4eaq"]
+a = Vector2(-299.5381, -199.69202)
+b = Vector2(386.0713, 257.38098)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_mnkel"]
+a = Vector2(-171.80896, 38.179688)
+b = Vector2(523.2363, -116.27466)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_121ml"]
+a = Vector2(-214.96045, -214.96045)
+b = Vector2(175.36255, 175.3623)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_vy7ly"]
+a = Vector2(40, 0)
+b = Vector2(-80, 0)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_740cp"]
+a = Vector2(0, 40)
+b = Vector2(0, -80)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_lxtvc"]
+a = Vector2(0, -48)
+b = Vector2(0, 40)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_gc33t"]
+a = Vector2(0, 40)
+b = Vector2(0, -48)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_hfphq"]
+a = Vector2(96.166504, 96.16699)
+b = Vector2(-231.93091, -231.93066)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_pjt38"]
+a = Vector2(19.494629, 43.86328)
+b = Vector2(-32.49121, -73.10449)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_n55nl"]
+a = Vector2(13.251709, -119.26611)
+b = Vector2(-58.30786, 524.7705)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_kwa76"]
+a = Vector2(79.51074, -8.834473)
+b = Vector2(-238.53198, 26.503662)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_ili1q"]
+a = Vector2(-176, 0)
+b = Vector2(168, 0)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_scnih"]
+size = Vector2(160, 2000)
+
+[node name="TrackReverse" type="Node2D" unique_id=1381157225]
+
+[node name="RaceStartLightsMap" type="Node2D" parent="." unique_id=901997129 groups=["race_start_lights_map"] instance=ExtResource("1_56q13")]
+z_index = 3
+position = Vector2(671, 1300)
+
+[node name="Brissac" type="Node2D" parent="." unique_id=1561549427 instance=ExtResource("2_qac7o")]
+y_sort_enabled = true
+
+[node name="Sections" type="Node2D" parent="." unique_id=801200717]
+
+[node name="Section00" type="Area2D" parent="Sections" unique_id=1638673130]
+position = Vector2(816, 1360)
+collision_mask = 2
+script = ExtResource("3_n6ltc")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section00" unique_id=181513365]
+shape = SubResource("SegmentShape2D_wmbff")
+
+[node name="RespawnPoint" type="Marker2D" parent="Sections/Section00" unique_id=343106815]
+rotation = 1.5707964
+
+[node name="Section01" type="Area2D" parent="Sections" unique_id=1885845201]
+position = Vector2(1101.1099, 5581.11)
+collision_mask = 2
+script = ExtResource("3_n6ltc")
+section_id = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section01" unique_id=470999731]
+shape = SubResource("SegmentShape2D_6omuk")
+
+[node name="RespawnPoint" type="Marker2D" parent="Sections/Section01" unique_id=314208994]
+rotation = 0.9097532
+
+[node name="Section02" type="Area2D" parent="Sections" unique_id=1838252630]
+position = Vector2(2070.532, 2025.4679)
+collision_mask = 2
+script = ExtResource("3_n6ltc")
+section_id = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section02" unique_id=995514838]
+shape = SubResource("SegmentShape2D_s4eaq")
+
+[node name="RespawnPoint" type="Marker2D" parent="Sections/Section02" unique_id=600348497]
+rotation = -0.9827937
+
+[node name="Section03" type="Area2D" parent="Sections" unique_id=375925409]
+position = Vector2(1936, -2236.9153)
+collision_mask = 2
+script = ExtResource("3_n6ltc")
+section_id = 3
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section03" unique_id=1861942951]
+shape = SubResource("SegmentShape2D_mnkel")
+
+[node name="RespawnPoint" type="Marker2D" parent="Sections/Section03" unique_id=262146843]
+rotation = -1.7894653
+
+[node name="Section04" type="Area2D" parent="Sections" unique_id=1329671777]
+position = Vector2(3301.5098, -5957.51)
+collision_mask = 2
+script = ExtResource("3_n6ltc")
+section_id = 4
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section04" unique_id=817915419]
+shape = SubResource("SegmentShape2D_121ml")
+
+[node name="RespawnPoint" type="Marker2D" parent="Sections/Section04" unique_id=42488677]
+rotation = -0.7853982
+
+[node name="Section05" type="Area2D" parent="Sections" unique_id=1865505636]
+position = Vector2(2288, -6360.2905)
+collision_mask = 2
+script = ExtResource("3_n6ltc")
+section_id = 5
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section05" unique_id=811180758]
+shape = SubResource("SegmentShape2D_vy7ly")
+
+[node name="RespawnPoint" type="Marker2D" parent="Sections/Section05" unique_id=432889175]
+rotation = 1.5707964
+
+[node name="Section06" type="Area2D" parent="Sections" unique_id=1430578815]
+position = Vector2(14.523158, -7344)
+collision_mask = 2
+script = ExtResource("3_n6ltc")
+section_id = 6
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section06" unique_id=1433616103]
+shape = SubResource("SegmentShape2D_740cp")
+
+[node name="RespawnPoint" type="Marker2D" parent="Sections/Section06" unique_id=958626458]
+rotation = 3.1415927
+
+[node name="Section07" type="Area2D" parent="Sections" unique_id=1159588812]
+position = Vector2(1323.1309, -9296)
+collision_mask = 2
+script = ExtResource("3_n6ltc")
+section_id = 7
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section07" unique_id=585747319]
+shape = SubResource("SegmentShape2D_lxtvc")
+
+[node name="RespawnPoint" type="Marker2D" parent="Sections/Section07" unique_id=1568161510]
+
+[node name="Section08" type="Area2D" parent="Sections" unique_id=2115674247]
+position = Vector2(2001.5491, -10800)
+collision_mask = 2
+script = ExtResource("3_n6ltc")
+section_id = 8
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section08" unique_id=745589741]
+shape = SubResource("SegmentShape2D_gc33t")
+
+[node name="RespawnPoint" type="Marker2D" parent="Sections/Section08" unique_id=492329998]
+rotation = 3.1415927
+
+[node name="Section09" type="Area2D" parent="Sections" unique_id=2040894213]
+position = Vector2(-2163.7893, -10316.211)
+collision_mask = 2
+script = ExtResource("3_n6ltc")
+section_id = 9
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section09" unique_id=392600262]
+shape = SubResource("SegmentShape2D_hfphq")
+
+[node name="RespawnPoint" type="Marker2D" parent="Sections/Section09" unique_id=922642904]
+rotation = 2.3561945
+
+[node name="Section10" type="Area2D" parent="Sections" unique_id=415148524]
+position = Vector2(-5961.157, -8944)
+collision_mask = 2
+script = ExtResource("3_n6ltc")
+section_id = 10
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section10" unique_id=107315177]
+shape = SubResource("SegmentShape2D_pjt38")
+
+[node name="RespawnPoint" type="Marker2D" parent="Sections/Section10" unique_id=1708193393]
+rotation = 2.7233684
+
+[node name="Section11" type="Area2D" parent="Sections" unique_id=2022376085]
+position = Vector2(-3913.8528, -7088)
+collision_mask = 2
+script = ExtResource("3_n6ltc")
+section_id = 11
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section11" unique_id=191705187]
+shape = SubResource("SegmentShape2D_n55nl")
+
+[node name="RespawnPoint" type="Marker2D" parent="Sections/Section11" unique_id=1967364851]
+rotation = 0.11065722
+
+[node name="Section12" type="Area2D" parent="Sections" unique_id=705967589]
+position = Vector2(-2160, -3913.7534)
+collision_mask = 2
+script = ExtResource("3_n6ltc")
+section_id = 12
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section12" unique_id=589562933]
+shape = SubResource("SegmentShape2D_kwa76")
+
+[node name="RespawnPoint" type="Marker2D" parent="Sections/Section12" unique_id=1595961936]
+rotation = 1.4601392
+
+[node name="Section13" type="Area2D" parent="Sections" unique_id=112926916]
+position = Vector2(-112, -1731.5999)
+collision_mask = 2
+script = ExtResource("3_n6ltc")
+section_id = 13
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section13" unique_id=1679931304]
+shape = SubResource("SegmentShape2D_ili1q")
+
+[node name="RespawnPoint" type="Marker2D" parent="Sections/Section13" unique_id=761150473]
+rotation = -1.5707964
+
+[node name="SpawnPoints" type="Node2D" parent="." unique_id=1702861210]
+
+[node name="Spawn01" type="Marker2D" parent="SpawnPoints" unique_id=1746049772]
+position = Vector2(922, 1210)
+rotation = 1.5707964
+
+[node name="Spawn02" type="Marker2D" parent="SpawnPoints" unique_id=453995882]
+position = Vector2(702, 1020)
+rotation = 1.5707964
+
+[node name="Spawn03" type="Marker2D" parent="SpawnPoints" unique_id=843161325]
+position = Vector2(922, 830)
+rotation = 1.5707964
+
+[node name="Spawn04" type="Marker2D" parent="SpawnPoints" unique_id=1731230486]
+position = Vector2(702, 640)
+rotation = 1.5707964
+
+[node name="Spawn05" type="Marker2D" parent="SpawnPoints" unique_id=1770355509]
+position = Vector2(922, 450)
+rotation = 1.5707964
+
+[node name="Spawn06" type="Marker2D" parent="SpawnPoints" unique_id=89711067]
+position = Vector2(702, 260)
+rotation = 1.5707964
+
+[node name="Spawn07" type="Marker2D" parent="SpawnPoints" unique_id=1857948420]
+position = Vector2(922, 70)
+rotation = 1.5707964
+
+[node name="Spawn08" type="Marker2D" parent="SpawnPoints" unique_id=1747472219]
+position = Vector2(702, -120)
+rotation = 1.5707964
+
+[node name="PitStop" type="Area2D" parent="." unique_id=1658118890]
+position = Vector2(100, 385)
+script = ExtResource("4_ju2or")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PitStop" unique_id=74710719]
+shape = SubResource("RectangleShape2D_scnih")

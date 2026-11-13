@@ -796,12 +796,20 @@ func on_car_entered_section(
 	# --------------------------------------------------------
 	# La voiture doit franchir les sections dans l'ordre.
 	# --------------------------------------------------------
+	# Variantes de circuit : la carte intégrée contient aussi les sections
+	# du circuit d'origine ; seules celles du circuit courant comptent.
+	if (
+		respawn_point != null
+		and _sections.get(section_id) != respawn_point.get_parent()
+	):
+		return
+
 	if not trusted and not _is_car_near_gate(state.car, section_id):
 		return
 
 	if section_id != state.next_section:
 		if _is_shortcut(state, section_id):
-			_punish_shortcut(state)
+			_punish_shortcut(state, section_id)
 		return
 
 	var current_time := get_race_time()
@@ -925,15 +933,23 @@ func request_respawn(car: Car) -> void:
 	if state.car._destruction_started == false:
 		state.car.respawn_at(state.respawn_transform)
 
-		# Après un raccourci : la section sautée est validée à la
-		# réapparition (la voiture y est replacée).
+		# Après un raccourci : les sections sautées, jusqu'à celle où la
+		# voiture est replacée, sont validées dans l'ordre.
 		if state.pending_section_validation >= 0:
-			var section_id := state.pending_section_validation
+			var target := state.pending_section_validation
 			state.pending_section_validation = -1
-			var section: RaceSection = _sections.get(section_id)
 
-			if section != null:
+			for i in range(section_count):
+				var section_id := state.next_section
+				var section: RaceSection = _sections.get(section_id)
+
+				if section == null:
+					break
+
 				on_car_entered_section(state.car, section_id, section.respawn_point, true)
+
+				if section_id == target or state.finished:
+					break
 
 
 # ============================================================
@@ -975,17 +991,19 @@ func _is_car_near_gate(car: Car, section_id: int) -> bool:
 	return car.global_position.distance_to(closest) <= GATE_MAX_DISTANCE
 
 
-## Explosion, puis réapparition à la section sautée.
-func _punish_shortcut(state: RaceParticipantState) -> void:
-	var missed := state.next_section
-	var section: RaceSection = _sections.get(missed)
+## Explosion, puis réapparition à la section précédant celle qui a
+## arrêté la voiture (la section qu'elle était censée prendre). Les
+## sections sautées jusqu'à celle-ci sont validées à la réapparition.
+func _punish_shortcut(state: RaceParticipantState, stopping_section: int) -> void:
+	var target := posmod(stopping_section - 1, section_count)
+	var section: RaceSection = _sections.get(target)
 
 	if section != null and section.respawn_point != null:
 		state.respawn_transform = section.respawn_point.global_transform
 		state.has_respawn_point = true
-		state.pending_section_validation = missed
+		state.pending_section_validation = target
 
-	shortcut_detected.emit(state, missed)
+	shortcut_detected.emit(state, target)
 	state.car.explosion()
 
 

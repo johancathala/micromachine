@@ -210,7 +210,7 @@ func _setup_settings_from_config() -> void:
 	if lap_index >= 0:
 		lap_selector.select(lap_index)
 
-	track_selector.select(race_config.track.id)
+	track_selector.select(track_selector.get_item_index(race_config.track.id))
 
 func _setup_ai_difficulty() -> void:
 	ai_difficulty.clear()
@@ -255,7 +255,7 @@ func _setup_tracks() -> void:
 		track_selector.add_item(track.name, track.id)
 	
 	var first_track: Dictionary = track_catalog.get(0)
-	track_selector.select(first_track.id)
+	track_selector.select(track_selector.get_item_index(first_track.id))
 
 	race_config.track = first_track
 

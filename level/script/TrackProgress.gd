@@ -50,112 +50,14 @@ func build(track: Node, gate_segments: Dictionary) -> bool:
 	_cumulative.clear()
 	section_count = gate_segments.size()
 
-	var map := track.get_node_or_null("Map")
-
-	if map == null or section_count < 2:
-		last_error = "nœud Map absent ou moins de 2 sections"
+	if section_count < 2:
+		last_error = "moins de 2 sections"
 		return false
 
-	var drivable: Dictionary = {}
-	var layers: Array[TileMapLayer] = []
+	var astar := build_grid(track)
 
-	for child in map.get_children():
-		var layer := child as TileMapLayer
-
-		if layer == null or layer.tile_set == null:
-			continue
-
-		layers.append(layer)
-
-		var lower_name := String(layer.name).to_lower()
-
-		for keyword in DRIVABLE_KEYWORDS:
-			if lower_name.contains(keyword):
-				if _reference_layer == null:
-					_reference_layer = layer
-					_cell_size = Vector2(layer.tile_set.tile_size)
-				break
-
-	if _reference_layer == null:
-		last_error = "aucune couche « asphalte » / « vibreur »"
+	if astar == null:
 		return false
-
-	# Cases praticables (grille de la couche de référence).
-	for layer in layers:
-		var lower_name := String(layer.name).to_lower()
-		var is_drivable := false
-
-		for keyword in DRIVABLE_KEYWORDS:
-			if lower_name.contains(keyword):
-				is_drivable = true
-
-		if not is_drivable:
-			continue
-
-		for cell in layer.get_used_cells():
-			drivable[_to_grid(layer, cell)] = true
-
-	# Cases bloquées : tuiles avec collision, quelle que soit la couche.
-	var blocked: Dictionary = {}
-
-	for layer in layers:
-		if layer.tile_set.get_physics_layers_count() == 0:
-			continue
-
-		var collision_layer := layer.tile_set.get_physics_layer_collision_layer(0)
-
-		if collision_layer & BLOCKING_COLLISION_MASK == 0:
-			continue
-
-		for cell in layer.get_used_cells():
-			# Certaines cases peuvent pointer vers une tuile absente du
-			# jeu de tuiles (ex. Track01) : on les ignore sans erreur.
-			var source := layer.tile_set.get_source(layer.get_cell_source_id(cell)) if layer.tile_set.has_source(layer.get_cell_source_id(cell)) else null
-
-			if not source is TileSetAtlasSource:
-				continue
-
-			var coords := layer.get_cell_atlas_coords(cell)
-			var alternative := layer.get_cell_alternative_tile(cell)
-
-			if not (source as TileSetAtlasSource).has_tile(coords):
-				continue
-
-			if not (source as TileSetAtlasSource).has_alternative_tile(coords, alternative):
-				continue
-
-			var data := layer.get_cell_tile_data(cell)
-
-			if data == null or data.get_collision_polygons_count(0) == 0:
-				continue
-
-			blocked[_to_grid(layer, cell)] = true
-
-	if drivable.is_empty():
-		return false
-
-	var region := Rect2i()
-	var first := true
-
-	for cell in drivable:
-		if first:
-			region = Rect2i(cell, Vector2i.ONE)
-			first = false
-		else:
-			region = region.expand(cell).expand(cell + Vector2i.ONE)
-
-	var astar := AStarGrid2D.new()
-	astar.region = region.grow(1)
-	astar.cell_size = Vector2.ONE
-	astar.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_ONLY_IF_NO_OBSTACLES
-	astar.default_compute_heuristic = AStarGrid2D.HEURISTIC_OCTILE
-	astar.default_estimate_heuristic = AStarGrid2D.HEURISTIC_OCTILE
-	astar.update()
-	astar.fill_solid_region(astar.region, true)
-
-	for cell in drivable:
-		if not blocked.has(cell):
-			astar.set_point_solid(cell, false)
 
 	# Points de passage possibles de chaque porte : une porte peut
 	# couper plusieurs routes ; on garde chaque portion de route coupée.
@@ -304,6 +206,135 @@ func _gate_crossings(
 		result.append(run[run.size() / 2])
 
 	return result
+
+
+## Grille A* des cases praticables du circuit (null si impossible).
+## Le nœud « Map » peut être à la racine du circuit ou dans une carte
+## intégrée (variantes de circuit réutilisant une autre carte).
+func build_grid(track: Node) -> AStarGrid2D:
+	var map := track.get_node_or_null("Map")
+
+	if map == null:
+		map = track.find_child("Map", true, false)
+
+	if map == null:
+		last_error = "nœud Map absent"
+		return null
+
+	var drivable: Dictionary = {}
+	var layers: Array[TileMapLayer] = []
+
+	for child in map.get_children():
+		var layer := child as TileMapLayer
+
+		if layer == null or layer.tile_set == null:
+			continue
+
+		layers.append(layer)
+
+		var lower_name := String(layer.name).to_lower()
+
+		for keyword in DRIVABLE_KEYWORDS:
+			if lower_name.contains(keyword):
+				if _reference_layer == null:
+					_reference_layer = layer
+					_cell_size = Vector2(layer.tile_set.tile_size)
+				break
+
+	if _reference_layer == null:
+		last_error = "aucune couche « asphalte » / « vibreur »"
+		return null
+
+	# Cases praticables (grille de la couche de référence).
+	for layer in layers:
+		var lower_name := String(layer.name).to_lower()
+		var is_drivable := false
+
+		for keyword in DRIVABLE_KEYWORDS:
+			if lower_name.contains(keyword):
+				is_drivable = true
+
+		if not is_drivable:
+			continue
+
+		for cell in layer.get_used_cells():
+			drivable[_to_grid(layer, cell)] = true
+
+	# Cases bloquées : tuiles avec collision, quelle que soit la couche.
+	var blocked: Dictionary = {}
+
+	for layer in layers:
+		if layer.tile_set.get_physics_layers_count() == 0:
+			continue
+
+		var collision_layer := layer.tile_set.get_physics_layer_collision_layer(0)
+
+		if collision_layer & BLOCKING_COLLISION_MASK == 0:
+			continue
+
+		for cell in layer.get_used_cells():
+			# Certaines cases peuvent pointer vers une tuile absente du
+			# jeu de tuiles (ex. Track01) : on les ignore sans erreur.
+			var source := layer.tile_set.get_source(layer.get_cell_source_id(cell)) if layer.tile_set.has_source(layer.get_cell_source_id(cell)) else null
+
+			if not source is TileSetAtlasSource:
+				continue
+
+			var coords := layer.get_cell_atlas_coords(cell)
+			var alternative := layer.get_cell_alternative_tile(cell)
+
+			if not (source as TileSetAtlasSource).has_tile(coords):
+				continue
+
+			if not (source as TileSetAtlasSource).has_alternative_tile(coords, alternative):
+				continue
+
+			var data := layer.get_cell_tile_data(cell)
+
+			if data == null or data.get_collision_polygons_count(0) == 0:
+				continue
+
+			blocked[_to_grid(layer, cell)] = true
+
+	if drivable.is_empty():
+		return null
+
+	var region := Rect2i()
+	var first := true
+
+	for cell in drivable:
+		if first:
+			region = Rect2i(cell, Vector2i.ONE)
+			first = false
+		else:
+			region = region.expand(cell).expand(cell + Vector2i.ONE)
+
+	var astar := AStarGrid2D.new()
+	astar.region = region.grow(1)
+	astar.cell_size = Vector2.ONE
+	astar.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_ONLY_IF_NO_OBSTACLES
+	astar.default_compute_heuristic = AStarGrid2D.HEURISTIC_OCTILE
+	astar.default_estimate_heuristic = AStarGrid2D.HEURISTIC_OCTILE
+	astar.update()
+	astar.fill_solid_region(astar.region, true)
+
+	for cell in drivable:
+		if not blocked.has(cell):
+			astar.set_point_solid(cell, false)
+
+	return astar
+
+
+func is_drivable_cell(astar: AStarGrid2D, cell: Vector2i) -> bool:
+	return astar.is_in_boundsv(cell) and not astar.is_point_solid(cell)
+
+
+func world_to_cell(world_position: Vector2) -> Vector2i:
+	return _reference_layer.local_to_map(_reference_layer.to_local(world_position))
+
+
+func cell_to_world(cell: Vector2i) -> Vector2:
+	return _cell_to_world(cell)
 
 
 func is_ready() -> bool:
