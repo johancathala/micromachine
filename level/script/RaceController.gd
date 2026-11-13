@@ -31,6 +31,10 @@ signal race_end_countdown_started(
 
 signal race_finished()
 
+# Un participant a coupé : il a franchi une section plus loin que celle
+# qu'il devait passer. Il explose et réapparaît à la section sautée.
+signal shortcut_detected(state: RaceParticipantState, missed_section: int)
+
 # Départ : résultats de réaction au feu vert (humains).
 # Chaque entrée : {state, reaction, effect} ; effect > 0 bonus, < 0 malus.
 signal start_reactions_judged(results: Array)
@@ -78,6 +82,17 @@ var section_count: int = 0
 # Position de chaque section (section_id -> Vector2), pour mesurer
 # la progression continue entre deux sections.
 var _section_positions: Dictionary = {}
+
+# Sections du circuit (section_id -> RaceSection).
+var _sections: Dictionary = {}
+
+# Portes des sections (section_id -> [a, b] en coordonnées globales).
+var _gate_segments: Dictionary = {}
+
+# Distance maximale (px) entre la voiture et la porte pour valider un
+# passage : écarte les contacts « fantômes » signalés juste après une
+# réapparition, alors que la voiture est déjà ailleurs.
+const GATE_MAX_DISTANCE := 300.0
 
 # Progression mesurée le long de la route (chemin réel entre deux
 # sections). null si le circuit ne permet pas de la calculer :
@@ -347,7 +362,9 @@ func _initialize_sections() -> bool:
 	for child in sections_root.get_children():
 		var section := child as RaceSection
 		_section_positions[section.section_id] = section.global_position
+		_sections[section.section_id] = section
 		gate_segments[section.section_id] = _get_gate_segment(section)
+		_gate_segments[section.section_id] = gate_segments[section.section_id]
 
 	track_progress = TrackProgress.new()
 
@@ -738,10 +755,13 @@ func get_race_time() -> float:
 # ============================================================
 # DÉTECTION D'UNE SECTION
 # ============================================================
+## trusted : appel du jeu lui-même (validation après un raccourci),
+## sans contrôle de distance à la porte.
 func on_car_entered_section(
 	car: Car,
 	section_id: int,
-	respawn_point: Marker2D
+	respawn_point: Marker2D,
+	trusted: bool = false
 ) -> void:
 	# --------------------------------------------------------
 	# Une section n'a aucun effet avant le départ.
@@ -776,7 +796,12 @@ func on_car_entered_section(
 	# --------------------------------------------------------
 	# La voiture doit franchir les sections dans l'ordre.
 	# --------------------------------------------------------
+	if not trusted and not _is_car_near_gate(state.car, section_id):
+		return
+
 	if section_id != state.next_section:
+		if _is_shortcut(state, section_id):
+			_punish_shortcut(state)
 		return
 
 	var current_time := get_race_time()
@@ -899,6 +924,69 @@ func request_respawn(car: Car) -> void:
 	print("respawn: destruction en cours ? "+str(state.car._destruction_started))
 	if state.car._destruction_started == false:
 		state.car.respawn_at(state.respawn_transform)
+
+		# Après un raccourci : la section sautée est validée à la
+		# réapparition (la voiture y est replacée).
+		if state.pending_section_validation >= 0:
+			var section_id := state.pending_section_validation
+			state.pending_section_validation = -1
+			var section: RaceSection = _sections.get(section_id)
+
+			if section != null:
+				on_car_entered_section(state.car, section_id, section.respawn_point, true)
+
+
+# ============================================================
+# RACCOURCIS
+# ============================================================
+
+## La voiture franchit une section située plus loin (au plus un
+## demi-tour) que celle qu'elle devait passer. Repasser une section
+## déjà franchie (tête-à-queue, retour en arrière) n'est pas un
+## raccourci.
+func _is_shortcut(state: RaceParticipantState, section_id: int) -> bool:
+	if race_state != RaceState.RUNNING or section_count < 2:
+		return false
+
+	if not is_instance_valid(state.car):
+		return false
+
+	if state.car._destruction_started or state.car._respawning:
+		return false
+
+	if state.pending_section_validation >= 0:
+		return false
+
+	var ahead := posmod(section_id - state.next_section, section_count)
+
+	return ahead >= 1 and ahead <= section_count / 2
+
+
+func _is_car_near_gate(car: Car, section_id: int) -> bool:
+	var gate: Array = _gate_segments.get(section_id, [])
+
+	if gate.is_empty() or not is_instance_valid(car):
+		return true
+
+	var closest := Geometry2D.get_closest_point_to_segment(
+		car.global_position, gate[0], gate[1]
+	)
+
+	return car.global_position.distance_to(closest) <= GATE_MAX_DISTANCE
+
+
+## Explosion, puis réapparition à la section sautée.
+func _punish_shortcut(state: RaceParticipantState) -> void:
+	var missed := state.next_section
+	var section: RaceSection = _sections.get(missed)
+
+	if section != null and section.respawn_point != null:
+		state.respawn_transform = section.respawn_point.global_transform
+		state.has_respawn_point = true
+		state.pending_section_validation = missed
+
+	shortcut_detected.emit(state, missed)
+	state.car.explosion()
 
 
 # ============================================================

@@ -126,6 +126,10 @@ func _connect_controller_signals() -> void:
 		_on_start_reactions_judged
 	)
 
+	race_controller.shortcut_detected.connect(
+		func(state, _missed): show_player_message(state, "RACCOURCI !", 2.5)
+	)
+
 	if race_controller.pit_stops != null:
 		var pits := race_controller.pit_stops
 

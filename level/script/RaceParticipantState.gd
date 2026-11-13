@@ -34,6 +34,9 @@ var start_judged: bool = false
 # Début de l'appui en cours sur l'accélérateur (-1 = relâché).
 var start_press_usec: int = -1
 
+# Raccourci : section sautée, à valider à la réapparition (-1 = aucune).
+var pending_section_validation: int = -1
+
 # Mode élimination.
 var points: int = 0
 var eliminated: bool = false

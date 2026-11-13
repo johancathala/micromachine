@@ -256,6 +256,7 @@ func _restart_round(survivor: RaceParticipantState) -> void:
 
 		state.car.place_for_restart(slot_transform)
 		state.eliminated = false
+		state.pending_section_validation = -1
 
 		# Même progression que le survivant pour tous.
 		state.current_lap = survivor.current_lap

@@ -108,6 +108,22 @@ func build(track: Node, gate_segments: Dictionary) -> bool:
 			continue
 
 		for cell in layer.get_used_cells():
+			# Certaines cases peuvent pointer vers une tuile absente du
+			# jeu de tuiles (ex. Track01) : on les ignore sans erreur.
+			var source := layer.tile_set.get_source(layer.get_cell_source_id(cell)) if layer.tile_set.has_source(layer.get_cell_source_id(cell)) else null
+
+			if not source is TileSetAtlasSource:
+				continue
+
+			var coords := layer.get_cell_atlas_coords(cell)
+			var alternative := layer.get_cell_alternative_tile(cell)
+
+			if not (source as TileSetAtlasSource).has_tile(coords):
+				continue
+
+			if not (source as TileSetAtlasSource).has_alternative_tile(coords, alternative):
+				continue
+
 			var data := layer.get_cell_tile_data(cell)
 
 			if data == null or data.get_collision_polygons_count(0) == 0:
