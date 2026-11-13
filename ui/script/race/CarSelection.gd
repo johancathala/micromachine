@@ -51,6 +51,7 @@ func _ready() -> void:
 		_select_participant(0)
 
 	start_button.pressed.connect(_on_start_pressed)
+	_refresh_start_button()
 	back_button.pressed.connect(_on_back_pressed)
 
 	AudioManager.bind_sound_btt()
@@ -82,6 +83,54 @@ func _setup_participant_defaults() -> void:
 			participant["color_id"] = colors[0]["id"]
 
 		race_config.participants[i] = participant
+
+	# Écran commun : chaque participant reçoit une livrée distincte.
+	for i in range(race_config.participants.size()):
+		_ensure_unique_livery(i)
+
+
+## Si la livrée (modèle + couleur) du participant est déjà prise,
+## lui attribue la première couleur libre pour ce modèle.
+func _ensure_unique_livery(index: int) -> void:
+	if not race_config.requires_unique_liveries():
+		return
+
+	var participant := race_config.participants[index]
+
+	if not bool(participant.get("enabled", true)):
+		return
+
+	var car_id := String(participant.get("car_id", ""))
+
+	if not race_config.is_livery_taken(
+		car_id,
+		String(participant.get("color_id", "")),
+		index
+	):
+		return
+
+	var free_color := race_config.find_free_color(
+		car_id,
+		index,
+		_get_color_ids()
+	)
+
+	if not free_color.is_empty():
+		participant["color_id"] = free_color
+		race_config.participants[index] = participant
+
+
+func _get_color_ids() -> Array:
+	var ids: Array = []
+
+	for color_data in colors:
+		ids.append(String(color_data["id"]))
+
+	return ids
+
+
+func _refresh_start_button() -> void:
+	start_button.disabled = not race_config.is_car_selection_valid()
 
 
 func _setup_car_grid() -> void:
@@ -312,11 +361,15 @@ func _on_toggle_pressed(index: int) -> void:
 
 	race_config.participants[index] = participant
 
+	# Une IA réactivée ne doit pas reprendre une livrée déjà utilisée.
+	_ensure_unique_livery(index)
+
 	_refresh_participant_list()
 
 	_refresh_car_buttons()
 	_refresh_color_buttons()
 	_refresh_preview()
+	_refresh_start_button()
 	focus_manager.set_focus(back_button)
 
 func _refresh_car_buttons() -> void:
@@ -376,6 +429,8 @@ func _refresh_color_buttons() -> void:
 		participant.get("color_id", "")
 	)
 
+	var car_id := String(participant.get("car_id", ""))
+
 	for i in range(color_grid.get_child_count()):
 		var button := color_grid.get_child(i) as Button
 
@@ -390,9 +445,21 @@ func _refresh_color_buttons() -> void:
 
 		var prefix := "✓ " if color_id == selected_color_id else ""
 
+		# Écran commun : couleur déjà prise pour ce modèle.
+		var taken: bool = (
+			race_config.requires_unique_liveries()
+			and race_config.is_livery_taken(
+				car_id,
+				color_id,
+				selected_participant_index
+			)
+		)
+
+		button.disabled = taken
+
 		button.text = prefix + String(
 			color_data["name"]
-		)
+		) + (" (prise)" if taken else "")
 
 
 func _on_car_selected(car_id: String, car_name: String) -> void:
@@ -407,13 +474,32 @@ func _on_car_selected(car_id: String, car_name: String) -> void:
 		selected_participant_index
 	]["car_name"] = car_name
 
+	# Nouveau modèle : la couleur actuelle peut y être déjà prise.
+	_ensure_unique_livery(selected_participant_index)
+
 	_refresh_participant_list()
 	_refresh_car_buttons()
+	_refresh_color_buttons()
 	_refresh_preview()
+	_refresh_start_button()
 
 
 func _on_color_selected(color_id: String) -> void:
 	if selected_participant_index < 0:
+		return
+
+	var car_id := String(
+		race_config.participants[selected_participant_index].get("car_id", "")
+	)
+
+	if (
+		race_config.requires_unique_liveries()
+		and race_config.is_livery_taken(
+			car_id,
+			color_id,
+			selected_participant_index
+		)
+	):
 		return
 
 	race_config.participants[
@@ -423,6 +509,7 @@ func _on_color_selected(color_id: String) -> void:
 	_refresh_participant_list()
 	_refresh_color_buttons()
 	_refresh_preview()
+	_refresh_start_button()
 
 
 func _refresh_preview() -> void:

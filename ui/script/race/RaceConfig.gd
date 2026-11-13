@@ -305,7 +305,76 @@ func get_enabled_ai_count() -> int:
 	return count
 
 
+# ================================================================
+# LIVRÉES (MODÈLE + COULEUR)
+# ================================================================
+
+## Sur un écran commun (partagé ou élimination), deux voitures
+## identiques seraient indiscernables : un couple modèle + couleur
+## ne peut être utilisé que par un seul participant.
+func requires_unique_liveries() -> bool:
+	return not uses_split_screen()
+
+
+func is_livery_taken(
+	car_id: String,
+	color_id: String,
+	except_index: int
+) -> bool:
+
+	for i in range(participants.size()):
+		if i == except_index:
+			continue
+
+		var other := participants[i]
+
+		if not bool(other.get("enabled", true)):
+			continue
+
+		if (
+			String(other.get("car_id", "")) == car_id
+			and String(other.get("color_id", "")) == color_id
+		):
+			return true
+
+	return false
+
+
+## Première couleur libre pour ce modèle ("" si toutes sont prises).
+func find_free_color(
+	car_id: String,
+	except_index: int,
+	color_ids: Array
+) -> String:
+
+	for color_id in color_ids:
+		if not is_livery_taken(car_id, String(color_id), except_index):
+			return String(color_id)
+
+	return ""
+
+
+func has_duplicate_liveries() -> bool:
+	for i in range(participants.size()):
+		var participant := participants[i]
+
+		if not bool(participant.get("enabled", true)):
+			continue
+
+		if is_livery_taken(
+			String(participant.get("car_id", "")),
+			String(participant.get("color_id", "")),
+			i
+		):
+			return true
+
+	return false
+
+
 func is_car_selection_valid() -> bool:
+	if requires_unique_liveries() and has_duplicate_liveries():
+		return false
+
 	var active_count := 0
 
 	for participant in participants:
