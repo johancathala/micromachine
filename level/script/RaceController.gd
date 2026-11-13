@@ -31,6 +31,10 @@ signal race_end_countdown_started(
 
 signal race_finished()
 
+# Départ : résultats de réaction au feu vert (humains).
+# Chaque entrée : {state, reaction, effect} ; effect > 0 bonus, < 0 malus.
+signal start_reactions_judged(results: Array)
+
 signal quit_race()
 
 signal return_to_main_menu()
@@ -82,6 +86,25 @@ var _section_positions: Dictionary = {}
 # franchissement d'une section) : les dépassements apparaissent
 # en temps réel.
 const POSITION_UPDATE_INTERVAL := 0.2
+
+# ============================================================
+# RÉACTION AU DÉPART
+# ============================================================
+# Réaction (s) en dessous de laquelle le bonus est maximal.
+const START_REACTION_PERFECT := 0.12
+# Réaction (s) au-delà de laquelle il n'y a plus de bonus.
+const START_REACTION_WINDOW := 0.40
+# Bonus de puissance maximal (+60 %).
+const START_BONUS_MAX := 0.6
+# Faux départ : malus de puissance de 50 % (juste avant le vert)
+# à 85 % (0,6 s d'avance ou plus).
+const START_MALUS_MIN := 0.5
+const START_MALUS_MAX := 0.85
+const START_EARLY_FULL := 0.6
+# Durée de l'effet (il s'estompe progressivement).
+const START_EFFECT_DURATION := 1.5
+
+var _judging_start := false
 
 var _position_update_timer: float = 0.0
 var _last_order: Array[int] = []
@@ -407,6 +430,14 @@ func start_countdown() -> void:
 
 	race_start_usec = 0
 
+	# Suivi de l'accélérateur des joueurs pendant les feux.
+	_judging_start = true
+
+	for state in participants:
+		state.start_reaction_time = NAN
+		state.start_judged = state.is_ai
+		state.start_press_usec = -1
+
 	# --------------------------------------------------------
 	# Toutes les voitures sont bloquées.
 	# --------------------------------------------------------
@@ -617,6 +648,18 @@ func _start_race() -> void:
 	# Origine du chronométrage.
 	# --------------------------------------------------------
 	race_start_usec = Time.get_ticks_usec()
+
+	# Accélérateur déjà enfoncé au vert : faux départ.
+	_track_start_throttle()
+
+	for state in participants:
+		if state.start_judged or state.start_press_usec < 0:
+			continue
+
+		_judge_start(
+			state,
+			float(state.start_press_usec - race_start_usec) / 1_000_000.0
+		)
 	# --------------------------------------------------------
 	# Le HUD reçoit d'abord l'ordre de passer les feux au vert.
 	# --------------------------------------------------------
@@ -1129,6 +1172,9 @@ func _get_finished_count() -> int:
 # ============================================================
 
 func _physics_process(delta: float) -> void:
+	if _judging_start:
+		_update_start_judging()
+
 	if race_state != RaceState.RUNNING or race_is_paused:
 		return
 
@@ -1141,6 +1187,108 @@ func _physics_process(delta: float) -> void:
 
 	# Signal seulement si l'ordre a changé.
 	_update_positions(false)
+
+
+# ============================================================
+# RÉACTION AU DÉPART
+# ============================================================
+
+## Mémorise le début de l'appui en cours sur l'accélérateur.
+func _track_start_throttle() -> void:
+	var now := Time.get_ticks_usec()
+
+	for state in participants:
+		if state.start_judged or state.car == null:
+			continue
+
+		var input := InputManager.get_player_input(
+			state.car.input_device_type,
+			state.car.input_device_id
+		)
+
+		if input.throttle > 0.5:
+			if state.start_press_usec < 0:
+				state.start_press_usec = now
+		else:
+			state.start_press_usec = -1
+
+
+func _update_start_judging() -> void:
+	_track_start_throttle()
+
+	# Avant le vert : on se contente de suivre les appuis.
+	if race_start_usec <= 0:
+		return
+
+	var elapsed := float(Time.get_ticks_usec() - race_start_usec) / 1_000_000.0
+
+	for state in participants:
+		if state.start_judged:
+			continue
+
+		# Appui commencé après le vert : temps de réaction.
+		if state.start_press_usec >= race_start_usec:
+			_judge_start(
+				state,
+				float(state.start_press_usec - race_start_usec) / 1_000_000.0
+			)
+		# Trop tard pour un bonus : départ neutre.
+		elif elapsed > START_REACTION_WINDOW:
+			_judge_start(state, INF)
+
+	for state in participants:
+		if not state.start_judged:
+			return
+
+	_judging_start = false
+
+	var results: Array = []
+
+	for state in participants:
+		if state.is_ai:
+			continue
+
+		results.append({
+			"state": state,
+			"reaction": state.start_reaction_time,
+			"effect": get_start_effect(state.start_reaction_time)
+		})
+
+	start_reactions_judged.emit(results)
+
+
+## Bonus (> 0) / malus (< 0) de puissance selon la réaction (s).
+## reaction < 0 : accélérateur enfoncé avant le vert.
+static func get_start_effect(reaction: float) -> float:
+	if is_nan(reaction) or is_inf(reaction):
+		return 0.0
+
+	if reaction < 0.0:
+		var early := clampf(-reaction / START_EARLY_FULL, 0.0, 1.0)
+		return -lerpf(START_MALUS_MIN, START_MALUS_MAX, early)
+
+	var quality := 1.0 - clampf(
+		(reaction - START_REACTION_PERFECT)
+		/ (START_REACTION_WINDOW - START_REACTION_PERFECT),
+		0.0,
+		1.0
+	)
+
+	return START_BONUS_MAX * quality
+
+
+func _judge_start(state: RaceParticipantState, reaction: float) -> void:
+	state.start_judged = true
+	state.start_reaction_time = reaction
+
+	var effect := get_start_effect(reaction)
+
+	if effect != 0.0 and is_instance_valid(state.car):
+		state.car.apply_start_effect(
+			effect,
+			START_EFFECT_DURATION,
+			effect < 0.0
+		)
 
 
 ## always_emit = false : n'émet positions_changed que si l'ordre change.

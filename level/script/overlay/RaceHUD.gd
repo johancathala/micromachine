@@ -102,6 +102,10 @@ func _connect_controller_signals() -> void:
 			_on_race_finished
 	)
 
+	race_controller.start_reactions_judged.connect(
+		_on_start_reactions_judged
+	)
+
 	if race_controller.is_elimination_mode():
 		var rules := race_controller.elimination_rules
 
@@ -128,6 +132,29 @@ func _show_message(text: String, duration: float = 0.0) -> void:
 
 	if id == _message_id:
 		message_label.hide()
+
+
+func _on_start_reactions_judged(results: Array) -> void:
+	var parts: PackedStringArray = []
+
+	for result in results:
+		var state: RaceParticipantState = result["state"]
+		var reaction: float = result["reaction"]
+		var effect: float = result["effect"]
+		var text := state.nickname + " : "
+
+		if effect < 0.0:
+			text += "FAUX DÉPART (%.2f s trop tôt)" % -reaction
+		elif effect >= RaceController.START_BONUS_MAX * 0.75:
+			text += "DÉPART CANON ! %.2f s" % reaction
+		elif effect > 0.0:
+			text += "bon départ %.2f s" % reaction
+		else:
+			text += "départ lent"
+
+		parts.append(text)
+
+	_show_message("\n".join(parts), 3.0)
 
 
 func _on_player_eliminated(state: RaceParticipantState) -> void:

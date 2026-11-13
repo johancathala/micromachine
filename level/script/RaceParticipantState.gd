@@ -27,6 +27,13 @@ var has_started_lap: bool = false
 var race_position: int = 0
 var last_progress_time: float = 0.0
 
+# Départ : temps de réaction au feu vert, en secondes.
+# Négatif = accélérateur déjà enfoncé au vert (départ anticipé).
+var start_reaction_time: float = NAN
+var start_judged: bool = false
+# Début de l'appui en cours sur l'accélérateur (-1 = relâché).
+var start_press_usec: int = -1
+
 # Mode élimination.
 var points: int = 0
 var eliminated: bool = false

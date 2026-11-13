@@ -142,6 +142,38 @@ var _respawning := false
 # Intensité courante de l'aspiration (0 à 1), lissée.
 var slipstream_factor: float = 0.0
 
+# ---------------------------
+# DÉPART (réaction au feu vert)
+# ---------------------------
+# Modificateur de puissance moteur appliqué au départ :
+# > 0 bonus, < 0 malus. Il s'estompe linéairement sur sa durée.
+var _start_engine_bonus: float = 0.0
+var _start_effect_duration: float = 0.0
+var _start_effect_time_left: float = 0.0
+var _start_wheelspin: bool = false
+
+
+## Bonus (> 0) ou malus (< 0) de puissance au départ.
+## wheelspin : la voiture patine (fumée, crissement).
+func apply_start_effect(
+	engine_bonus: float,
+	duration: float,
+	wheelspin: bool
+) -> void:
+
+	_start_engine_bonus = engine_bonus
+	_start_effect_duration = maxf(duration, 0.01)
+	_start_effect_time_left = _start_effect_duration
+	_start_wheelspin = wheelspin
+
+
+## Intensité restante de l'effet de départ (1 au début, 0 à la fin).
+func _get_start_effect_fade() -> float:
+	if _start_effect_time_left <= 0.0:
+		return 0.0
+
+	return _start_effect_time_left / _start_effect_duration
+
 # Grip "de base" (asphalte-like)
 # Adhérence latérale de base (résistance au dérapage à basse vitesse)
 @export_range(0.0, 50.0, 0.1) var lateral_grip: float = 10.0
@@ -356,6 +388,10 @@ func _process_movement(_delta: float) -> void:
 	# Aspiration derrière une autre voiture
 	_update_slipstream(_delta, fwd)
 
+	# Effet de départ (bonus / malus) qui s'estompe
+	if _start_effect_time_left > 0.0:
+		_start_effect_time_left = maxf(_start_effect_time_left - _delta, 0.0)
+
 	# Forces longitudinales
 	var force_long: float = _calculate_longitudinal_forces(speed, v_long_scalar)
 	var grip_mult: float = 1.0 if not handbrake else handbrake_grip_multiplier
@@ -386,6 +422,10 @@ func _process_movement(_delta: float) -> void:
 	# FX SYSTEM
 	# ======================
 	var slip = _compute_slip_intensity(v_lat_scalar, speed)
+
+	# Faux départ : les roues patinent (fumée, traces, crissement).
+	if _start_wheelspin and throttle > 0.1:
+		slip = maxf(slip, 0.8 * _get_start_effect_fade())
 
 	_apply_surface_fx()
 	_update_skidmarks(slip)
@@ -800,7 +840,11 @@ func _calculate_longitudinal_forces(_speed: float, v_long_scalar: float) -> floa
 	# Engine (forward)
 	if throttle > 0.001:
 		var engine_fade: float = 1.0 - clamp(_speed / max_speed, 0.0, 1.0) * 0.35
-		force_long += engine_force * _current_engine_mul * throttle * engine_fade
+		var start_mul: float = maxf(
+			1.0 + _start_engine_bonus * _get_start_effect_fade(),
+			0.0
+		)
+		force_long += engine_force * _current_engine_mul * throttle * engine_fade * start_mul
 
 	# Brake or reverse
 	if brake > 0.001:
