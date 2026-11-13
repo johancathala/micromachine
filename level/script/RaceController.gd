@@ -79,6 +79,15 @@ var section_count: int = 0
 # la progression continue entre deux sections.
 var _section_positions: Dictionary = {}
 
+# Progression mesurée le long de la route (chemin réel entre deux
+# sections). null si le circuit ne permet pas de la calculer :
+# on retombe alors sur l'estimation à vol d'oiseau.
+var track_progress: TrackProgress = null
+
+# Cache : progression calculée une fois par image physique.
+var _progress_cache: Dictionary = {}
+var _progress_cache_frame: int = -1
+
 # ============================================================
 # CLASSEMENT EN CONTINU
 # ============================================================
@@ -324,11 +333,37 @@ func _initialize_sections() -> bool:
 
 	_section_positions.clear()
 
+	var gate_segments: Dictionary = {}
+
 	for child in sections_root.get_children():
 		var section := child as RaceSection
 		_section_positions[section.section_id] = section.global_position
+		gate_segments[section.section_id] = _get_gate_segment(section)
+
+	track_progress = TrackProgress.new()
+
+	if not track_progress.build(race_world.current_track, gate_segments):
+		push_warning(
+			"RaceController : progression le long de la route indisponible (%s), "
+			% track_progress.last_error
+			+ "estimation à vol d'oiseau utilisée."
+		)
+		track_progress = null
 
 	return true
+
+
+## Porte d'une section : son SegmentShape2D en coordonnées globales
+## (ou un segment nul à la position de la section).
+func _get_gate_segment(section: RaceSection) -> Array:
+	for child in section.get_children():
+		var shape := child as CollisionShape2D
+
+		if shape != null and shape.shape is SegmentShape2D:
+			var segment := shape.shape as SegmentShape2D
+			return [shape.to_global(segment.a), shape.to_global(segment.b)]
+
+	return [section.global_position, section.global_position]
 
 
 # ============================================================
@@ -1328,6 +1363,23 @@ func get_progress(state: RaceParticipantState) -> float:
 	if section_count <= 0:
 		return 0.0
 
+	# Même valeur pour tous les appels d'une image (classement, caméras).
+	var frame := Engine.get_physics_frames()
+
+	if frame != _progress_cache_frame:
+		_progress_cache.clear()
+		_progress_cache_frame = frame
+
+	if _progress_cache.has(state):
+		return _progress_cache[state]
+
+	var progress := _compute_progress(state)
+	_progress_cache[state] = progress
+	return progress
+
+
+func _compute_progress(state: RaceParticipantState) -> float:
+
 	# Avant le premier passage sur la ligne : on approche la section 0.
 	if not state.has_started_lap:
 		return -1.0 + _get_fraction_to_section(state, 0, -1)
@@ -1341,6 +1393,14 @@ func get_progress(state: RaceParticipantState) -> float:
 
 	var target := state.next_section
 	var previous := (target - 1 + section_count) % section_count
+
+	# Distance réellement parcourue le long de la route dans le tronçon.
+	if track_progress != null and is_instance_valid(state.car):
+		return (
+			float(state.current_lap * section_count)
+			+ float(segment_index - 1)
+			+ track_progress.get_fraction(previous, state.car.global_position)
+		)
 
 	return (
 		float(state.current_lap * section_count)
