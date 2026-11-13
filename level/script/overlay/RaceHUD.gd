@@ -55,6 +55,13 @@ func initialize(
 	message_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	message_label.offset_bottom = -170.0
 
+	# Feux de départ : au milieu de l'écran en splitté (à la jonction
+	# des vues), en haut au centre en écran partagé.
+	_place_start_lights()
+
+	if not get_viewport().size_changed.is_connected(_place_start_lights):
+		get_viewport().size_changed.connect(_place_start_lights)
+
 	# Écran splitté : rien en haut des vues, sauf la position de chaque
 	# joueur (affichée par SplitScreen dans le coin de sa vue).
 	if split_screen != null:
@@ -460,6 +467,26 @@ func _build_participant_rows() -> void:
 		row.setup(state,race_controller)
 
 		participant_rows[state.participant_id] = row
+
+# Taille du bloc des feux (5 feux de 32 x 48 px), avant mise à l'échelle.
+const START_LIGHTS_SIZE := Vector2(288, 48)
+const START_LIGHTS_TOP_MARGIN := 12.0
+
+
+func _place_start_lights() -> void:
+	if light_start == null:
+		return
+
+	var screen := get_viewport_rect().size
+	var lights_size := START_LIGHTS_SIZE * light_start.scale
+	var x := (screen.x - lights_size.x) / 2.0
+	var y := START_LIGHTS_TOP_MARGIN
+
+	if split_screen != null:
+		y = (screen.y - lights_size.y) / 2.0
+
+	light_start.position = Vector2(x, y)
+
 
 func start_message() -> void:
 	message_label.text = "PREPAREZ VOUS AU DEPART !"
