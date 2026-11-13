@@ -54,6 +54,15 @@ var leader_direction_min_speed: float = 120.0
 @export_range(0.1, 20.0, 0.1)
 var leader_lookahead_smoothing_speed: float = 4.0
 
+# Changement de leader : le nouveau leader doit le rester un instant
+# (évite le va-et-vient entre deux voitures côte à côte), puis la
+# caméra glisse progressivement vers lui au lieu de sauter.
+@export_range(0.0, 2.0, 0.05)
+var leader_switch_confirm_time: float = 0.3
+
+@export_range(0.05, 3.0, 0.05)
+var leader_switch_blend_time: float = 0.8
+
 @export_category("Mode élimination")
 
 # Zoom fixe : la caméra suit le leader sans dézoomer pour cadrer
@@ -104,6 +113,13 @@ var race_controller: RaceController = null
 # use_target_car doit être activé avant l'ajout dans l'arbre.
 var use_target_car: bool = false
 var target_car: Car = null
+
+# Transition entre deux leaders suivis.
+var _anchor_car: Car = null
+var _previous_anchor_car: Car = null
+var _anchor_blend: float = 1.0
+var _candidate_car: Car = null
+var _candidate_time: float = 0.0
 
 # Décalage lissé entre le joueur en tête et le point à garder visible.
 var _leader_lookahead_offset: Vector2 = Vector2.ZERO
@@ -342,7 +358,53 @@ func _get_smoothed_lookahead_point(
 			weight
 		)
 
-	return leader.global_position + _leader_lookahead_offset
+	return _get_blended_anchor(leader, delta) + _leader_lookahead_offset
+
+
+## Position suivie : celle du leader, avec une transition douce
+## lorsqu'il change.
+func _get_blended_anchor(leader: Car, delta: float) -> Vector2:
+	# Premier leader : adopté immédiatement.
+	if _anchor_car == null or not is_instance_valid(_anchor_car):
+		_anchor_car = leader
+		_anchor_blend = 1.0
+
+	if leader != _anchor_car:
+		if leader != _candidate_car:
+			_candidate_car = leader
+			_candidate_time = 0.0
+
+		_candidate_time += delta
+
+		# L'ancien leader n'est plus suivable (explosé...) : on bascule.
+		var anchor_lost := (
+			_anchor_car._destruction_started or not _anchor_car.visible
+		)
+
+		if _candidate_time >= leader_switch_confirm_time or anchor_lost:
+			_previous_anchor_car = _anchor_car
+			_anchor_car = leader
+			_anchor_blend = 0.0
+			_candidate_car = null
+	else:
+		_candidate_car = null
+
+	_anchor_blend = minf(
+		_anchor_blend + delta / leader_switch_blend_time,
+		1.0
+	)
+
+	if (
+		_anchor_blend >= 1.0
+		or _previous_anchor_car == null
+		or not is_instance_valid(_previous_anchor_car)
+	):
+		return _anchor_car.global_position
+
+	return _previous_anchor_car.global_position.lerp(
+		_anchor_car.global_position,
+		smoothstep(0.0, 1.0, _anchor_blend)
+	)
 
 
 ## Joueur humain le mieux classé parmi les voitures cadrées.
@@ -352,7 +414,7 @@ func _find_leader_car(cars: Array[Node2D]) -> Car:
 		return null
 
 	var leader: Car = null
-	var best_rank := INF
+	var best_score := -INF
 
 	for state in race_controller.get_participant_states():
 		if state.is_ai or state.car == null:
@@ -361,18 +423,14 @@ func _find_leader_car(cars: Array[Node2D]) -> Car:
 		if not cars.has(state.car):
 			continue
 
-		# race_position vaut 0 tant que le classement n'est pas calculé.
-		var rank: float = (
-			float(state.race_position)
-			if state.race_position > 0
-			else 1000.0
-		)
+		# Progression continue, calculée à chaque image.
+		var score: float = race_controller.get_progress(state)
 
 		if state.finished:
-			rank += 10000.0
+			score -= 100000.0
 
-		if rank < best_rank:
-			best_rank = rank
+		if score > best_score:
+			best_score = score
 			leader = state.car
 
 	return leader

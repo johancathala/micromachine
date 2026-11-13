@@ -71,6 +71,21 @@ var participants: Array[RaceParticipantState] = []
 # ============================================================
 var section_count: int = 0
 
+# Position de chaque section (section_id -> Vector2), pour mesurer
+# la progression continue entre deux sections.
+var _section_positions: Dictionary = {}
+
+# ============================================================
+# CLASSEMENT EN CONTINU
+# ============================================================
+# Le classement est recalculé régulièrement (pas seulement au
+# franchissement d'une section) : les dépassements apparaissent
+# en temps réel.
+const POSITION_UPDATE_INTERVAL := 0.2
+
+var _position_update_timer: float = 0.0
+var _last_order: Array[int] = []
+
 # ============================================================
 # CHRONOMÉTRAGE
 # ============================================================
@@ -283,6 +298,12 @@ func _initialize_sections() -> bool:
 			)
 
 			return false
+
+	_section_positions.clear()
+
+	for child in sections_root.get_children():
+		var section := child as RaceSection
+		_section_positions[section.section_id] = section.global_position
 
 	return true
 
@@ -1107,7 +1128,23 @@ func _get_finished_count() -> int:
 # CLASSEMENT
 # ============================================================
 
-func _update_positions() -> void:
+func _physics_process(delta: float) -> void:
+	if race_state != RaceState.RUNNING or race_is_paused:
+		return
+
+	_position_update_timer += delta
+
+	if _position_update_timer < POSITION_UPDATE_INTERVAL:
+		return
+
+	_position_update_timer = 0.0
+
+	# Signal seulement si l'ordre a changé.
+	_update_positions(false)
+
+
+## always_emit = false : n'émet positions_changed que si l'ordre change.
+func _update_positions(always_emit: bool = true) -> void:
 
 	var ordered := (
 		participants.duplicate()
@@ -1116,12 +1153,84 @@ func _update_positions() -> void:
 		_compare_participants
 	)
 
+	var order: Array[int] = []
+
 	for i in range(
 		ordered.size()
 	):
 		ordered[i].race_position = i + 1
+		order.append(ordered[i].participant_id)
+
+	if not always_emit and order == _last_order:
+		return
+
+	_last_order = order
 
 	positions_changed.emit(ordered[0])
+
+
+## Progression continue sur la course, en « sections » :
+## tours x sections + sections franchies dans le tour + fraction
+## parcourue vers la prochaine section (0 à 1).
+##
+## Corrige l'ancien classement où, après la dernière section
+## (next_section revenu à 0), une voiture en fin de tour passait
+## derrière celles encore en milieu de tour.
+func get_progress(state: RaceParticipantState) -> float:
+	if section_count <= 0:
+		return 0.0
+
+	# Avant le premier passage sur la ligne : on approche la section 0.
+	if not state.has_started_lap:
+		return -1.0 + _get_fraction_to_section(state, 0, -1)
+
+	# next_section = 0 : il ne reste que la ligne d'arrivée,
+	# c'est le dernier segment du tour (pas le premier).
+	var segment_index := state.next_section
+
+	if segment_index == 0:
+		segment_index = section_count
+
+	var target := state.next_section
+	var previous := (target - 1 + section_count) % section_count
+
+	return (
+		float(state.current_lap * section_count)
+		+ float(segment_index - 1)
+		+ _get_fraction_to_section(state, target, previous)
+	)
+
+
+## Fraction (0 à 1) du segment previous -> target déjà parcourue,
+## estimée à vol d'oiseau. previous = -1 : distance seule.
+func _get_fraction_to_section(
+	state: RaceParticipantState,
+	target: int,
+	previous: int
+) -> float:
+
+	if state.car == null or not is_instance_valid(state.car):
+		return 0.0
+
+	var target_position: Variant = _section_positions.get(target)
+
+	if target_position == null:
+		return 0.0
+
+	var distance := state.car.global_position.distance_to(target_position)
+
+	var previous_position: Variant = _section_positions.get(previous)
+
+	if previous_position == null:
+		# Plus on est proche, plus on est avancé (reste < 1).
+		return 1.0 / (1.0 + distance / 1000.0)
+
+	var segment_length: float = maxf(
+		(previous_position as Vector2).distance_to(target_position),
+		1.0
+	)
+
+	return clampf(1.0 - distance / segment_length, 0.0, 0.999)
 
 
 func _compare_participants(
@@ -1152,27 +1261,16 @@ func _compare_participants(
 		)
 
 	# --------------------------------------------------------
-	# Nombre de tours.
+	# Progression continue (tours, sections, fraction du segment).
 	# --------------------------------------------------------
-	if a.current_lap != b.current_lap:
-		return (
-			a.current_lap
-			>
-			b.current_lap
-		)
+	var progress_a := get_progress(a)
+	var progress_b := get_progress(b)
+
+	if not is_equal_approx(progress_a, progress_b):
+		return progress_a > progress_b
 
 	# --------------------------------------------------------
-	# Section atteinte.
-	# --------------------------------------------------------
-	if a.next_section != b.next_section:
-		return (
-			a.next_section
-			>
-			b.next_section
-		)
-	# --------------------------------------------------------
-	# Même section :
-	# celui qui l'a atteinte en premier est devant.
+	# Égalité parfaite : celui qui a progressé en premier.
 	# --------------------------------------------------------
 	return (
 		a.last_progress_time

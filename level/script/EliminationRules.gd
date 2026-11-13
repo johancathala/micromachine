@@ -62,9 +62,6 @@ var _grace_time := 0.0
 # participant_id -> PackedVector2Array (le plus récent en dernier).
 var _trails: Dictionary = {}
 
-# Position des sections du circuit (section_id -> Vector2).
-var _section_positions: Dictionary = {}
-
 
 func setup(
 	p_controller: RaceController,
@@ -75,20 +72,6 @@ func setup(
 	controller = p_controller
 	camera = p_camera
 	target_score = p_target_score
-
-	_section_positions.clear()
-
-	var track := controller.race_world.current_track
-	var sections_root := track.get_node_or_null("Sections") if track else null
-
-	if sections_root != null:
-		for child in sections_root.get_children():
-			var section := child as RaceSection
-
-			if section != null:
-				_section_positions[section.section_id] = (
-					section.global_position
-				)
 
 
 # ============================================================
@@ -454,41 +437,6 @@ func _any_car_destroying() -> bool:
 	return false
 
 
-## Progression : tours, sections franchies, puis distance à la
-## prochaine section (plus proche = plus avancé).
+## Progression continue partagée avec le classement de la course.
 func _is_ahead(a: RaceParticipantState, b: RaceParticipantState) -> bool:
-	var progress_a := _get_progress(a)
-	var progress_b := _get_progress(b)
-
-	if progress_a != progress_b:
-		return progress_a > progress_b
-
-	return (
-		_distance_to_next_section(a)
-		< _distance_to_next_section(b)
-	)
-
-
-func _get_progress(state: RaceParticipantState) -> int:
-	if not state.has_started_lap:
-		return -1
-
-	var section_count := controller.section_count
-
-	# next_section vaut 0 quand il ne reste que la ligne d'arrivée :
-	# c'est la fin du tour, pas le début.
-	var section_index := state.next_section
-
-	if section_index == 0:
-		section_index = section_count
-
-	return state.current_lap * (section_count + 1) + section_index
-
-
-func _distance_to_next_section(state: RaceParticipantState) -> float:
-	var target: Variant = _section_positions.get(state.next_section)
-
-	if target == null or not is_instance_valid(state.car):
-		return INF
-
-	return state.car.global_position.distance_to(target)
+	return controller.get_progress(a) > controller.get_progress(b)
