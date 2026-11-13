@@ -176,6 +176,9 @@ func _initialize_camera() -> void:
 		)
 		return
 
+	# La caméra a besoin du classement pour connaître le joueur en tête.
+	camera.race_controller = race_controller
+
 func _on_race_finished() -> void:
 	# Pause l'exécution de la fonction pendant 2 secondes
 	await get_tree().create_timer(4.0).timeout

@@ -33,6 +33,27 @@ var solo_lookahead_distance: float = 150.0
 @export_range(100.0, 3000.0, 50.0)
 var solo_lookahead_speed: float = 1200.0
 
+@export_category("Anticipation du joueur en tête (multijoueur)")
+
+# Échelle du jeu : une voiture (~4,2 m) mesure ~141 px de long.
+@export_range(1.0, 200.0, 0.5)
+var pixels_per_meter: float = 34.0
+
+# Distance minimale visible devant le joueur humain en tête,
+# pour voir arriver les virages.
+@export_range(0.0, 60.0, 0.5)
+var leader_lookahead_meters: float = 15.0
+
+# En dessous de cette vitesse (px/s), on utilise l'orientation
+# de la voiture plutôt que sa direction de déplacement.
+@export_range(0.0, 500.0, 10.0)
+var leader_direction_min_speed: float = 120.0
+
+# Lissage du point d'anticipation (évite les à-coups quand
+# la voiture tourne ou que le joueur en tête change).
+@export_range(0.1, 20.0, 0.1)
+var leader_lookahead_smoothing_speed: float = 4.0
+
 @export_category("Zoom")
 
 @export_range(0.05, 2.0, 0.01)
@@ -55,6 +76,13 @@ var zoom_smoothing_speed: float = 10.0
 
 var cars_root: Node2D = null
 var camera_initialized: bool = false
+
+# Fourni par Race : donne le classement des participants.
+var race_controller: RaceController = null
+
+# Décalage lissé entre le joueur en tête et le point à garder visible.
+var _leader_lookahead_offset: Vector2 = Vector2.ZERO
+var _lookahead_initialized: bool = false
 
 
 func _ready() -> void:
@@ -95,7 +123,16 @@ func _process(delta: float) -> void:
 		target_position = _calculate_solo_target(car)
 		target_zoom = _calculate_solo_zoom(car)
 	else:
-		# En multijoueur, on conserve le cadrage collectif.
+		# En multijoueur, on conserve le cadrage collectif,
+		# en gardant visible la route devant le joueur en tête.
+		var lookahead_point: Variant = _get_leader_lookahead_point(
+			cars,
+			delta
+		)
+
+		if lookahead_point != null:
+			bounds = bounds.expand(lookahead_point)
+
 		target_position = bounds.get_center()
 		target_zoom = _calculate_zoom(bounds)
 
@@ -184,6 +221,86 @@ func _calculate_solo_target(car: Car) -> Vector2:
 	)
 
 	return car.global_position - forward * lookahead
+
+
+# ------------------------------------------------------------------
+# Joueur en tête
+# ------------------------------------------------------------------
+
+## Point situé leader_lookahead_meters devant le joueur humain en tête,
+## ou null s'il n'y a pas de joueur en tête identifiable.
+func _get_leader_lookahead_point(
+	cars: Array[Node2D],
+	delta: float
+) -> Variant:
+
+	var leader := _find_leader_car(cars)
+
+	if leader == null:
+		_lookahead_initialized = false
+		return null
+
+	var target_offset: Vector2 = (
+		_get_travel_direction(leader)
+		* leader_lookahead_meters
+		* pixels_per_meter
+	)
+
+	if not _lookahead_initialized:
+		_leader_lookahead_offset = target_offset
+		_lookahead_initialized = true
+	else:
+		var weight: float = (
+			1.0 - exp(-leader_lookahead_smoothing_speed * delta)
+		)
+
+		_leader_lookahead_offset = _leader_lookahead_offset.lerp(
+			target_offset,
+			weight
+		)
+
+	return leader.global_position + _leader_lookahead_offset
+
+
+## Joueur humain le mieux classé parmi les voitures cadrées.
+## Les joueurs ayant terminé passent après ceux encore en course.
+func _find_leader_car(cars: Array[Node2D]) -> Car:
+	if race_controller == null:
+		return null
+
+	var leader: Car = null
+	var best_rank := INF
+
+	for state in race_controller.get_participant_states():
+		if state.is_ai or state.car == null:
+			continue
+
+		if not cars.has(state.car):
+			continue
+
+		# race_position vaut 0 tant que le classement n'est pas calculé.
+		var rank: float = (
+			float(state.race_position)
+			if state.race_position > 0
+			else 1000.0
+		)
+
+		if state.finished:
+			rank += 10000.0
+
+		if rank < best_rank:
+			best_rank = rank
+			leader = state.car
+
+	return leader
+
+
+## Direction de déplacement (ou orientation à basse vitesse).
+func _get_travel_direction(car: Car) -> Vector2:
+	if car.velocity.length() >= leader_direction_min_speed:
+		return car.velocity.normalized()
+
+	return Vector2.RIGHT.rotated(car.global_rotation)
 
 
 func _calculate_bounds(cars: Array[Node2D]) -> Rect2:
