@@ -197,6 +197,6 @@ physics_layer_0/collision_layer = 8
 physics_layer_0/collision_mask = 0
 sources/1 = SubResource("TileSetAtlasSource_8c55l")
 
-[node name="Pneu_sac" type="TileMapLayer" unique_id=1834524238]
+[node name="Pneu_sac" type="TileMapLayer" unique_id=1834524238 groups=["bouncy_obstacle"]]
 y_sort_enabled = true
 tile_set = SubResource("TileSet_wklh6")
