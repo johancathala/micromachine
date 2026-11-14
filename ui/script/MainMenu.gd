@@ -39,20 +39,21 @@ func _connect_signals() -> void:
 	quit_button.pressed.connect(_on_quit_pressed)
 
 func _on_single_race_pressed() -> void:
-	# Nouvelle course : paramètres, puis joueurs.
+	# Nouvelle course : mode, joueurs, IA, puis circuit.
 	GameManager.clear_pending_race_config()
-	NavigationManager.go("RaceSetup")
+	NavigationManager.go("RaceModeSelect")
 
 func _on_championship_pressed() -> void:
 	NavigationManager.go("ChampionshipSetup")
 
 func _on_time_trial_pressed() -> void:
-	# Mêmes écrans que la course simple, mode contre-la-montre présélectionné.
+	# Mêmes écrans que la course simple, mode contre-la-montre déjà
+	# choisi : directement le joueur, puis le circuit.
 	var config := RaceConfig.new()
 	config.mode = GameManager.GameMode.SINGLE_RACE
 	config.race_rules = RaceConfig.RaceRules.TIME_TRIAL
 	GameManager.set_pending_race_config(config)
-	NavigationManager.go("RaceSetup")
+	NavigationManager.go("CarSelection")
 
 func _on_leaderboards_pressed() -> void:
 	NavigationManager.go("BestTimes")

@@ -58,7 +58,8 @@ var _all_ready_timer: SceneTreeTimer = null
 
 
 func _ready() -> void:
-	# Écran « Joueurs » : vient après l'écran des paramètres (RaceSetup).
+	# Écran « Joueurs » : après le mode de jeu (RaceModeSelect), avant
+	# les IA (course classique) ou directement le circuit (RaceSetup).
 	race_config = GameManager.get_pending_race_config()
 
 	if race_config == null:
@@ -77,7 +78,7 @@ func _ready() -> void:
 	($MarginContainer/VBoxContainer/MainContent/ParticipantsPanel as Control).hide()
 	($MarginContainer/VBoxContainer/MainContent/SelectionPanel as Control).hide()
 	($MarginContainer/VBoxContainer/Header/Title as Label).text = "JOUEURS"
-	start_button.text = "COMMENCER LA COURSE"
+	start_button.text = "IA ›" if race_config.is_classic() else "CIRCUIT ›"
 
 	start_button.pressed.connect(_on_start_pressed)
 	back_button.pressed.connect(_on_back_pressed)
@@ -350,7 +351,7 @@ func _on_picker_ready_toggled(picker: PlayerCarPicker) -> void:
 		if not other.is_ready:
 			return
 
-	# Tout le monde est prêt : départ après un court délai, annulé si
+	# Tout le monde est prêt : écran suivant après un court délai, annulé si
 	# quelqu'un repasse « pas prêt » entre-temps.
 	if not _can_start():
 		return
@@ -541,7 +542,7 @@ func _refresh_lobby_help() -> void:
 	elif race_config.is_elimination() and count < RaceConfig.ELIMINATION_MIN_PLAYERS:
 		text += " — élimination : %d joueurs minimum" % RaceConfig.ELIMINATION_MIN_PLAYERS
 	elif count > 0:
-		text += " — tout le monde « prêt » pour partir"
+		text += " — tout le monde « prêt » pour continuer"
 
 	help_label.text = text
 
@@ -1043,25 +1044,13 @@ func _on_start_pressed() -> void:
 	if not _can_start():
 		return
 
-	# IA engagées selon les paramètres (course classique), livrées
-	# distinctes de celles des joueurs.
 	race_config.build_participants()
-	race_config.enable_ai(_get_color_ids())
-
-	if not race_config.is_car_selection_valid():
-		return
-
-	GameManager.set_pending_race_config(race_config)
-
-	if not GameManager.start_race():
-		return
-
-	AudioManager.play_start_event()
-	await get_tree().create_timer(1.0).timeout
-	NavigationManager.go("Race", true, true)
+	GameManager.set_pending_race_config(race_config.duplicate_config())
+	# IA (course classique), puis circuit et réglages.
+	NavigationManager.go("AISetup" if race_config.is_classic() else "RaceSetup")
 
 
 func _on_back_pressed() -> void:
-	# Retour aux paramètres en gardant les joueurs et leurs voitures.
+	# Retour au mode de jeu en gardant les joueurs et leurs voitures.
 	GameManager.set_pending_race_config(race_config.duplicate_config())
-	NavigationManager.go_back()
+	NavigationManager.go("RaceModeSelect")
