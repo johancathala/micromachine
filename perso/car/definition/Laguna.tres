@@ -16,4 +16,5 @@ brake_force = 1092.0
 max_speed = 2196.0
 max_reverse_speed = 534.0
 lateral_grip = 8.6
+mass = 1400.0
 metadata/_custom_type_script = "uid://de3h01guotde1"
