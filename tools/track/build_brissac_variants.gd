@@ -6,9 +6,10 @@ extends SceneTree
 #
 #   godot --headless --path . -s tools/track/build_brissac_variants.gd
 #
-# Chaque variante est une scène qui intègre Track01 tel quel (nœud
-# « Brissac ») et définit à sa racine ses propres Sections,
-# SpawnPoints, PitStop et feux. Le tracé est calculé par A* sur les
+# Chaque variante est une scène qui intègre la carte de Brissac
+# (level/map/BrissacMap.tscn, nœud « Brissac » : décor seul) et définit
+# à sa racine ses propres Sections, SpawnPoints et feux ; le stand
+# (PitStop) est repris du circuit Brissac (même voie des stands). Le tracé est calculé par A* sur les
 # routes de la carte entre des points de passage ; les portes sont
 # posées perpendiculairement au tracé, limitées à la chaussée (elles
 # ne débordent pas sur une route voisine séparée par un vibreur).
@@ -16,12 +17,12 @@ extends SceneTree
 # level/track/variants/ (dossier ignoré par Godot).
 # ============================================================
 
+# Circuit Brissac (ses sections servent à calculer les tracés).
 const BASE_SCENE := "res://level/track/Track01.tscn"
+# Carte intégrée par chaque variante (sans logique de course).
+const MAP_SCENE := "res://level/map/BrissacMap.tscn"
 const PREVIEW_DIR := "res://level/track/variants/"
 
-# Brissac : stand (voie des stands, à l'ouest de la ligne droite).
-const PIT_POSITION := Vector2(100, 385)
-const PIT_SIZE := Vector2(160, 2000)
 
 # Une porte tous les ~4500 px de tracé (au moins 10).
 const GATE_SPACING := 4500.0
@@ -429,8 +430,7 @@ func _build_variant(variant: Dictionary) -> void:
 	var scene_root := Node2D.new()
 	scene_root.name = variant["name"]
 
-	# Feux de départ en premier : RaceStartLights prend le premier nœud
-	# du groupe (ceux de Brissac, intégrés, restent décoratifs).
+	# Feux de départ : RaceStartLights prend le premier nœud du groupe.
 	var start_data := _point_at(route, lengths, 0.0)
 	var lights := (load("res://level/scene/RaceStartLightsMap.tscn") as PackedScene).instantiate() as Node2D
 	lights.name = "RaceStartLightsMap"
@@ -438,7 +438,7 @@ func _build_variant(variant: Dictionary) -> void:
 	lights.position = (start_data[0] as Vector2) + Vector2(-145, -60)
 	_add(scene_root, lights, scene_root)
 
-	var map_instance := (load(BASE_SCENE) as PackedScene).instantiate()
+	var map_instance := (load(MAP_SCENE) as PackedScene).instantiate()
 	map_instance.name = "Brissac"
 	_add(scene_root, map_instance, scene_root)
 
@@ -508,19 +508,14 @@ func _build_variant(variant: Dictionary) -> void:
 		_add(spawns, marker, scene_root)
 		spawn_points.append(marker.position)
 
-	# ---- Stand (voie des stands de Brissac) ----
-	var pit := Area2D.new()
-	pit.name = "PitStop"
-	pit.set_script(load("res://level/script/PitStop.gd"))
-	pit.position = PIT_POSITION
+	# ---- Stand : celui du circuit Brissac (zones d'arrêt comprises) ----
+	var brissac := (load(BASE_SCENE) as PackedScene).instantiate()
+	var pit := brissac.get_node("PitStop").duplicate()
+	brissac.free()
 	_add(scene_root, pit, scene_root)
 
-	var pit_shape := CollisionShape2D.new()
-	pit_shape.name = "CollisionShape2D"
-	var rect := RectangleShape2D.new()
-	rect.size = PIT_SIZE
-	pit_shape.shape = rect
-	_add(pit, pit_shape, scene_root)
+	for pit_child in pit.get_children():
+		pit_child.owner = scene_root
 
 	var packed := PackedScene.new()
 	packed.pack(scene_root)

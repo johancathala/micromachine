@@ -12,6 +12,8 @@ class_name GhostManager
 #   rapide de tous les joueurs pour ce circuit et cette voiture.
 # - Fantômes affichés selon le choix du joueur : le meilleur, le sien,
 #   ou les deux (un seul si le record est le sien).
+# - Toujours affiché en plus : le meilleur tour de la session en cours,
+#   même s'il ne bat pas le record (s'il le bat, il devient le record).
 # - Chaque fantôme (voiture semi-transparente, sans collision, avec son
 #   nom et son temps) refait son tour à chaque début de tour du joueur.
 # - Un tour avec explosion ou réapparition n'est pas retenu.
@@ -25,6 +27,7 @@ const GHOST_DIR := "user://ghosts/"
 const SAMPLE_INTERVAL := 1.0 / 30.0
 const GHOST_ALPHA := 0.45
 const BEST_GHOST_COLOR := Color("#ffd54f")
+const SESSION_GHOST_COLOR := Color("#80deea")
 # Valeurs par échantillon : temps, x, y, orientation.
 const STRIDE := 4
 
@@ -38,6 +41,9 @@ var mode: GhostMode = GhostMode.BOTH
 # Fantômes : meilleur de tous, et celui du joueur.
 var best_ghost: Dictionary = {}
 var own_ghost: Dictionary = {}
+# Meilleur tour de la session en cours (non enregistré s'il ne bat pas
+# le record du joueur).
+var session_ghost: Dictionary = {}
 
 # Fantômes affichés : [{data, node, label}].
 var _shown: Array[Dictionary] = []
@@ -194,13 +200,6 @@ func _physics_process(_delta: float) -> void:
 
 
 func _consider_lap(lap_time: float) -> void:
-	var previous_own := float(own_ghost.get("lap_time", INF))
-
-	if lap_time >= previous_own:
-		return
-
-	var previous_best := float(best_ghost.get("lap_time", INF))
-
 	var data := {
 		"lap_time": lap_time,
 		"nickname": state.nickname,
@@ -209,6 +208,22 @@ func _consider_lap(lap_time: float) -> void:
 		"track_id": track_id,
 		"samples": _samples
 	}
+
+	var session_record := lap_time < float(session_ghost.get("lap_time", INF))
+
+	if session_record:
+		session_ghost = data
+
+	var previous_own := float(own_ghost.get("lap_time", INF))
+
+	if lap_time >= previous_own:
+		# Pas de record, mais nouveau meilleur tour de la session.
+		if session_record:
+			_refresh_shown_ghosts()
+
+		return
+
+	var previous_best := float(best_ghost.get("lap_time", INF))
 
 	_save_ghost(data)
 	own_ghost = data
@@ -243,6 +258,10 @@ func _wanted_ghosts() -> Array[Dictionary]:
 	if mode != GhostMode.BEST and not own_ghost.is_empty() and not (best_is_own and mode == GhostMode.BOTH):
 		wanted.append(own_ghost)
 
+	# Meilleur tour de la session, sauf s'il est déjà affiché (record).
+	if not session_ghost.is_empty() and not wanted.has(session_ghost):
+		wanted.append(session_ghost)
+
 	return wanted
 
 
@@ -253,8 +272,8 @@ func _refresh_shown_ghosts() -> void:
 	_shown.clear()
 
 	for data in _wanted_ghosts():
-		var is_best := data == best_ghost
-		var node := _create_ghost_node(data, is_best)
+		var kind := "best" if data == best_ghost else ("own" if data == own_ghost else "session")
+		var node := _create_ghost_node(data, kind)
 
 		if node != null:
 			_shown.append({"data": data, "node": node})
@@ -302,14 +321,16 @@ func _update_ghost(shown: Dictionary, lap_time_now: float) -> void:
 
 ## Voiture fantôme : modèle de la voiture, semi-transparent, sans
 ## collision ni son, avec le nom et le temps au-dessus.
-func _create_ghost_node(data: Dictionary, is_best: bool) -> Node2D:
+func _create_ghost_node(data: Dictionary, kind: String) -> Node2D:
+	var is_best := kind == "best"
+
 	var definition := CarCatalog.get_car(String(data.get("car_id", car_id)))
 
 	if definition == null or definition.model_scene == null:
 		return null
 
 	var node := Node2D.new()
-	node.name = "BestGhost" if is_best else "OwnGhost"
+	node.name = {"best": "BestGhost", "own": "OwnGhost", "session": "SessionGhost"}[kind]
 	node.z_index = 1
 
 	# Le corps tourne avec la voiture, l'étiquette reste droite.
@@ -324,12 +345,15 @@ func _create_ghost_node(data: Dictionary, is_best: bool) -> Node2D:
 		sound.queue_free()
 
 	var color := BEST_GHOST_COLOR if is_best else Color.from_string(String(data.get("color", "")), car_color)
+
+	if kind == "session":
+		color = SESSION_GHOST_COLOR
 	body.modulate = Color(color.r, color.g, color.b, GHOST_ALPHA)
 
 	var label := Label.new()
 	label.text = "%s %s  %s" % [
 		"★" if is_best else "",
-		String(data.get("nickname", "")),
+		"Session" if kind == "session" else String(data.get("nickname", "")),
 		_format_time(float(data.get("lap_time", 0.0)))
 	]
 	label.position = Vector2(-110, -120)

@@ -149,9 +149,14 @@ var slipstream_factor: float = 0.0
 var tire_wear_enabled: bool = false
 # 0 = pneus neufs, 1 = pneus complètement usés.
 var tire_wear: float = 0.0
-# Distance (px) pour user complètement les pneus sans glisser
-# (~1,5 tour de Track01 avant le « BOX » à 60 %).
-@export_range(1000.0, 1000000.0, 1000.0) var tire_wear_distance: float = 150000.0
+# Nombre de tours pour user complètement les pneus sur la route sans
+# glisser : l'usure est proportionnelle au circuit (« BOX » à 60 % vers
+# le 3e ou 4e tour, quelle que soit la longueur du tour : un arrêt sur
+# une course de 5 tours, aucun d'obligatoire sur 3 tours).
+@export_range(0.5, 50.0, 0.1) var tire_wear_laps: float = 7.0
+# Distance (px) correspondante, fixée par la course selon la longueur
+# du tour (set_lap_length). Valeur par défaut : tour de Brissac.
+var tire_wear_distance: float = 150000.0
 # La glisse use plus vite (x3 en pleine glisse).
 @export_range(0.0, 10.0, 0.1) var tire_wear_slip_factor: float = 2.0
 # Jusqu'à ce niveau d'usure, la voiture se conduit normalement.
@@ -195,6 +200,12 @@ func _get_surface_wear_multiplier() -> float:
 
 func reset_tires() -> void:
 	tire_wear = 0.0
+
+
+## Usure proportionnelle au circuit : `length` = longueur d'un tour (px).
+func set_lap_length(length: float) -> void:
+	if length > 0.0:
+		tire_wear_distance = length * tire_wear_laps
 
 # ---------------------------
 # DÉPART (réaction au feu vert)
@@ -547,12 +558,30 @@ func _handle_car_collision(
 
 	# Les contacts entre voitures ne provoquent plus d'explosion :
 	# elles se poussent simplement.
+	_last_car_contact_msec = Time.get_ticks_msec()
 	var other_velocity := other_car.velocity
 	var impact_speed := _get_impact_speed(collision, other_velocity)
 
 	if impact_speed > 100.0:
 		_play_collision_sound()
 
+
+
+## Dernier contact avec une autre voiture (une IA poussée dans un
+## obstacle n'en tire pas de leçon).
+var _last_car_contact_msec := -100000
+const CAR_CONTACT_EXCUSE_MSEC := 1500
+
+
+## IA détruite seule contre un obstacle : elle apprend à ralentir là.
+func _notify_ai_crash() -> void:
+	if ai_driver == null:
+		return
+
+	if Time.get_ticks_msec() - _last_car_contact_msec < CAR_CONTACT_EXCUSE_MSEC:
+		return
+
+	ai_driver.on_crash()
 
 
 func _handle_obstacle_collision(collision: KinematicCollision2D) -> void:
@@ -572,6 +601,7 @@ func _handle_obstacle_collision(collision: KinematicCollision2D) -> void:
 		obstacle.detonate()
 
 		# Le contact direct avec le baril détruit toujours la voiture.
+		_notify_ai_crash()
 		explosion()
 		return
 
@@ -596,6 +626,7 @@ func _handle_obstacle_collision(collision: KinematicCollision2D) -> void:
 	# OBSTACLE CLASSIQUE
 	# --------------------------------------------------------
 	if impact_speed >= explosion_impact_speed:
+		_notify_ai_crash()
 		explosion()
 		return
 
@@ -643,8 +674,13 @@ func _process_human_input(_delta: float) -> void:
 	handbrake = input_state.handbrake
 	respawn = input_state.respawn
 
+## Pilote IA (AIDriver), fourni par la course.
+var ai_driver: AIDriver = null
+
+
 func _process_ai_input(_delta: float) -> void:
-	pass
+	if ai_driver != null:
+		ai_driver.update(_delta)
 
 # ---------------------------
 # SLIP
@@ -1018,8 +1054,29 @@ func _apply_rotation(delta: float, v_long_after: float, steer_eff: float) -> voi
 		var yaw_rate: float = (v_long_after / max(wheel_base, 1.0)) * tan(effective_steer)
 		rotation += yaw_rate * delta
 
+## Vitesse limitée (voie des stands, PitLane) : à rappeler à chaque
+## image physique tant que la voiture est dans la zone.
+const SPEED_LIMIT_DECEL := 3000.0
+var _speed_limit := 0.0
+var _speed_limit_frame := -10
+
+
+func apply_speed_limit(limit: float) -> void:
+	_speed_limit = limit
+	_speed_limit_frame = Engine.get_physics_frames()
+
+
+func is_speed_limited() -> bool:
+	return Engine.get_physics_frames() - _speed_limit_frame <= 1
+
+
 func _clamp_velocity(fwd: Vector2, v_long: Vector2, v_lat: Vector2) -> void:
 	var v: Vector2 = v_long + v_lat
+
+	# Limiteur de la voie des stands : freinage ferme jusqu'à la limite.
+	if is_speed_limited() and v.length() > _speed_limit:
+		var excess := v.length() - _speed_limit
+		v = v.normalized() * (v.length() - minf(excess, SPEED_LIMIT_DECEL * get_physics_process_delta_time()))
 
 	# Limitation de la vitesse longitudinale
 	# (relevée par l'aspiration)

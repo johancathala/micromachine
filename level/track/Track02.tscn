@@ -1,61 +1,66 @@
 [gd_scene format=3]
 
 [ext_resource type="PackedScene" path="res://level/scene/RaceStartLightsMap.tscn" id="1_mdtsh"]
-[ext_resource type="PackedScene" path="res://level/track/Track01.tscn" id="2_q2nl6"]
+[ext_resource type="PackedScene" path="res://level/map/BrissacMap.tscn" id="2_mdtsh"]
 [ext_resource type="Script" path="res://level/script/RaceSection.gd" id="3_skds4"]
 [ext_resource type="Script" path="res://level/script/PitStop.gd" id="4_grhsg"]
 
-[sub_resource type="SegmentShape2D" id="SegmentShape2D_wwk3q"]
-a = Vector2(200, 0)
-b = Vector2(-208, 0)
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_q2nl6"]
+a = Vector2(612, 0)
+b = Vector2(-612, 0)
 
-[sub_resource type="SegmentShape2D" id="SegmentShape2D_o18ye"]
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_mdtsh"]
 a = Vector2(392.30176, -112.08618)
-b = Vector2(-707.68164, 202.19482)
+b = Vector2(-834.60254, 238.45825)
 
-[sub_resource type="SegmentShape2D" id="SegmentShape2D_4rjay"]
-a = Vector2(0, -144)
-b = Vector2(0, 328)
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_skds4"]
+a = Vector2(0, -612)
+b = Vector2(0, 804)
 
-[sub_resource type="SegmentShape2D" id="SegmentShape2D_ftxgt"]
-a = Vector2(0, -400)
-b = Vector2(0, 360)
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_grhsg"]
+a = Vector2(0, -900)
+b = Vector2(0, 420)
 
-[sub_resource type="SegmentShape2D" id="SegmentShape2D_4jx8c"]
-a = Vector2(-97.473236, -219.31482)
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_wwk3q"]
+a = Vector2(-289.1705, -650.63385)
 b = Vector2(298.9179, 672.5654)
 
-[sub_resource type="SegmentShape2D" id="SegmentShape2D_eyea0"]
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_o18ye"]
 a = Vector2(-208, 0)
-b = Vector2(136, 0)
+b = Vector2(284, 0)
 
-[sub_resource type="SegmentShape2D" id="SegmentShape2D_xlknd"]
-a = Vector2(-292.8817, 439.32257)
-b = Vector2(115.37764, -173.06647)
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_4rjay"]
+a = Vector2(-554.7002, 832.0503)
+b = Vector2(115.377625, -173.06647)
 
-[sub_resource type="SegmentShape2D" id="SegmentShape2D_of25n"]
-a = Vector2(0, 232)
-b = Vector2(0, -176)
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_ftxgt"]
+a = Vector2(0, 644)
+b = Vector2(0, -580)
 
-[sub_resource type="SegmentShape2D" id="SegmentShape2D_t3p7e"]
-a = Vector2(0, 232)
-b = Vector2(0, -176)
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_4jx8c"]
+a = Vector2(0, 644)
+b = Vector2(0, -580)
 
-[sub_resource type="SegmentShape2D" id="SegmentShape2D_a2x52"]
-a = Vector2(200, 0)
-b = Vector2(-208, 0)
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_eyea0"]
+a = Vector2(612, 0)
+b = Vector2(-612, 0)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_uwack"]
-size = Vector2(160, 2000)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pitstop"]
+size = Vector2(421, 578)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_o300m"]
+size = Vector2(417.5, 587)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_p8cjj"]
+size = Vector2(408, 571)
 
 [node name="TrackPaddock1" type="Node2D" unique_id=1191149637]
 
-[node name="RaceStartLightsMap" type="Node2D" parent="." unique_id=901997129 groups=["race_start_lights_map"] instance=ExtResource("1_mdtsh")]
+[node name="RaceStartLightsMap" parent="." unique_id=901997129 instance=ExtResource("1_mdtsh")]
 z_index = 3
 position = Vector2(-4289, 1140)
 
-[node name="Brissac" type="Node2D" parent="." unique_id=1561549427 instance=ExtResource("2_q2nl6")]
-y_sort_enabled = true
+[node name="Brissac" parent="." unique_id=126388196 instance=ExtResource("2_mdtsh")]
 
 [node name="Sections" type="Node2D" parent="." unique_id=1296897716]
 
@@ -65,7 +70,7 @@ collision_mask = 2
 script = ExtResource("3_skds4")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section00" unique_id=1998574275]
-shape = SubResource("SegmentShape2D_wwk3q")
+shape = SubResource("SegmentShape2D_q2nl6")
 
 [node name="RespawnPoint" type="Marker2D" parent="Sections/Section00" unique_id=1685503391]
 rotation = 1.5707964
@@ -77,7 +82,7 @@ script = ExtResource("3_skds4")
 section_id = 1
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section01" unique_id=2089513804]
-shape = SubResource("SegmentShape2D_o18ye")
+shape = SubResource("SegmentShape2D_mdtsh")
 
 [node name="RespawnPoint" type="Marker2D" parent="Sections/Section01" unique_id=537385936]
 rotation = 1.2924967
@@ -89,7 +94,7 @@ script = ExtResource("3_skds4")
 section_id = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section02" unique_id=1233584960]
-shape = SubResource("SegmentShape2D_4rjay")
+shape = SubResource("SegmentShape2D_skds4")
 
 [node name="RespawnPoint" type="Marker2D" parent="Sections/Section02" unique_id=1772882098]
 
@@ -100,7 +105,7 @@ script = ExtResource("3_skds4")
 section_id = 3
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section03" unique_id=1195559405]
-shape = SubResource("SegmentShape2D_ftxgt")
+shape = SubResource("SegmentShape2D_grhsg")
 
 [node name="RespawnPoint" type="Marker2D" parent="Sections/Section03" unique_id=1277805274]
 
@@ -111,7 +116,7 @@ script = ExtResource("3_skds4")
 section_id = 4
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section04" unique_id=892866845]
-shape = SubResource("SegmentShape2D_4jx8c")
+shape = SubResource("SegmentShape2D_wwk3q")
 
 [node name="RespawnPoint" type="Marker2D" parent="Sections/Section04" unique_id=840188755]
 rotation = -0.4182243
@@ -123,7 +128,7 @@ script = ExtResource("3_skds4")
 section_id = 5
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section05" unique_id=465548557]
-shape = SubResource("SegmentShape2D_eyea0")
+shape = SubResource("SegmentShape2D_o18ye")
 
 [node name="RespawnPoint" type="Marker2D" parent="Sections/Section05" unique_id=1990042734]
 rotation = -1.5707964
@@ -135,7 +140,7 @@ script = ExtResource("3_skds4")
 section_id = 6
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section06" unique_id=2098461566]
-shape = SubResource("SegmentShape2D_xlknd")
+shape = SubResource("SegmentShape2D_4rjay")
 
 [node name="RespawnPoint" type="Marker2D" parent="Sections/Section06" unique_id=946997538]
 rotation = -2.55359
@@ -147,7 +152,7 @@ script = ExtResource("3_skds4")
 section_id = 7
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section07" unique_id=806629050]
-shape = SubResource("SegmentShape2D_of25n")
+shape = SubResource("SegmentShape2D_ftxgt")
 
 [node name="RespawnPoint" type="Marker2D" parent="Sections/Section07" unique_id=1783474923]
 rotation = 3.1415927
@@ -159,7 +164,7 @@ script = ExtResource("3_skds4")
 section_id = 8
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section08" unique_id=1764078116]
-shape = SubResource("SegmentShape2D_t3p7e")
+shape = SubResource("SegmentShape2D_4jx8c")
 
 [node name="RespawnPoint" type="Marker2D" parent="Sections/Section08" unique_id=8708179]
 rotation = 3.1415927
@@ -171,7 +176,7 @@ script = ExtResource("3_skds4")
 section_id = 9
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section09" unique_id=965796893]
-shape = SubResource("SegmentShape2D_a2x52")
+shape = SubResource("SegmentShape2D_eyea0")
 
 [node name="RespawnPoint" type="Marker2D" parent="Sections/Section09" unique_id=1667196456]
 rotation = 1.5707964
@@ -210,9 +215,18 @@ rotation = 1.5707964
 position = Vector2(-4250, -280)
 rotation = 1.5707964
 
-[node name="PitStop" type="Area2D" parent="." unique_id=2130349911]
+[node name="PitStop" type="Area2D" parent="." unique_id=1948338450]
 position = Vector2(100, 385)
 script = ExtResource("4_grhsg")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="PitStop" unique_id=1320785530]
-shape = SubResource("RectangleShape2D_uwack")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PitStop" unique_id=1652063379]
+position = Vector2(-82.5, -791)
+shape = SubResource("RectangleShape2D_pitstop")
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="PitStop" unique_id=2024697141]
+position = Vector2(-80.75, 23.5)
+shape = SubResource("RectangleShape2D_o300m")
+
+[node name="CollisionShape2D3" type="CollisionShape2D" parent="PitStop" unique_id=58095718]
+position = Vector2(-89, 850.5)
+shape = SubResource("RectangleShape2D_p8cjj")

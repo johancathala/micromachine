@@ -102,12 +102,20 @@ func _spawn_cars() -> bool:
 		)
 		return false
 
-	# Contre-la-montre : départ en fond de grille.
 	var spawn_count := race_world.current_track.get_node("SpawnPoints").get_child_count()
+
+	# Places sur la grille tirées au sort à chaque départ (joueurs et IA
+	# mélangés). Contre-la-montre : seul, en fond de grille.
+	var grid_slots: Array[int] = []
+
+	for slot in range(participants.size()):
+		grid_slots.append(slot)
+
+	grid_slots.shuffle()
 
 	for spawn_index in range(participants.size()):
 		var participant: Dictionary = participants[spawn_index]
-		var grid_index := spawn_index
+		var grid_index := grid_slots[spawn_index]
 
 		if race_config.is_time_trial():
 			grid_index = spawn_count - 1 - spawn_index

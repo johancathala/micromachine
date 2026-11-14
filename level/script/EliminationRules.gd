@@ -5,12 +5,12 @@ class_name EliminationRules
 # MODE ÉLIMINATION HORS ÉCRAN
 # ============================================================
 #
-# - Écran partagé, joueurs humains uniquement.
+# - Écran partagé, joueurs humains et IA.
 # - Un joueur dont la voiture sort de l'écran explose et est éliminé
 #   de la manche.
 # - Quand il ne reste qu'un joueur, la manche est terminée :
-#   avec N joueurs, le survivant marque N-1 points, le dernier
-#   éliminé N-2, ..., le premier éliminé 0.
+#   le survivant marque 4 points, le dernier éliminé 2, l'avant-dernier
+#   1, les autres 0 (ROUND_POINTS), quel que soit le nombre de voitures.
 # - Si personne n'a atteint le score cible, la course repart à la
 #   position du survivant, en grille inversée : le premier éliminé
 #   devant, le survivant derrière.
@@ -49,7 +49,10 @@ const TRAIL_MAX_POINTS := 300
 
 var controller: RaceController = null
 var camera: RaceCamera = null
-var target_score: int = 10
+var target_score: int = 20
+
+## Points de la manche selon la place : 1er, 2e, 3e ; les suivants 0.
+const ROUND_POINTS := [4, 2, 1]
 
 var round_active := false
 var round_number := 0
@@ -181,11 +184,10 @@ func _end_round() -> void:
 	for i in range(elimination_order.size() - 1, -1, -1):
 		ranking.append(elimination_order[i])
 
-	var player_count := ranking.size()
 	var awarded: Array[int] = []
 
-	for i in range(player_count):
-		var points := player_count - 1 - i
+	for i in range(ranking.size()):
+		var points: int = ROUND_POINTS[i] if i < ROUND_POINTS.size() else 0
 		ranking[i].points += points
 		awarded.append(points)
 
@@ -256,6 +258,9 @@ func _restart_round(survivor: RaceParticipantState) -> void:
 
 		state.car.place_for_restart(slot_transform)
 		state.eliminated = false
+
+		if state.car.ai_driver != null:
+			state.car.ai_driver.reset_tracking()
 		state.pending_section_validation = -1
 
 		# Même progression que le survivant pour tous.
@@ -341,7 +346,7 @@ func _get_grid_transform(
 
 func _record_trails() -> void:
 	for state in controller.participants:
-		if state.is_ai or state.eliminated:
+		if state.eliminated:
 			continue
 
 		var car := state.car
@@ -384,7 +389,7 @@ func get_alive_states() -> Array[RaceParticipantState]:
 	var result: Array[RaceParticipantState] = []
 
 	for state in controller.participants:
-		if state.is_ai or state.eliminated:
+		if state.eliminated:
 			continue
 
 		if not is_instance_valid(state.car):
@@ -415,9 +420,6 @@ func get_score_leader() -> RaceParticipantState:
 	var tie := false
 
 	for state in controller.participants:
-		if state.is_ai:
-			continue
-
 		if best == null or state.points > best.points:
 			best = state
 			tie = false

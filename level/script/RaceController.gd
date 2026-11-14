@@ -169,6 +169,10 @@ var pit_stops: PitStopManager = null
 # Fantôme (mode contre-la-montre).
 var ghost_manager: GhostManager = null
 
+# Trajectoire suivie par les IA (tracé « RacingLine » du circuit, sinon
+# axe de la chaussée calculé).
+var racing_line: RacingLine = null
+
 const RACE_END_DELAY := 30.0
 
 
@@ -226,6 +230,11 @@ func initialize(
 	if race_config.is_elimination():
 		_initialize_elimination()
 
+	if race_config.uses_tire_wear():
+		_scale_tire_wear()
+
+	_setup_ai_drivers()
+
 	if race_config.is_time_trial():
 		ghost_manager = GhostManager.new()
 		ghost_manager.name = "GhostManager"
@@ -256,6 +265,71 @@ func _initialize_elimination() -> void:
 	elimination_rules.round_finished.connect(
 		func(_ranking, _awarded): _update_positions()
 	)
+
+
+## Usure des pneus proportionnelle au circuit : même nombre de tours
+## par train de pneus sur un circuit court ou long.
+func _scale_tire_wear() -> void:
+	if track_progress == null:
+		return
+
+	var lap_length := track_progress.get_lap_length()
+
+	for state in participants:
+		if is_instance_valid(state.car):
+			state.car.set_lap_length(lap_length)
+
+
+## Un pilote générique par IA, sur la trajectoire du circuit.
+func _setup_ai_drivers() -> void:
+	var has_ai := false
+
+	for state in participants:
+		if state.is_ai and is_instance_valid(state.car):
+			has_ai = true
+
+	if not has_ai:
+		return
+
+	racing_line = RacingLine.from_track(race_world.current_track, track_progress)
+
+	if not racing_line.is_valid():
+		push_warning("RaceController : pas de trajectoire pour les IA.")
+		return
+
+	print("IA : trajectoire = %s (%d points, %d px)" % [
+		racing_line.source, racing_line.points.size(), racing_line.length
+	])
+
+	# Passage au stand (course avec usure des pneus).
+	var pit_route: Dictionary = {}
+
+	if race_config.uses_tire_wear():
+		pit_route = track_progress.build_pit_route(race_world.current_track, racing_line.points)
+		print("IA : passage au stand %s" % ("calculé" if not pit_route.is_empty() else "introuvable"))
+
+	for state in participants:
+		if state.is_ai and is_instance_valid(state.car):
+			var driver := AIDriver.new(
+				state.car, racing_line, _get_ai_difficulty(state),
+				race_world.current_track.scene_file_path
+			)
+			driver.participant = state
+			driver.learning_key = AILearning.make_key(
+				race_world.current_track.scene_file_path, state.car.definition.id
+			)
+			driver.lap_count = 0 if race_config.has_infinite_laps() else race_config.lap_count
+			driver.setup_pit(pit_route)
+			state.car.ai_driver = driver
+
+
+## Niveau de l'IA choisi sur l'écran des IA.
+func _get_ai_difficulty(state: RaceParticipantState) -> int:
+	for participant in race_config.participants:
+		if int(participant.get("participant_id", -1)) == state.participant_id:
+			return int(participant.get("ai_difficulty", race_config.ai_difficulty))
+
+	return race_config.ai_difficulty
 
 
 func is_elimination_mode() -> bool:
@@ -821,8 +895,8 @@ func on_car_entered_section(
 	# --------------------------------------------------------
 	# La voiture doit franchir les sections dans l'ordre.
 	# --------------------------------------------------------
-	# Variantes de circuit : la carte intégrée contient aussi les sections
-	# du circuit d'origine ; seules celles du circuit courant comptent.
+	# Seules comptent les sections du circuit courant (garde-fou si une
+	# scène intégrée contenait ses propres sections).
 	if (
 		respawn_point != null
 		and _sections.get(section_id) != respawn_point.get_parent()
@@ -972,6 +1046,9 @@ func request_respawn(car: Car) -> void:
 	if state.car._destruction_started == false:
 		state.car.respawn_at(state.respawn_transform)
 
+		if state.car.ai_driver != null:
+			state.car.ai_driver.reset_tracking()
+
 		# Après un raccourci : les sections sautées, jusqu'à celle où la
 		# voiture est replacée, sont validées dans l'ordre.
 		if state.pending_section_validation >= 0:
@@ -1043,6 +1120,12 @@ func _punish_shortcut(state: RaceParticipantState, stopping_section: int) -> voi
 		state.pending_section_validation = target
 
 	shortcut_detected.emit(state, target)
+
+	# IA : un raccourci est une sortie de trajectoire (virage manqué) ;
+	# elle apprend à ralentir avant l'endroit où elle l'a perdue.
+	if state.car.ai_driver != null:
+		state.car.ai_driver.on_crash()
+
 	state.car.explosion()
 
 

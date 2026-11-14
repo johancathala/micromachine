@@ -1,71 +1,52 @@
 extends Control
 
-const PLAYER_SLOT_SCENE := preload("res://ui/scene/PlayerSlot.tscn")
-
-const MAX_HUMAN_PLAYERS := 8
-
-# Actions de JOIN fixes.
-# Elles ne dépendent PAS des contrôles configurables.
-const KEYBOARD_JOIN_KEY := KEY_E
-const GAMEPAD_JOIN_BUTTON := JOY_BUTTON_B
-
-enum AIDifficulty {
-	NOVICE,
-	MEDIUM,
-	EXPERT
-}
-
-
-var race_config: RaceConfig
-var track_catalog: Array
-
-
-@onready var back_button: Button = ($MarginContainer/VBoxContainer/Footer/BackButton)
-
-@onready var player_list: VBoxContainer = ($MarginContainer/VBoxContainer/MainContent/PlayersPanel/PlayersMargin/PlayersVBox/PlayerListScroll/PlayerList)
-
-@onready var join_hint: Label = ($MarginContainer/VBoxContainer/MainContent/PlayersPanel/PlayersMargin/PlayersVBox/JoinHint)
-
-@onready var ai_difficulty: OptionButton = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/AIDifficultyRow/AIDifficulty)
-
-@onready var track_selector: OptionButton = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TrackRow/Track)
-
-@onready var lap_selector: OptionButton = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/LapCountRow/LapCount)
-
-@onready var game_type_selector: OptionButton = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/GameTypeRow/GameType)
-
-@onready var target_score_row: HBoxContainer = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TargetScoreRow)
-
-@onready var target_score_selector: OptionButton = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TargetScoreRow/TargetScore)
-
-const TARGET_SCORES := [5, 10, 15, 20, 30]
-
-@onready var screen_mode_row: HBoxContainer = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/ScreenModeRow)
-
-@onready var screen_mode_selector: OptionButton = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/ScreenModeRow/ScreenMode)
-
-@onready var tire_wear_row: HBoxContainer = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TireWearRow)
-
-@onready var tire_wear_selector: OptionButton = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TireWearRow/TireWear)
-
-@onready var ghost_row: HBoxContainer = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/GhostRow)
-
-@onready var ghost_selector: OptionButton = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/GhostRow/GhostMode)
-
-@onready var ai_count_row: HBoxContainer = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/AICountRow)
-
-@onready var ai_count_selector: OptionButton = ($MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/AICountRow/AICount)
+# ============================================================
+# CIRCUIT ET RÉGLAGES (dernier écran avant la course)
+# ============================================================
+#
+# Parcours : Mode → Joueurs → IA (course classique) → Circuit → Course.
+# Le plateau (joueurs, IA) est déjà fait : on choisit où courir et
+# les réglages de la course, puis on lance le départ. Le récapitulatif
+# de fin de course revient ici (« changer de circuit ») avec les mêmes
+# joueurs et les mêmes IA.
+# ============================================================
 
 enum ScreenMode {
 	SHARED,
 	SPLIT
 }
 
-@onready var start_button: Button = ($MarginContainer/VBoxContainer/Footer/StartButton)
+const TARGET_SCORES := [12, 16, 20, 30, 40]
+const LAP_COUNTS := [1, 2, 3, 4, 5, 7, 10, 15, 20]
+## Sélecteur de tours : « ∞ » grisé hors course classique.
+const INFINITE_LAPS_ID := 9999
 
-@onready var help_label: Label = ($MarginContainer/VBoxContainer/Footer/HelpLabel)
+const SETTINGS_PATH := "MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/"
 
+var race_config: RaceConfig
+var track_catalog: Array
+
+@onready var back_button: Button = $MarginContainer/VBoxContainer/Footer/BackButton
+@onready var start_button: Button = $MarginContainer/VBoxContainer/Footer/StartButton
+@onready var help_label: Label = $MarginContainer/VBoxContainer/Footer/HelpLabel
 @onready var focus_manager: MenuFocusManager = $MenuFocusManager
+
+@onready var track_selector: OptionButton = get_node(SETTINGS_PATH + "TrackRow/Track")
+@onready var lap_selector: OptionButton = get_node(SETTINGS_PATH + "LapCountRow/LapCount")
+@onready var target_score_row: HBoxContainer = get_node(SETTINGS_PATH + "TargetScoreRow")
+@onready var target_score_selector: OptionButton = get_node(SETTINGS_PATH + "TargetScoreRow/TargetScore")
+@onready var screen_mode_row: HBoxContainer = get_node(SETTINGS_PATH + "ScreenModeRow")
+@onready var screen_mode_selector: OptionButton = get_node(SETTINGS_PATH + "ScreenModeRow/ScreenMode")
+@onready var tire_wear_row: HBoxContainer = get_node(SETTINGS_PATH + "TireWearRow")
+@onready var tire_wear_selector: OptionButton = get_node(SETTINGS_PATH + "TireWearRow/TireWear")
+@onready var ghost_row: HBoxContainer = get_node(SETTINGS_PATH + "GhostRow")
+@onready var ghost_selector: OptionButton = get_node(SETTINGS_PATH + "GhostRow/GhostMode")
+@onready var preview_image: TextureRect = get_node(SETTINGS_PATH + "TrackPreview/PreviewVBox/PreviewImage")
+@onready var preview_label: Label = get_node(SETTINGS_PATH + "TrackPreview/PreviewVBox/PreviewLabel")
+
+# Pilotes fantômes : fantôme retrouvé pour chacun sur ce circuit.
+var ghost_pilots_label: Label
+
 
 func _ready() -> void:
 	AudioManager.bind_sound_btt()
@@ -76,84 +57,73 @@ func _ready() -> void:
 		race_config = RaceConfig.new()
 		race_config.mode = GameManager.GameMode.SINGLE_RACE
 
-	# Écran « Paramètres » : vient en premier ; les joueurs rejoignent
-	# et choisissent leur voiture sur l'écran suivant (CarSelection).
-	($MarginContainer/VBoxContainer/MainContent/PlayersPanel as Control).hide()
-	start_button.text = "JOUEURS ›"
+	race_config.build_participants()
 
-	_setup_settings()
+	# Les joueurs ont rejoint sur l'écran précédent.
+	($MarginContainer/VBoxContainer/MainContent/PlayersPanel as Control).hide()
+
+	ghost_pilots_label = Label.new()
+	ghost_pilots_label.add_theme_font_size_override("font_size", 28)
+	ghost_pilots_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	ghost_pilots_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var preview_box := preview_label.get_parent()
+	preview_box.add_child(ghost_pilots_label)
+
+	_setup_tracks()
+	_setup_laps()
+	_setup_screen_modes()
+	_setup_tire_wear()
+	_setup_ghost_modes()
+	_setup_target_scores()
+	_apply_game_type_ui()
 	_connect_signals()
 	_refresh_ui()
 
 
-func set_focus() -> void:
-	var settings: Array[Control] = []
-
-	if ai_count_row.visible:
-		settings.append(ai_count_selector)
-
-	settings.append_array([
-		ai_difficulty,
-		track_selector,
-		lap_selector,
-		game_type_selector
-	])
-
-	if screen_mode_row.visible:
-		settings.append(screen_mode_selector)
-
-	if tire_wear_row.visible:
-		settings.append(tire_wear_selector)
-
-	if ghost_row.visible:
-		settings.append(ghost_selector)
-
-	if target_score_row.visible:
-		settings.append(target_score_selector)
-
-	focus_manager.set_vertical_navigation(settings)
-
-	var last_setting: Control = settings[settings.size() - 1]
-
-	focus_manager.set_neighbors(last_setting,settings[settings.size() - 2],back_button)
-	focus_manager.set_neighbors(back_button,last_setting,ai_difficulty,start_button,start_button)
-	focus_manager.set_neighbors(start_button,last_setting,ai_difficulty,back_button,back_button)
-
-
-
-func _exit_tree() -> void:
-	if InputManager.gamepad_disconnected.is_connected(
-		_on_gamepad_disconnected
-	):
-		InputManager.gamepad_disconnected.disconnect(
-			_on_gamepad_disconnected
-	)
-
-
 # ================================================================
-# Configuration
+# Réglages
 # ================================================================
-func _setup_settings() -> void:
-	_setup_ai_difficulty()
-	_setup_laps()
-	_setup_tracks()
-	_setup_game_types()
-	_setup_screen_modes()
-	_setup_tire_wear()
-	_setup_ghost_modes()
-	_setup_ai_count()
-	_setup_target_scores()
-	_apply_game_type_ui()
+
+func _setup_tracks() -> void:
+	track_selector.clear()
+
+	for track: Dictionary in track_catalog:
+		track_selector.add_item(track.name, track.id)
+
+	# Circuit en cours, sinon le premier.
+	if race_config.track.is_empty() or track_selector.get_item_index(int(race_config.track.get("id", -1))) < 0:
+		race_config.track = track_catalog.get(0)
+
+	track_selector.select(track_selector.get_item_index(int(race_config.track.id)))
 
 
-## Nombre d'IA (course classique) : jusqu'à 7 (au moins un joueur).
-func _setup_ai_count() -> void:
-	ai_count_selector.clear()
+func _setup_laps() -> void:
+	lap_selector.clear()
 
-	for count in range(RaceConfig.TOTAL_RACE_SLOTS):
-		ai_count_selector.add_item(str(count), count)
+	for laps in LAP_COUNTS:
+		lap_selector.add_item(str(laps), laps)
 
-	ai_count_selector.select(ai_count_selector.get_item_index(clampi(race_config.ai_count, 0, RaceConfig.TOTAL_RACE_SLOTS - 1)))
+	# Nombre de tours en cours (3 par défaut).
+	if lap_selector.get_item_index(race_config.lap_count) < 0:
+		race_config.lap_count = 3
+
+	lap_selector.select(lap_selector.get_item_index(race_config.lap_count))
+
+
+func _setup_screen_modes() -> void:
+	screen_mode_selector.clear()
+	screen_mode_selector.add_item("Écran partagé", ScreenMode.SHARED)
+	screen_mode_selector.add_item("Écran splitté", ScreenMode.SPLIT)
+	screen_mode_selector.select(screen_mode_selector.get_item_index(
+		ScreenMode.SPLIT if race_config.split_screen else ScreenMode.SHARED
+	))
+
+
+func _setup_tire_wear() -> void:
+	tire_wear_selector.clear()
+	tire_wear_selector.add_item("Non", 0)
+	tire_wear_selector.add_item("Oui (arrêts au stand)", 1)
+	tire_wear_selector.select(1 if race_config.tire_wear else 0)
 
 
 func _setup_ghost_modes() -> void:
@@ -163,51 +133,7 @@ func _setup_ghost_modes() -> void:
 	ghost_selector.add_item("Les deux", 0)
 	ghost_selector.add_item("Le meilleur", 1)
 	ghost_selector.add_item("Le mien", 2)
-
 	ghost_selector.select(ghost_selector.get_item_index(race_config.ghost_mode))
-
-
-func _setup_tire_wear() -> void:
-	tire_wear_selector.clear()
-
-	tire_wear_selector.add_item("Non", 0)
-	tire_wear_selector.add_item("Oui (arrêts au stand)", 1)
-
-	tire_wear_selector.select(1 if race_config.tire_wear else 0)
-
-
-func _setup_screen_modes() -> void:
-	screen_mode_selector.clear()
-
-	screen_mode_selector.add_item("Écran partagé", ScreenMode.SHARED)
-	screen_mode_selector.add_item("Écran splitté", ScreenMode.SPLIT)
-
-	screen_mode_selector.select(
-		screen_mode_selector.get_item_index(
-			ScreenMode.SPLIT if race_config.split_screen else ScreenMode.SHARED
-		)
-	)
-
-
-func _setup_game_types() -> void:
-	game_type_selector.clear()
-
-	game_type_selector.add_item(
-		"Course classique",
-		RaceConfig.RaceRules.CLASSIC
-	)
-	game_type_selector.add_item(
-		"Élimination",
-		RaceConfig.RaceRules.ELIMINATION
-	)
-	game_type_selector.add_item(
-		"Contre-la-montre",
-		RaceConfig.RaceRules.TIME_TRIAL
-	)
-
-	game_type_selector.select(
-		game_type_selector.get_item_index(race_config.race_rules)
-	)
 
 
 func _setup_target_scores() -> void:
@@ -216,96 +142,24 @@ func _setup_target_scores() -> void:
 	for score in TARGET_SCORES:
 		target_score_selector.add_item("%d points" % score, score)
 
-	var index := target_score_selector.get_item_index(
-		race_config.target_score
-	)
-
-	if index < 0:
-		index = target_score_selector.get_item_index(
-			RaceConfig.DEFAULT_TARGET_SCORE
-		)
+	if target_score_selector.get_item_index(race_config.target_score) < 0:
 		race_config.target_score = RaceConfig.DEFAULT_TARGET_SCORE
 
-	target_score_selector.select(index)
+	target_score_selector.select(target_score_selector.get_item_index(race_config.target_score))
 
 
-## En élimination : pas d'IA et pas de limite de tours,
-## mais un score à atteindre.
+## Réglages propres au mode choisi au début.
 func _apply_game_type_ui() -> void:
-	var elimination := race_config.is_elimination()
 	var classic := race_config.is_classic()
 
-	target_score_row.visible = elimination
-	# Écran splitté et usure des pneus : course classique uniquement.
-	screen_mode_row.visible = classic
+	target_score_row.visible = race_config.is_elimination()
+	# Écran splitté : course classique à plusieurs joueurs.
+	screen_mode_row.visible = classic and race_config.get_human_player_count() >= 2
 	tire_wear_row.visible = classic
 	ghost_row.visible = race_config.is_time_trial()
-	ai_count_row.visible = classic
-	# Pas d'IA hors course classique ; tours illimités (∞, grisé) en
-	# élimination et en contre-la-montre.
-	ai_difficulty.disabled = not classic
+	# Tours illimités (∞, grisé) en élimination et en contre-la-montre.
 	_show_infinite_laps(not classic)
 
-func _setup_settings_from_config() -> void:
-	_setup_settings()
-
-	var difficulty_index := race_config.ai_difficulty
-
-	if difficulty_index >= 0 and difficulty_index < ai_difficulty.item_count:
-		ai_difficulty.select(difficulty_index)
-
-
-	var lap_index := lap_selector.get_item_index(
-		race_config.lap_count
-	)
-
-	if lap_index >= 0:
-		lap_selector.select(lap_index)
-
-	track_selector.select(track_selector.get_item_index(race_config.track.id))
-
-func _setup_ai_difficulty() -> void:
-	ai_difficulty.clear()
-
-	ai_difficulty.add_item("Novice", AIDifficulty.NOVICE)
-	ai_difficulty.add_item("Moyen", AIDifficulty.MEDIUM)
-	ai_difficulty.add_item("Expert", AIDifficulty.EXPERT)
-
-	# Réglage en cours conservé (retour depuis l'écran des joueurs).
-	ai_difficulty.select(ai_difficulty.get_item_index(race_config.ai_difficulty))
-
-
-func _setup_laps() -> void:
-	lap_selector.clear()
-
-	var lap_counts := [
-		1,
-		2,
-		3,
-		4,
-		5,
-		7,
-		10,
-		15,
-		20
-	]
-
-	for laps in lap_counts:
-		lap_selector.add_item(str(laps), laps)
-
-	# Nombre de tours en cours (3 par défaut).
-	var lap_index := lap_selector.get_item_index(race_config.lap_count)
-
-	if lap_index < 0:
-		race_config.lap_count = 3
-		lap_index = lap_selector.get_item_index(3)
-
-	lap_selector.select(lap_index)
-
-
-## Sélecteur de tours : « ∞ » grisé hors course classique, sinon le
-## nombre de tours choisi (conservé dans la configuration).
-const INFINITE_LAPS_ID := 9999
 
 func _show_infinite_laps(infinite: bool) -> void:
 	var infinite_index := lap_selector.get_item_index(INFINITE_LAPS_ID)
@@ -323,399 +177,142 @@ func _show_infinite_laps(infinite: bool) -> void:
 		lap_selector.remove_item(infinite_index)
 
 	lap_selector.disabled = false
-
-	var lap_index := lap_selector.get_item_index(race_config.lap_count)
-
-	if lap_index >= 0:
-		lap_selector.select(lap_index)
+	lap_selector.select(lap_selector.get_item_index(race_config.lap_count))
 
 
-func _setup_tracks() -> void:
-	track_selector.clear()
-	
-	for track: Dictionary in track_catalog:
-		track_selector.add_item(track.name, track.id)
-	
-	# Circuit en cours, sinon le premier.
-	if race_config.track.is_empty() or track_selector.get_item_index(int(race_config.track.get("id", -1))) < 0:
-		race_config.track = track_catalog.get(0)
-
-	track_selector.select(track_selector.get_item_index(int(race_config.track.id)))
-	_refresh_track_preview()
-
-# ================================================================
-# Signaux
-# ================================================================
 func _connect_signals() -> void:
 	back_button.pressed.connect(_on_back_pressed)
 	start_button.pressed.connect(_on_start_pressed)
 
-	ai_difficulty.item_selected.connect(
-		_on_ai_difficulty_changed
+	track_selector.item_selected.connect(func(index: int) -> void:
+		race_config.track = track_catalog.get(index)
+		_refresh_ui()
 	)
-
-	track_selector.item_selected.connect(
-		_on_track_changed
+	lap_selector.item_selected.connect(func(index: int) -> void:
+		race_config.lap_count = lap_selector.get_item_id(index)
+		_refresh_ui()
 	)
-
-	lap_selector.item_selected.connect(
-		_on_laps_changed
+	target_score_selector.item_selected.connect(func(index: int) -> void:
+		race_config.target_score = target_score_selector.get_item_id(index)
 	)
-
-	game_type_selector.item_selected.connect(
-		_on_game_type_changed
+	screen_mode_selector.item_selected.connect(func(index: int) -> void:
+		race_config.split_screen = screen_mode_selector.get_item_id(index) == ScreenMode.SPLIT
 	)
-
-	target_score_selector.item_selected.connect(
-		_on_target_score_changed
+	tire_wear_selector.item_selected.connect(func(index: int) -> void:
+		race_config.tire_wear = tire_wear_selector.get_item_id(index) == 1
 	)
-
-	screen_mode_selector.item_selected.connect(
-		_on_screen_mode_changed
-	)
-
-	tire_wear_selector.item_selected.connect(
-		_on_tire_wear_changed
-	)
-
-	ai_count_selector.item_selected.connect(
-		func(index):
-			race_config.ai_count = ai_count_selector.get_item_id(index)
-			_refresh_join_hint()
-	)
-
-	ghost_selector.item_selected.connect(
-		func(index): race_config.ghost_mode = ghost_selector.get_item_id(index)
-	)
-
-	# IMPORTANT :
-	# Une connexion de manette ne fait PAS rejoindre automatiquement
-	# un joueur.
-	if not InputManager.gamepad_disconnected.is_connected(
-		_on_gamepad_disconnected
-	):
-		InputManager.gamepad_disconnected.connect(
-			_on_gamepad_disconnected
+	ghost_selector.item_selected.connect(func(index: int) -> void:
+		race_config.ghost_mode = ghost_selector.get_item_id(index)
 	)
 
 
 # ================================================================
-# JOIN
+# Affichage
 # ================================================================
-func _unhandled_input(event: InputEvent) -> void:
-	# On rejoint la partie sur l'écran des joueurs.
-	return
 
-	# ------------------------------------------------------------
-	# Clavier
-	# ------------------------------------------------------------
-	if event is InputEventKey:
-		if not event.pressed:
-			return
-
-		if event.echo:
-			return
-
-		if event.physical_keycode == KEYBOARD_JOIN_KEY:
-			_try_join_keyboard()
-
-		return
-
-
-	# ------------------------------------------------------------
-	# Manette
-	# ------------------------------------------------------------
-	if event is InputEventJoypadButton:
-		if not event.pressed:
-			return
-
-		if event.button_index == GAMEPAD_JOIN_BUTTON:
-			_try_join_gamepad(event.device)
-
-		return
-
-
-# ================================================================
-# JOIN CLAVIER
-# ================================================================
-# Jusqu'à InputManager.KEYBOARD_PLAYER_COUNT joueurs partagent le clavier :
-# chaque appui sur la touche de JOIN ajoute le joueur clavier suivant.
-func _try_join_keyboard() -> void:
-
-	if race_config.is_full():
-		return
-
-	var keyboard_id := race_config.get_free_keyboard_id()
-
-	if keyboard_id < 0:
-		return
-
-	AudioManager.play_click()
-	var player_id := race_config.get_next_player_id()
-
-	var nickname : String
-
-	if keyboard_id == 0:
-		# Le clavier 1 correspond au profil principal.
-		nickname = SaveManager.get_nickname()
-	else:
-		nickname = SaveManager.get_player_nickname(
-			"keyboard",
-			keyboard_id
-		)
-
-	if nickname.is_empty():
-		nickname = "Joueur %d" % (
-			race_config.get_human_player_count() + 1
-		)
-
-	var player := {
-		"player_id": player_id,
-		"device_type": "keyboard",
-		"device_id": keyboard_id,
-		"nickname": nickname
-	}
-
-	race_config.players.append(player)
-
-	_refresh_ui()
-
-
-# ================================================================
-# JOIN MANETTE
-# ================================================================
-func _try_join_gamepad(device_id: int) -> void:
-
-	if race_config.is_full():
-		return
-
-	# Une manette déjà inscrite ne peut pas rejoindre une seconde fois.
-	if race_config.has_gamepad_player(device_id):
-		return
-
-	AudioManager.play_click()
-	var player_id := race_config.get_next_player_id()
-
-	var player_number := race_config.get_human_player_count() + 1
-
-	var nickname : String = SaveManager.get_player_nickname(
-		"gamepad",
-		device_id
-	)
-
-	if nickname.is_empty():
-		nickname = "Joueur %d" % player_number
-
-	var player := {
-		"player_id": player_id,
-		"device_type": "gamepad",
-		"device_id": device_id,
-		"nickname": nickname
-	}
-
-	race_config.players.append(player)
-
-	_refresh_ui()
-
-
-# ================================================================
-# REFRESH INTERFACE
-# ================================================================
 func _refresh_ui() -> void:
-	_refresh_players()
-	_refresh_start_button()
-	_refresh_join_hint()
-	set_focus()
-
-
-func _refresh_players() -> void:
-
-	for child in player_list.get_children():
-		child.queue_free()
-
-
-	for i in range(race_config.players.size()):
-
-		var player: Dictionary = race_config.players[i]
-
-		var slot: PlayerSlot = PLAYER_SLOT_SCENE.instantiate()
-
-		player_list.add_child(slot)
-
-		# i + 1 = numéro affiché.
-		slot.setup(player, i + 1)
-
-		slot.remove_requested.connect(
-			_on_player_remove_requested
-		)
-		
-		slot.nickname_changed.connect(
-			_on_player_nickname_changed
-		)
-
-
-func _refresh_start_button() -> void:
-	# Les joueurs sont choisis à l'écran suivant : seuls les réglages
-	# comptent ici.
-	start_button.disabled = race_config.track.is_empty() or race_config.lap_count <= 0
-
-
-## Résumé du mode choisi (les joueurs rejoignent à l'écran suivant).
-func _refresh_join_hint() -> void:
-	if race_config.is_time_trial():
-		help_label.text = "Contre-la-montre : un seul joueur, contre votre fantôme"
-	elif race_config.is_elimination():
-		help_label.text = "Élimination : %d joueurs minimum, sans IA" % RaceConfig.ELIMINATION_MIN_PLAYERS
-	else:
-		help_label.text = "Course classique : %d IA" % race_config.ai_count
-
-
-# ================================================================
-# PARAMÈTRES
-# ================================================================
-func _on_ai_difficulty_changed(index: int) -> void:
-	race_config.ai_difficulty = ai_difficulty.get_item_id(index)
-
-	_refresh_start_button()
-
-
-func _on_track_changed(index: int) -> void:
-	race_config.track = track_catalog.get(index)
 	_refresh_track_preview()
-
-	_refresh_start_button()
+	_refresh_ghost_pilots()
+	_refresh_summary()
+	start_button.disabled = not race_config.is_valid()
+	_set_focus_navigation()
 
 
 ## Aperçu du circuit choisi (vue d'ensemble avec le parcours).
 func _refresh_track_preview() -> void:
-	var preview_box := $MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TrackPreview/PreviewVBox
-	var image := preview_box.get_node("PreviewImage") as TextureRect
-	var label := preview_box.get_node("PreviewLabel") as Label
-
 	var texture := TrackCatalog.get_preview(int(race_config.track.get("id", -1)))
 
 	if texture != null:
-		image.texture = texture
+		preview_image.texture = texture
 
-	label.text = String(race_config.track.get("name", ""))
-
-
-func _on_laps_changed(index: int) -> void:
-	race_config.lap_count = lap_selector.get_item_id(index)
-
-	_refresh_start_button()
+	preview_label.text = String(race_config.track.get("name", ""))
 
 
-func _on_game_type_changed(index: int) -> void:
-	race_config.race_rules = (
-		game_type_selector.get_item_id(index)
-		as RaceConfig.RaceRules
-	)
+## Pilotes fantômes : fantôme retrouvé pour leur voiture sur ce
+## circuit, sinon ils roulent en Expert.
+func _refresh_ghost_pilots() -> void:
+	var lines: PackedStringArray = []
+	var track_id := int(race_config.track.get("id", -1))
 
-	_apply_game_type_ui()
-	_refresh_ui()
-
-
-func _on_tire_wear_changed(index: int) -> void:
-	race_config.tire_wear = tire_wear_selector.get_item_id(index) == 1
-
-
-func _on_screen_mode_changed(index: int) -> void:
-	race_config.split_screen = (
-		screen_mode_selector.get_item_id(index) == ScreenMode.SPLIT
-	)
-
-	_refresh_join_hint()
-
-
-func _on_target_score_changed(index: int) -> void:
-	race_config.target_score = target_score_selector.get_item_id(index)
-
-	_refresh_start_button()
-
-
-func _on_player_nickname_changed(
-	player_id: int,
-	new_nickname: String
-) -> void:
-
-	for player in race_config.players:
-		if int(player.get("player_id", -1)) != player_id:
+	for participant in race_config.participants:
+		if int(participant.get("ai_pilot", -1)) != RaceConfig.AIPilot.GHOST:
 			continue
 
-		player["nickname"] = new_nickname
+		var car_id := String(participant.get("car_id", ""))
+		var car := CarCatalog.get_car(car_id)
+		var car_name := car.display_name if car != null else car_id
+		var ghost := GhostManager.load_best_ghost(track_id, car_id)
+		var pilot_name := String(participant.get("nickname", ""))
 
-		var device_type := str(
-			player.get("device_type", "")
-		)
-
-		var device_id := int(
-			player.get("device_id", -1)
-		)
-
-		if (
-			device_type == "keyboard"
-			and InputManager.get_keyboard_index(device_id) == 0
-		):
-			# Le joueur clavier 1 correspond au profil principal.
-			SaveManager.set_nickname(new_nickname)
+		if ghost.is_empty():
+			lines.append("%s — fantôme %s : aucun, roulera en Expert" % [pilot_name, car_name])
 		else:
-			SaveManager.set_player_nickname(
-				device_type,
-				device_id,
-				new_nickname
-			)
+			lines.append("%s — fantôme %s : %s, %.1f s" % [
+				pilot_name, car_name, String(ghost.get("nickname", "?")), float(ghost.get("lap_time", 0.0))
+			])
 
-		break
-
-# ================================================================
-# SUPPRESSION JOUEUR
-# ================================================================
-func _on_player_remove_requested(player_id: int) -> void:
-
-	var player := race_config.get_player_by_id(player_id)
-
-	if player.is_empty():
-		return
-
-	race_config.remove_player(player_id)
-
-	_refresh_ui()
+	ghost_pilots_label.text = "\n".join(lines)
+	ghost_pilots_label.visible = not lines.is_empty()
 
 
-# ================================================================
-# DÉCONNEXION MANETTE
-# ================================================================
-func _on_gamepad_disconnected(device_id: int) -> void:
+func _refresh_summary() -> void:
+	var players := race_config.get_human_player_count()
+	var text := "%d joueur%s" % [players, "s" if players > 1 else ""]
 
-	var player_id := -1
+	if race_config.is_classic():
+		text += " + %d IA" % race_config.get_enabled_ai_count()
+	elif race_config.is_elimination():
+		text = "Élimination : %s + %d IA" % [text, race_config.get_enabled_ai_count()]
+	else:
+		text = "Contre-la-montre : seul contre votre fantôme"
 
-	for player in race_config.players:
+	help_label.text = text
 
-		if str(player.get("device_type", "")) != "gamepad":
-			continue
 
-		if int(player.get("device_id", -1)) == device_id:
-			player_id = int(player.get("player_id", -1))
-			break
+func _set_focus_navigation() -> void:
+	var settings: Array[Control] = [track_selector, lap_selector]
 
-	if player_id < 0:
-		return
+	for row_selector: Array in [
+		[screen_mode_row, screen_mode_selector],
+		[tire_wear_row, tire_wear_selector],
+		[ghost_row, ghost_selector],
+		[target_score_row, target_score_selector]
+	]:
+		if (row_selector[0] as Control).visible:
+			settings.append(row_selector[1])
 
-	race_config.remove_player(player_id)
+	focus_manager.set_vertical_navigation(settings, false)
 
-	_refresh_ui()
+	var last_setting: Control = settings[settings.size() - 1]
+
+	focus_manager.set_neighbors(last_setting, null, start_button)
+	focus_manager.set_neighbors(back_button, last_setting, track_selector, start_button, start_button)
+	focus_manager.set_neighbors(start_button, last_setting, track_selector, back_button, back_button)
+	focus_manager.set_neighbors(track_selector, start_button)
 
 
 # ================================================================
-# NAVIGATION
+# Navigation
 # ================================================================
+
 func _on_back_pressed() -> void:
-	GameManager.clear_pending_race_config()
-	NavigationManager.go_back_menu()
+	GameManager.set_pending_race_config(race_config.duplicate_config())
+	NavigationManager.go("AISetup" if race_config.allows_ai() else "CarSelection")
 
 
 func _on_start_pressed() -> void:
-	# Écran suivant : les joueurs (et leurs voitures).
-	GameManager.set_pending_race_config(race_config.duplicate_config())
-	NavigationManager.go("CarSelection")
+	race_config.build_participants()
+
+	if not race_config.is_valid() or not race_config.is_car_selection_valid():
+		push_warning("RaceSetup : configuration de course invalide.")
+		return
+
+	GameManager.set_pending_race_config(race_config)
+
+	if not GameManager.start_race():
+		return
+
+	start_button.disabled = true
+	AudioManager.play_start_event()
+	await get_tree().create_timer(1.0).timeout
+	NavigationManager.go("Race", true, true)

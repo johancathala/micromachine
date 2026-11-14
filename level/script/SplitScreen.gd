@@ -65,7 +65,7 @@ var _minimap_framed_sizes: Array[Vector2i] = []
 # quelques images après chaque cadrage (le temps que les tuiles soient
 # prêtes), puis figée. Seules les pastilles des joueurs sont mises à
 # jour. La redessiner à chaque image coûtait ~75 % des performances
-# (tout le circuit, ~450 000 tuiles sur Alès).
+# (tout le circuit : des centaines de milliers de tuiles).
 const MINIMAP_RENDER_FRAMES := 10
 var _minimap_render_left: Array[int] = []
 
