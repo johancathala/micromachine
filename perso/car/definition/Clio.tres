@@ -20,4 +20,5 @@ lateral_grip = 6.7
 high_speed_grip_start = 272.0
 handbrake_grip_multiplier = 0.03
 handbrake_brake_multiplier = 0.3
+mass = 1100.0
 metadata/_custom_type_script = "uid://de3h01guotde1"

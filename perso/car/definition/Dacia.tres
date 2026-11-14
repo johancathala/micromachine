@@ -12,4 +12,5 @@ description = "Faut pas l'emmerder. 50 ans, toujours sous le seuil de pauvreté 
 model_scene = ExtResource("1_4hdsc")
 preview_texture = ExtResource("2_4hdsc")
 brake_force = 859.0
+mass = 1150.0
 metadata/_custom_type_script = "uid://de3h01guotde1"

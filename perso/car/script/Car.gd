@@ -341,6 +341,7 @@ func _apply_car_definition() -> void:
 
 	max_speed = definition.max_speed
 	max_reverse_speed = definition.max_reverse_speed
+	mass = definition.mass
 
 	rolling_resistance = definition.rolling_resistance
 	air_drag = definition.air_drag
@@ -462,6 +463,11 @@ func _process_movement(_delta: float) -> void:
 	var grip_mult: float = 1.0 if not handbrake else handbrake_grip_multiplier
 	grip_mult *= _tire_effect(worn_tire_grip)
 
+	# Pneus décrochés par un choc : l'adhérence revient progressivement.
+	if _impact_grip_loss > 0.0:
+		grip_mult *= 1.0 - _impact_grip_loss
+		_impact_grip_loss = maxf(_impact_grip_loss - _delta / IMPACT_GRIP_RECOVERY * IMPACT_GRIP_MAX_LOSS, 0.0)
+
 	# Apply longitudinal acceleration
 	v_long += fwd * (force_long * _delta)
 
@@ -549,6 +555,42 @@ func _get_impact_speed(
 	return maxf(velocity_toward_collider, 0.0)
 
 
+# ---------------------------
+# CHOCS ENTRE VOITURES
+# ---------------------------
+# Choc entre deux corps : échange de vitesse selon les masses (rebond
+# partiel), frottement au point de contact, et rotation si le choc est
+# décentré. Jamais d'explosion entre voitures.
+
+## Part de la vitesse de rapprochement rendue en rebond (0 : les
+## voitures restent collées, 1 : rebond parfait).
+const CAR_RESTITUTION := 0.15
+## Frottement au contact : part de la vitesse de glissement transmise
+## (une voiture touchée en biais est entraînée).
+const CAR_FRICTION := 0.3
+## Dimensions (px) d'une voiture pour son inertie de rotation.
+const CAR_LENGTH := 141.0
+const CAR_WIDTH := 53.0
+## Rotation due aux chocs : plafond (rad/s) et amortissement (1/s).
+const MAX_IMPACT_SPIN := 5.0
+const IMPACT_SPIN_DAMPING := 3.5
+## Décrochage des pneus : perte maximale d'adhérence latérale, atteinte
+## pour une variation de vitesse de IMPACT_GRIP_FULL_LOSS px/s, et durée
+## de récupération (s).
+const IMPACT_GRIP_MAX_LOSS := 0.6
+const IMPACT_GRIP_FULL_LOSS := 900.0
+const IMPACT_GRIP_RECOVERY := 0.6
+
+@export_range(200.0, 3000.0, 10.0) var mass: float = 1200.0
+
+# Rotation (rad/s) donnée par un choc décentré, qui s'amortit.
+var _impact_spin := 0.0
+# Adhérence latérale perdue après un choc (0 à 1), qui revient.
+var _impact_grip_loss := 0.0
+# Dernière image où un choc avec une voiture donnée a été résolu.
+var _car_impact_frames: Dictionary = {}
+
+
 func _handle_car_collision(
 	collision: KinematicCollision2D,
 	other_car: Car
@@ -556,14 +598,87 @@ func _handle_car_collision(
 	if _destruction_started or _respawning:
 		return
 
-	# Les contacts entre voitures ne provoquent plus d'explosion :
-	# elles se poussent simplement.
 	_last_car_contact_msec = Time.get_ticks_msec()
-	var other_velocity := other_car.velocity
-	var impact_speed := _get_impact_speed(collision, other_velocity)
+	other_car._last_car_contact_msec = _last_car_contact_msec
+
+	var impact_speed := _get_impact_speed(collision, other_car.velocity)
 
 	if impact_speed > 100.0:
 		_play_collision_sound()
+
+	if other_car._destruction_started or other_car._respawning:
+		return
+
+	# Un même contact peut être vu par les deux voitures dans la même
+	# image : il n'est résolu qu'une fois.
+	var frame := Engine.get_physics_frames()
+
+	if (
+		int(other_car._car_impact_frames.get(get_instance_id(), -1)) == frame
+		or int(_car_impact_frames.get(other_car.get_instance_id(), -1)) == frame
+	):
+		return
+
+	_car_impact_frames[other_car.get_instance_id()] = frame
+
+	_resolve_car_impact(collision, other_car)
+
+
+## Impulsion de choc entre cette voiture et `other` (normale de
+## `other` vers nous) : vitesses et rotations des deux voitures.
+func _resolve_car_impact(collision: KinematicCollision2D, other: Car) -> void:
+	var normal := collision.get_normal()
+	var tangent := normal.orthogonal()
+	var own_velocity := _velocity_before_move
+	var relative := own_velocity - other.velocity
+	var approach := relative.dot(normal)
+
+	# Elles s'éloignent déjà : rien à faire.
+	if approach >= 0.0:
+		return
+
+	var inverse_own := 1.0 / maxf(mass, 1.0)
+	var inverse_other := 1.0 / maxf(other.mass, 1.0)
+	var inverse_sum := inverse_own + inverse_other
+
+	# Impulsion normale (rebond partiel), puis frottement tangentiel
+	# borné par la loi de Coulomb.
+	var normal_impulse := -(1.0 + CAR_RESTITUTION) * approach / inverse_sum
+	var tangent_impulse := clampf(
+		-relative.dot(tangent) / inverse_sum,
+		-CAR_FRICTION * normal_impulse,
+		CAR_FRICTION * normal_impulse
+	)
+	var impulse := normal * normal_impulse + tangent * tangent_impulse
+
+	velocity = own_velocity + impulse * inverse_own
+	other.velocity -= impulse * inverse_other
+	_velocity_before_move = velocity
+
+	# Les pneus décrochent sous le choc : la voiture glisse au lieu de
+	# s'arrêter net (d'autant plus que sa vitesse a changé).
+	_loosen_grip(impulse.length() * inverse_own)
+	other._loosen_grip(impulse.length() * inverse_other)
+
+	# Choc décentré : rotation (moment de l'impulsion / inertie).
+	var contact := collision.get_position()
+	_add_impact_spin((contact - global_position).cross(impulse) / _inertia())
+	other._add_impact_spin((contact - other.global_position).cross(-impulse) / other._inertia())
+
+
+## Perte d'adhérence après un choc (variation de vitesse `delta_v`
+## px/s) : adhérence latérale réduite, rétablie en IMPACT_GRIP_RECOVERY s.
+func _loosen_grip(delta_v: float) -> void:
+	var loss := clampf(delta_v / IMPACT_GRIP_FULL_LOSS, 0.0, 1.0) * IMPACT_GRIP_MAX_LOSS
+	_impact_grip_loss = maxf(_impact_grip_loss, loss)
+
+
+func _inertia() -> float:
+	return mass * (CAR_LENGTH * CAR_LENGTH + CAR_WIDTH * CAR_WIDTH) / 12.0
+
+
+func _add_impact_spin(spin: float) -> void:
+	_impact_spin = clampf(_impact_spin + spin, -MAX_IMPACT_SPIN, MAX_IMPACT_SPIN)
 
 
 
@@ -1054,6 +1169,11 @@ func _apply_rotation(delta: float, v_long_after: float, steer_eff: float) -> voi
 		var yaw_rate: float = (v_long_after / max(wheel_base, 1.0)) * tan(effective_steer)
 		rotation += yaw_rate * delta
 
+	# Rotation donnée par un choc décentré, amortie.
+	if absf(_impact_spin) > 0.001:
+		rotation += _impact_spin * delta
+		_impact_spin *= exp(-IMPACT_SPIN_DAMPING * delta)
+
 ## Vitesse limitée (voie des stands, PitLane) : à rappeler à chaque
 ## image physique tant que la voiture est dans la zone.
 const SPEED_LIMIT_DECEL := 3000.0
@@ -1103,7 +1223,14 @@ func _clamp_velocity(fwd: Vector2, v_long: Vector2, v_lat: Vector2) -> void:
 	velocity = v
 
 	# Unique déplacement physique de la voiture.
+	var velocity_before_slide := velocity
 	move_and_slide()
+
+	# Dégagement d'une superposition (réapparition sur une autre
+	# voiture...) : le moteur physique peut produire une vitesse
+	# aberrante ; on garde celle d'avant le déplacement.
+	if velocity.length() > maxf(velocity_before_slide.length(), effective_max_speed) * 1.5:
+		velocity = velocity_before_slide
 
 
 # Info affichées si le débug est activé
@@ -1170,6 +1297,8 @@ func get_node_animation() -> Node2D:
 	return animation
 
 func respawn_at(target: Transform2D) -> void:
+	_impact_spin = 0.0
+	_impact_grip_loss = 0.0
 	_respawning = true
 	_destruction_started = true
 	_velocity_before_move = Vector2.ZERO
@@ -1198,6 +1327,8 @@ func respawn_at(target: Transform2D) -> void:
 ## Replace la voiture (visible, collisions actives) pour un nouveau
 ## départ. Elle reste immobilisée jusqu'à set_can_move(true).
 func place_for_restart(target: Transform2D) -> void:
+	_impact_spin = 0.0
+	_impact_grip_loss = 0.0
 	_respawning = false
 	_destruction_started = false
 	_velocity_before_move = Vector2.ZERO

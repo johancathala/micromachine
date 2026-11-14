@@ -31,6 +31,11 @@ var max_speed: float = 2000.0
 @export_range(0.0, 1000.0, 1.0)
 var max_reverse_speed: float = 450.0
 
+## Masse (kg) : répartit la vitesse échangée lors d'un choc entre
+## voitures (la plus légère est la plus déviée).
+@export_range(200.0, 3000.0, 10.0)
+var mass: float = 1200.0
+
 
 @export_category("Resistance")
 

@@ -20,4 +20,5 @@ lateral_grip = 14.0
 lateral_grip_at_high_speed = 4.0
 high_speed_grip_start = 500.0
 steering_response_high_speed = 0.55
+mass = 800.0
 metadata/_custom_type_script = "uid://de3h01guotde1"
