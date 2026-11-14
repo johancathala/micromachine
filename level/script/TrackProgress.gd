@@ -29,6 +29,14 @@ const DRIVABLE_KEYWORDS := ["asphalte", "vibreur"]
 # voitures (Car.collision_mask = 14 : Player, Interact, Obstacle).
 const BLOCKING_COLLISION_MASK := 0b1110
 
+# La voie des stands (zone PitStop du circuit) coûte plus cher au calcul
+# du parcours : il préfère la piste, sauf quand une porte impose les
+# stands (ex. variantes « Paddock »).
+const PIT_LANE_WEIGHT := 4.0
+# La zone d'arrêt ne couvre que la voie centrale : on pondère aussi les
+# bandes voisines des stands (sans atteindre la piste, plus loin).
+const PIT_WEIGHT_MARGIN := Vector2(350, 600)
+
 var _cell_size := Vector2(32, 32)
 var _reference_layer: TileMapLayer = null
 
@@ -118,7 +126,7 @@ func build(track: Node, gate_segments: Dictionary) -> bool:
 					if cells == null:
 						continue
 
-					var total: float = cost[i] + float((cells as Array).size())
+					var total: float = cost[i] + _path_cost(astar, cells)
 
 					if total < float(next_cost.get(j, INF)):
 						next_cost[j] = total
@@ -322,7 +330,57 @@ func build_grid(track: Node) -> AStarGrid2D:
 		if not blocked.has(cell):
 			astar.set_point_solid(cell, false)
 
+	_weight_pit_lane(track, astar)
+
 	return astar
+
+
+## Rend la voie des stands plus coûteuse (zone du nœud PitStop).
+func _weight_pit_lane(track: Node, astar: AStarGrid2D) -> void:
+	var pit := track.get_node_or_null("PitStop") as Node2D
+
+	if pit == null:
+		return
+
+	for child in pit.get_children():
+		var shape := child as CollisionShape2D
+
+		if shape == null or not shape.shape is RectangleShape2D:
+			continue
+
+		var half := (shape.shape as RectangleShape2D).size / 2.0
+		var corners := [
+			shape.to_global(Vector2(-half.x, -half.y)), shape.to_global(Vector2(half.x, -half.y)),
+			shape.to_global(Vector2(half.x, half.y)), shape.to_global(Vector2(-half.x, half.y))
+		]
+		var area := Rect2(corners[0], Vector2.ZERO)
+
+		for corner in corners:
+			area = area.expand(corner)
+
+		area = area.grow_individual(
+			PIT_WEIGHT_MARGIN.x, PIT_WEIGHT_MARGIN.y,
+			PIT_WEIGHT_MARGIN.x, PIT_WEIGHT_MARGIN.y
+		)
+		var c0 := world_to_cell(area.position)
+		var c1 := world_to_cell(area.end)
+
+		for x in range(c0.x, c1.x + 1):
+			for y in range(c0.y, c1.y + 1):
+				var cell := Vector2i(x, y)
+
+				if astar.is_in_boundsv(cell) and not astar.is_point_solid(cell):
+					astar.set_point_weight_scale(cell, PIT_LANE_WEIGHT)
+
+
+## Coût d'un chemin : somme des poids des cases (voie des stands plus chère).
+func _path_cost(astar: AStarGrid2D, cells: Variant) -> float:
+	var total := 0.0
+
+	for cell in cells:
+		total += astar.get_point_weight_scale(cell)
+
+	return total
 
 
 func is_drivable_cell(astar: AStarGrid2D, cell: Vector2i) -> bool:
