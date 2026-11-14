@@ -5,7 +5,7 @@ class_name EliminationRules
 # MODE ÉLIMINATION HORS ÉCRAN
 # ============================================================
 #
-# - Écran partagé, joueurs humains uniquement.
+# - Écran partagé, joueurs humains et IA.
 # - Un joueur dont la voiture sort de l'écran explose et est éliminé
 #   de la manche.
 # - Quand il ne reste qu'un joueur, la manche est terminée :
@@ -256,6 +256,9 @@ func _restart_round(survivor: RaceParticipantState) -> void:
 
 		state.car.place_for_restart(slot_transform)
 		state.eliminated = false
+
+		if state.car.ai_driver != null:
+			state.car.ai_driver.reset_tracking()
 		state.pending_section_validation = -1
 
 		# Même progression que le survivant pour tous.
@@ -341,7 +344,7 @@ func _get_grid_transform(
 
 func _record_trails() -> void:
 	for state in controller.participants:
-		if state.is_ai or state.eliminated:
+		if state.eliminated:
 			continue
 
 		var car := state.car
@@ -384,7 +387,7 @@ func get_alive_states() -> Array[RaceParticipantState]:
 	var result: Array[RaceParticipantState] = []
 
 	for state in controller.participants:
-		if state.is_ai or state.eliminated:
+		if state.eliminated:
 			continue
 
 		if not is_instance_valid(state.car):
@@ -415,9 +418,6 @@ func get_score_leader() -> RaceParticipantState:
 	var tie := false
 
 	for state in controller.participants:
-		if state.is_ai:
-			continue
-
 		if best == null or state.points > best.points:
 			best = state
 			tie = false

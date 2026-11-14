@@ -78,7 +78,7 @@ func _ready() -> void:
 	($MarginContainer/VBoxContainer/MainContent/ParticipantsPanel as Control).hide()
 	($MarginContainer/VBoxContainer/MainContent/SelectionPanel as Control).hide()
 	($MarginContainer/VBoxContainer/Header/Title as Label).text = "JOUEURS"
-	start_button.text = "IA ›" if race_config.is_classic() else "CIRCUIT ›"
+	start_button.text = "IA ›" if race_config.allows_ai() else "CIRCUIT ›"
 
 	start_button.pressed.connect(_on_start_pressed)
 	back_button.pressed.connect(_on_back_pressed)
@@ -540,8 +540,8 @@ func _refresh_lobby_help() -> void:
 
 	if race_config.is_time_trial():
 		text = "Contre-la-montre : un seul joueur" if count != 1 else "Seul contre votre fantôme"
-	elif race_config.is_elimination() and count < RaceConfig.ELIMINATION_MIN_PLAYERS:
-		text += " — élimination : %d joueurs minimum" % RaceConfig.ELIMINATION_MIN_PLAYERS
+	elif race_config.is_elimination() and count == 1:
+		text += " — élimination : ajoutez des IA à l'écran suivant"
 	elif count > 0:
 		text += " — tout le monde « prêt » pour continuer"
 
@@ -1048,7 +1048,7 @@ func _on_start_pressed() -> void:
 	race_config.build_participants()
 	GameManager.set_pending_race_config(race_config.duplicate_config())
 	# IA (course classique), puis circuit et réglages.
-	NavigationManager.go("AISetup" if race_config.is_classic() else "RaceSetup")
+	NavigationManager.go("AISetup" if race_config.allows_ai() else "RaceSetup")
 
 
 func _on_back_pressed() -> void:

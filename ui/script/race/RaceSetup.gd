@@ -214,7 +214,7 @@ func _refresh_ui() -> void:
 	_refresh_track_preview()
 	_refresh_ghost_pilots()
 	_refresh_summary()
-	start_button.disabled = race_config.track.is_empty() or race_config.lap_count <= 0
+	start_button.disabled = not race_config.is_valid()
 	_set_focus_navigation()
 
 
@@ -262,7 +262,7 @@ func _refresh_summary() -> void:
 	if race_config.is_classic():
 		text += " + %d IA" % race_config.get_enabled_ai_count()
 	elif race_config.is_elimination():
-		text = "Élimination : " + text
+		text = "Élimination : %s + %d IA" % [text, race_config.get_enabled_ai_count()]
 	else:
 		text = "Contre-la-montre : seul contre votre fantôme"
 
@@ -297,7 +297,7 @@ func _set_focus_navigation() -> void:
 
 func _on_back_pressed() -> void:
 	GameManager.set_pending_race_config(race_config.duplicate_config())
-	NavigationManager.go("AISetup" if race_config.is_classic() else "CarSelection")
+	NavigationManager.go("AISetup" if race_config.allows_ai() else "CarSelection")
 
 
 func _on_start_pressed() -> void:

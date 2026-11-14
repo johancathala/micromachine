@@ -1,7 +1,7 @@
 extends Control
 
 # ============================================================
-# ÉCRAN DES IA (course classique, après les joueurs)
+# ÉCRAN DES IA (course classique et élimination, après les joueurs)
 # ============================================================
 #
 # Une ligne par IA engagée : pilote (Novice, Moyen, Expert ou
@@ -176,9 +176,16 @@ func _rebuild_rows() -> void:
 	add_button.disabled = free <= 0
 	fill_button.disabled = free <= 0
 	clear_button.disabled = count == 0
+	# Élimination : au moins deux voitures en tout.
+	next_button.disabled = (
+		race_config.is_elimination()
+		and race_config.players.size() + count < RaceConfig.ELIMINATION_MIN_PLAYERS
+	)
 
 	if race_config.get_max_ai_count() == 0:
 		empty_label.text = "Aucune place libre : la grille est complète."
+	elif race_config.is_elimination() and race_config.players.size() < RaceConfig.ELIMINATION_MIN_PLAYERS:
+		empty_label.text = "Élimination : ajoutez au moins une IA."
 	else:
 		empty_label.text = "Aucune IA : course entre joueurs."
 
