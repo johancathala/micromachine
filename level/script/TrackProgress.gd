@@ -553,15 +553,25 @@ func build_racing_line(spacing: float = 32.0, margin: float = 75.0, iterations: 
 	for section_id in gates:
 		var a: Vector2 = gates[section_id][0]
 		var b: Vector2 = gates[section_id][1]
-		var nearest := 0
-		var nearest_distance := INF
+		# Point où l'axe franchit la porte ; à défaut, le plus proche (une
+		# longue porte peut passer près d'une autre portion de route :
+		# la distance seule désignerait le mauvais endroit).
+		var nearest := -1
 
 		for i in range(count):
-			var distance := center[i].distance_squared_to(Geometry2D.get_closest_point_to_segment(center[i], a, b))
-
-			if distance < nearest_distance:
-				nearest_distance = distance
+			if Geometry2D.segment_intersects_segment(center[i], center[(i + 1) % count], a, b) != null:
 				nearest = i
+				break
+
+		if nearest < 0:
+			var nearest_distance := INF
+
+			for i in range(count):
+				var distance := center[i].distance_squared_to(Geometry2D.get_closest_point_to_segment(center[i], a, b))
+
+				if distance < nearest_distance:
+					nearest_distance = distance
+					nearest = i
 
 		for k in range(-GATE_CONSTRAINT_POINTS, GATE_CONSTRAINT_POINTS + 1):
 			var i := posmod(nearest + k, count)
