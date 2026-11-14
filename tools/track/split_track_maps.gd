@@ -12,8 +12,8 @@ extends SceneTree
 # de l'IA (RacingLine). Plusieurs circuits partagent ainsi une même
 # carte sans dupliquer ses sections ni son stand.
 #
-# 1. Brissac (Track01) et Alès (TrackAles) : la carte est extraite dans
-#    level/map/, le circuit garde sa logique et intègre la carte.
+# 1. Brissac (Track01) : la carte est extraite dans level/map/, le
+#    circuit garde sa logique et intègre la carte.
 # 2. Variantes de Brissac (Track02, Track03, Track05) : elles
 #    intégraient Track01 en entier (sections et stand compris) ; elles
 #    intègrent désormais la seule carte, et reprennent le stand de
@@ -31,12 +31,6 @@ const SPLITS := [
 		"map": "res://level/map/BrissacMap.tscn",
 		"map_root": "BrissacMap",
 		"instance_name": "Brissac"
-	},
-	{
-		"track": "res://level/track/TrackAles.tscn",
-		"map": "res://level/map/AlesMap.tscn",
-		"map_root": "AlesMap",
-		"instance_name": "Ales"
 	}
 ]
 

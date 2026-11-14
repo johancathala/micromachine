@@ -24,11 +24,6 @@ const TRACKS := [
 		"id": 4,
 		"name": "Brissac Reverse",
 		"scene": "res://level/track/Track05.tscn"
-	},
-	{
-		"id": 5,
-		"name": "Alès - Pôle Mécanique",
-		"scene": "res://level/track/TrackAles.tscn"
 	}
 ]
 
