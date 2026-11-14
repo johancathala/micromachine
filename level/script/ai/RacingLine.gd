@@ -27,6 +27,13 @@ var curvature := PackedFloat32Array()
 var signed_curvature := PackedFloat32Array()
 var length := 0.0
 var source := ""
+# Boucle fermée (tour du circuit) ou trajet ouvert (passage au stand).
+var closed := true
+# Place praticable (px) de chaque côté de la ligne, le long de
+# direction(i).orthogonal() (room_plus) et à l'opposé (room_minus).
+# Vide si inconnue.
+var room_plus := PackedFloat32Array()
+var room_minus := PackedFloat32Array()
 
 
 static func from_track(track: Node, progress: TrackProgress) -> RacingLine:
@@ -46,11 +53,34 @@ static func from_track(track: Node, progress: TrackProgress) -> RacingLine:
 		line._set_points(progress.build_racing_line(SPACING))
 		line.source = "trajectoire calculée (chaussée)"
 
+	if progress != null and line.is_valid():
+		line._measure_room(progress)
+
 	return line
+
+
+func _measure_room(progress: TrackProgress) -> void:
+	var count := points.size()
+	room_plus.resize(count)
+	room_minus.resize(count)
+
+	for i in range(count):
+		var normal := direction(i).orthogonal()
+		room_plus[i] = progress.drivable_extent(points[i], normal)
+		room_minus[i] = progress.drivable_extent(points[i], -normal)
 
 
 func is_valid() -> bool:
 	return points.size() >= 8
+
+
+## Trajet ouvert (points déjà espacés de SPACING px).
+static func open_path(new_points: PackedVector2Array, p_source: String) -> RacingLine:
+	var line := RacingLine.new()
+	line.closed = false
+	line._set_points(new_points)
+	line.source = p_source
+	return line
 
 
 func _set_points(new_points: PackedVector2Array) -> void:
@@ -62,9 +92,9 @@ func _set_points(new_points: PackedVector2Array) -> void:
 	signed_curvature.resize(count)
 
 	for i in range(count):
-		var a := points[posmod(i - CURVATURE_SPAN, count)]
+		var a := point(i - CURVATURE_SPAN)
 		var b := points[i]
-		var c := points[(i + CURVATURE_SPAN) % count]
+		var c := point(i + CURVATURE_SPAN)
 		curvature[i] = _menger_curvature(a, b, c)
 		signed_curvature[i] = curvature[i] * signf((b - a).cross(c - b))
 
@@ -101,7 +131,7 @@ func closest_index(position: Vector2, hint: int = -1, window: int = 60) -> int:
 		return best
 
 	for offset in range(-window, window + 1):
-		var i := posmod(hint + offset, count)
+		var i := wrap_index(hint + offset)
 		var d := position.distance_squared_to(points[i])
 
 		if d < best_distance:
@@ -111,18 +141,32 @@ func closest_index(position: Vector2, hint: int = -1, window: int = 60) -> int:
 	return best
 
 
+## Indice ramené sur la ligne : bouclé, ou borné pour un trajet ouvert.
+func wrap_index(index: int) -> int:
+	if closed:
+		return posmod(index, points.size())
+
+	return clampi(index, 0, points.size() - 1)
+
+
 func point(index: int) -> Vector2:
-	return points[posmod(index, points.size())]
+	return points[wrap_index(index)]
 
 
 func curvature_at(index: int) -> float:
-	return curvature[posmod(index, points.size())]
+	return curvature[wrap_index(index)]
 
 
 func signed_curvature_at(index: int) -> float:
-	return signed_curvature[posmod(index, points.size())]
+	return signed_curvature[wrap_index(index)]
 
 
 ## Direction de la ligne en un point.
 func direction(index: int) -> Vector2:
-	return (point(index + 2) - point(index - 2)).normalized()
+	var from := point(index - 2)
+	var to := point(index + 2)
+
+	if from.distance_squared_to(to) < 1.0:
+		return Vector2.RIGHT
+
+	return (to - from).normalized()

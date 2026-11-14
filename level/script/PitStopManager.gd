@@ -5,8 +5,10 @@ class_name PitStopManager
 # USURE DES PNEUS ET ARRÊT AU STAND
 # ============================================================
 #
-# - Les pneus des joueurs humains s'usent (voir Car.tire_wear).
-# - « BOX, BOX ! » s'affiche à 60 % puis à 85 % d'usure.
+# - Les pneus de toutes les voitures s'usent (voir Car.tire_wear),
+#   IA comprises : elles suivent les mêmes règles (arrêt dans la zone,
+#   QTE joué par AIDriver.qte_direction).
+# - « BOX, BOX ! » s'affiche aux joueurs à 60 % puis à 85 % d'usure.
 #   Le joueur peut continuer, mais la voiture devient de plus en
 #   plus difficile à conduire.
 # - Une voiture arrêtée dans la zone de stand (nœud PitStop du
@@ -58,12 +60,14 @@ func setup(p_controller: RaceController) -> void:
 		)
 
 	for state in controller.participants:
-		if state.is_ai or state.car == null:
+		if state.car == null:
 			continue
 
 		state.car.tire_wear_enabled = true
 		state.car.reset_tires()
-		_next_box_threshold[state.participant_id] = 0
+
+		if not state.is_ai:
+			_next_box_threshold[state.participant_id] = 0
 
 
 func is_in_pit(state: RaceParticipantState) -> bool:
@@ -85,14 +89,16 @@ func _physics_process(_delta: float) -> void:
 		return
 
 	for state in controller.participants:
-		if state.is_ai or state.finished or not is_instance_valid(state.car):
+		if state.finished or not is_instance_valid(state.car):
 			continue
 
 		if is_in_pit(state):
 			_update_qte(state)
 			continue
 
-		_check_box_message(state)
+		if not state.is_ai:
+			_check_box_message(state)
+
 		_check_pit_entry(state)
 
 
@@ -147,7 +153,7 @@ func _check_pit_entry(state: RaceParticipantState) -> void:
 		"sequence": sequence,
 		"index": 0,
 		# Attendre que le joueur relâche tout avant la 1re direction.
-		"last_dir": _read_direction(state),
+		"last_dir": _read_direction(state, {}),
 		"waiting_release": true
 	}
 
@@ -160,7 +166,7 @@ func _check_pit_entry(state: RaceParticipantState) -> void:
 
 func _update_qte(state: RaceParticipantState) -> void:
 	var qte: Dictionary = _active_qte[state.participant_id]
-	var direction := _read_direction(state)
+	var direction := _read_direction(state, qte)
 
 	# Une direction ne compte qu'au moment où elle est enfoncée.
 	if direction == qte["last_dir"]:
@@ -199,12 +205,26 @@ func _finish_pit(state: RaceParticipantState) -> void:
 	state.car.reset_tires()
 	state.car.set_can_move(true)
 
+	if state.car.ai_driver != null:
+		state.car.ai_driver.on_pit_finished()
+
 	pit_finished.emit(state)
 
 
 ## Direction enfoncée par le joueur (-1 si aucune), avec ses
 ## commandes de conduite : accélérer = haut, freiner = bas.
-func _read_direction(state: RaceParticipantState) -> int:
+## IA : son pilote joue la flèche attendue (`qte` en cours).
+func _read_direction(state: RaceParticipantState, qte: Dictionary) -> int:
+	if state.is_ai:
+		if qte.is_empty() or state.car.ai_driver == null:
+			return -1
+
+		var sequence: Array = qte["sequence"]
+		return state.car.ai_driver.qte_direction(
+			int(sequence[int(qte["index"])]),
+			get_physics_process_delta_time()
+		)
+
 	var input := InputManager.get_player_input(
 		state.car.input_device_type,
 		state.car.input_device_id

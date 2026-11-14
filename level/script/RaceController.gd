@@ -285,9 +285,20 @@ func _setup_ai_drivers() -> void:
 		racing_line.source, racing_line.points.size(), racing_line.length
 	])
 
+	# Passage au stand (course avec usure des pneus).
+	var pit_route: Dictionary = {}
+
+	if race_config.uses_tire_wear():
+		pit_route = track_progress.build_pit_route(race_world.current_track, racing_line.points)
+		print("IA : passage au stand %s" % ("calculé" if not pit_route.is_empty() else "introuvable"))
+
 	for state in participants:
 		if state.is_ai and is_instance_valid(state.car):
-			state.car.ai_driver = AIDriver.new(state.car, racing_line, race_config.ai_difficulty)
+			var driver := AIDriver.new(state.car, racing_line, race_config.ai_difficulty)
+			driver.participant = state
+			driver.lap_count = 0 if race_config.has_infinite_laps() else race_config.lap_count
+			driver.setup_pit(pit_route)
+			state.car.ai_driver = driver
 
 
 func is_elimination_mode() -> bool:
