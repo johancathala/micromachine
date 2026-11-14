@@ -150,9 +150,10 @@ var tire_wear_enabled: bool = false
 # 0 = pneus neufs, 1 = pneus complètement usés.
 var tire_wear: float = 0.0
 # Nombre de tours pour user complètement les pneus sur la route sans
-# glisser : l'usure est proportionnelle au circuit (~1,5 tour avant le
-# « BOX » à 60 %, quelle que soit la longueur du tour).
-@export_range(0.5, 50.0, 0.1) var tire_wear_laps: float = 2.4
+# glisser : l'usure est proportionnelle au circuit (« BOX » à 60 % vers
+# le 3e ou 4e tour, quelle que soit la longueur du tour : un arrêt sur
+# une course de 5 tours, aucun d'obligatoire sur 3 tours).
+@export_range(0.5, 50.0, 0.1) var tire_wear_laps: float = 7.0
 # Distance (px) correspondante, fixée par la course selon la longueur
 # du tour (set_lap_length). Valeur par défaut : tour de Brissac.
 var tire_wear_distance: float = 150000.0
@@ -557,12 +558,30 @@ func _handle_car_collision(
 
 	# Les contacts entre voitures ne provoquent plus d'explosion :
 	# elles se poussent simplement.
+	_last_car_contact_msec = Time.get_ticks_msec()
 	var other_velocity := other_car.velocity
 	var impact_speed := _get_impact_speed(collision, other_velocity)
 
 	if impact_speed > 100.0:
 		_play_collision_sound()
 
+
+
+## Dernier contact avec une autre voiture (une IA poussée dans un
+## obstacle n'en tire pas de leçon).
+var _last_car_contact_msec := -100000
+const CAR_CONTACT_EXCUSE_MSEC := 1500
+
+
+## IA détruite seule contre un obstacle : elle apprend à ralentir là.
+func _notify_ai_crash() -> void:
+	if ai_driver == null:
+		return
+
+	if Time.get_ticks_msec() - _last_car_contact_msec < CAR_CONTACT_EXCUSE_MSEC:
+		return
+
+	ai_driver.on_crash()
 
 
 func _handle_obstacle_collision(collision: KinematicCollision2D) -> void:
@@ -582,6 +601,7 @@ func _handle_obstacle_collision(collision: KinematicCollision2D) -> void:
 		obstacle.detonate()
 
 		# Le contact direct avec le baril détruit toujours la voiture.
+		_notify_ai_crash()
 		explosion()
 		return
 
@@ -606,6 +626,7 @@ func _handle_obstacle_collision(collision: KinematicCollision2D) -> void:
 	# OBSTACLE CLASSIQUE
 	# --------------------------------------------------------
 	if impact_speed >= explosion_impact_speed:
+		_notify_ai_crash()
 		explosion()
 		return
 
