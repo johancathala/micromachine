@@ -230,6 +230,9 @@ func initialize(
 	if race_config.is_elimination():
 		_initialize_elimination()
 
+	if race_config.uses_tire_wear():
+		_scale_tire_wear()
+
 	_setup_ai_drivers()
 
 	if race_config.is_time_trial():
@@ -262,6 +265,19 @@ func _initialize_elimination() -> void:
 	elimination_rules.round_finished.connect(
 		func(_ranking, _awarded): _update_positions()
 	)
+
+
+## Usure des pneus proportionnelle au circuit : même nombre de tours
+## par train de pneus sur un circuit court ou long.
+func _scale_tire_wear() -> void:
+	if track_progress == null:
+		return
+
+	var lap_length := track_progress.get_lap_length()
+
+	for state in participants:
+		if is_instance_valid(state.car):
+			state.car.set_lap_length(lap_length)
 
 
 ## Un pilote générique par IA, sur la trajectoire du circuit.

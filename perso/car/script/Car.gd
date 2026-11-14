@@ -149,9 +149,13 @@ var slipstream_factor: float = 0.0
 var tire_wear_enabled: bool = false
 # 0 = pneus neufs, 1 = pneus complètement usés.
 var tire_wear: float = 0.0
-# Distance (px) pour user complètement les pneus sans glisser
-# (~1,5 tour de Track01 avant le « BOX » à 60 %).
-@export_range(1000.0, 1000000.0, 1000.0) var tire_wear_distance: float = 150000.0
+# Nombre de tours pour user complètement les pneus sur la route sans
+# glisser : l'usure est proportionnelle au circuit (~1,5 tour avant le
+# « BOX » à 60 %, quelle que soit la longueur du tour).
+@export_range(0.5, 50.0, 0.1) var tire_wear_laps: float = 2.4
+# Distance (px) correspondante, fixée par la course selon la longueur
+# du tour (set_lap_length). Valeur par défaut : tour de Brissac.
+var tire_wear_distance: float = 150000.0
 # La glisse use plus vite (x3 en pleine glisse).
 @export_range(0.0, 10.0, 0.1) var tire_wear_slip_factor: float = 2.0
 # Jusqu'à ce niveau d'usure, la voiture se conduit normalement.
@@ -195,6 +199,12 @@ func _get_surface_wear_multiplier() -> float:
 
 func reset_tires() -> void:
 	tire_wear = 0.0
+
+
+## Usure proportionnelle au circuit : `length` = longueur d'un tour (px).
+func set_lap_length(length: float) -> void:
+	if length > 0.0:
+		tire_wear_distance = length * tire_wear_laps
 
 # ---------------------------
 # DÉPART (réaction au feu vert)
