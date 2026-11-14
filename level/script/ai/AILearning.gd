@@ -28,7 +28,7 @@ const WINDOW_BEFORE := 40
 const WINDOW_AFTER := 4
 # Réduction de vitesse par choc, et plancher.
 const CRASH_FACTOR := 0.88
-const MIN_FACTOR := 0.55
+const MIN_FACTOR := 0.35
 
 # Fichier où retenir ce qui est appris ("" : rien n'est enregistré).
 static var save_path := USER_PATH

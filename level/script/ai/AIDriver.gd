@@ -45,6 +45,10 @@ const DEFAULT_CORNER_SLIP := 0.5
 # dérive part dans le décor), à moins de TRAFFIC_RANGE px.
 const TRAFFIC_SLIP := 0.5
 const TRAFFIC_RANGE := 220.0
+# Calibrage valable pour le circuit où il a été mesuré : ailleurs
+# (virages plus serrés...), DEFAULT_CORNER_SLIP, affiné par
+# l'apprentissage des virages.
+const CALIBRATED_TRACK := "res://level/track/Track01.tscn"
 const CAR_CORNER_SLIP := {
 	"clio": 1.3,
 	"dacia": 1.0,
@@ -164,12 +168,20 @@ var _last_progress_index := -1
 # Apprentissage des virages (AILearning) : facteur de vitesse par
 # point de la trajectoire, pour ce circuit et cette voiture.
 var learning_key := ""
+# Circuit couru (chemin de la scène) : réglages propres au circuit.
+var track_path := ""
 var _safe_profile := PackedFloat32Array()
 var _slip_override := -1.0
 # Dernier point où la voiture suivait encore la trajectoire (perte de
 # contrôle) : c'est là qu'il faut ralentir, pas où elle finit sa course.
 const ON_LINE_DISTANCE := 150.0
 var _last_on_line_index := -1
+# Dernière perte de la trajectoire (index, et temps écoulé depuis) : la
+# voiture peut la rejoindre avant de s'écraser ou de manquer une porte,
+# c'est quand même ce virage-là qu'il faut ralentir.
+const LINE_LOSS_MEMORY := 8.0
+var _line_loss_index := -1
+var _line_loss_age := INF
 var _learned := PackedFloat32Array()
 var _learned_version := -1
 
@@ -179,9 +191,10 @@ var respawn_count := 0
 var pit_count := 0
 
 
-func _init(p_car: Car, p_line: RacingLine, p_difficulty: int) -> void:
+func _init(p_car: Car, p_line: RacingLine, p_difficulty: int, p_track_path: String = "") -> void:
 	car = p_car
 	line = p_line
+	track_path = p_track_path
 	_line = line
 	difficulty = clampi(p_difficulty, 0, PACE.size() - 1)
 	_build_safe_profile()
@@ -348,6 +361,9 @@ func corner_slip() -> float:
 	if max_slip > 0.0:
 		return max_slip
 
+	if track_path != CALIBRATED_TRACK:
+		return DEFAULT_CORNER_SLIP
+
 	var car_id := car.definition.id if car.definition != null else ""
 	return float(CAR_CORNER_SLIP.get(car_id, DEFAULT_CORNER_SLIP))
 
@@ -406,10 +422,16 @@ func _refresh_learning() -> bool:
 func on_crash() -> void:
 	crash_count += 1
 
-	if learning_key.is_empty() or _on_pit_route or _last_on_line_index < 0:
+	if learning_key.is_empty() or _on_pit_route:
 		return
 
-	AILearning.record_crash(learning_key, line, _last_on_line_index)
+	var index := _line_loss_index if _line_loss_age < LINE_LOSS_MEMORY else _last_on_line_index
+
+	if index < 0:
+		return
+
+	AILearning.record_crash(learning_key, line, index)
+	_line_loss_age = INF
 
 
 ## Durée (s) pour parcourir un profil entre deux indices.
@@ -451,8 +473,14 @@ func update(delta: float) -> void:
 	else:
 		_update_pit_plan()
 
+		_line_loss_age += delta
+
 		if position.distance_to(line.point(_index)) < ON_LINE_DISTANCE:
 			_last_on_line_index = _index
+		elif _last_on_line_index >= 0 and _line_loss_age > 1.0:
+			# Vient de quitter la trajectoire.
+			_line_loss_index = _last_on_line_index
+			_line_loss_age = 0.0
 
 	var profile := speed_profile
 
@@ -835,6 +863,8 @@ func reset_tracking() -> void:
 	_index = -1
 	_previous_index = -1
 	_last_on_line_index = -1
+	_line_loss_index = -1
+	_line_loss_age = INF
 	_lateral_offset = 0.0
 	_reverse_time = 0.0
 	_stuck_time = 0.0
