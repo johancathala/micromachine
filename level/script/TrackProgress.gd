@@ -672,11 +672,21 @@ func build_pit_route(track: Node, line: PackedVector2Array, spacing: float = 32.
 	if stop_index < 0:
 		return {}
 
+	# Voie des stands à vitesse limitée (PitLane) : limite en chaque point
+	# du trajet (0 : aucune).
+	var speed_limits := PackedFloat32Array()
+	speed_limits.resize(points.size())
+	var pit_lane := track.get_node_or_null("PitLane") as PitLane
+
+	for i in range(points.size()):
+		speed_limits[i] = pit_lane.speed_limit if pit_lane != null and pit_lane.contains_point(points[i]) else 0.0
+
 	return {
 		"points": points,
 		"entry_index": entry_index,
 		"exit_index": exit_index,
-		"stop_index": stop_index
+		"stop_index": stop_index,
+		"speed_limits": speed_limits
 	}
 
 

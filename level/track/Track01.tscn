@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" path="res://level/scene/RaceStartLightsMap.tscn" id="8_qiq11"]
 [ext_resource type="PackedScene" path="res://level/scene/RaceSection.tscn" id="9_qiq11"]
 [ext_resource type="Script" path="res://level/script/PitStop.gd" id="pitstop_script"]
+[ext_resource type="Script" path="res://level/script/PitLane.gd" id="pitlane_script"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_pitstop"]
 size = Vector2(421, 578)
@@ -13,6 +14,9 @@ size = Vector2(417.5, 587)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_p8cjj"]
 size = Vector2(408, 571)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pitlane"]
+size = Vector2(668, 2440)
 
 [node name="Track01" type="Node2D" unique_id=1561549427]
 y_sort_enabled = true
@@ -216,3 +220,10 @@ shape = SubResource("RectangleShape2D_o300m")
 [node name="CollisionShape2D3" type="CollisionShape2D" parent="PitStop" unique_id=2132445969]
 position = Vector2(-89, 850.5)
 shape = SubResource("RectangleShape2D_p8cjj")
+
+[node name="PitLane" type="Area2D" parent="."]
+position = Vector2(-106, 420)
+script = ExtResource("pitlane_script")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PitLane"]
+shape = SubResource("RectangleShape2D_pitlane")

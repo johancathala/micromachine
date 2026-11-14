@@ -1054,8 +1054,29 @@ func _apply_rotation(delta: float, v_long_after: float, steer_eff: float) -> voi
 		var yaw_rate: float = (v_long_after / max(wheel_base, 1.0)) * tan(effective_steer)
 		rotation += yaw_rate * delta
 
+## Vitesse limitée (voie des stands, PitLane) : à rappeler à chaque
+## image physique tant que la voiture est dans la zone.
+const SPEED_LIMIT_DECEL := 3000.0
+var _speed_limit := 0.0
+var _speed_limit_frame := -10
+
+
+func apply_speed_limit(limit: float) -> void:
+	_speed_limit = limit
+	_speed_limit_frame = Engine.get_physics_frames()
+
+
+func is_speed_limited() -> bool:
+	return Engine.get_physics_frames() - _speed_limit_frame <= 1
+
+
 func _clamp_velocity(fwd: Vector2, v_long: Vector2, v_lat: Vector2) -> void:
 	var v: Vector2 = v_long + v_lat
+
+	# Limiteur de la voie des stands : freinage ferme jusqu'à la limite.
+	if is_speed_limited() and v.length() > _speed_limit:
+		var excess := v.length() - _speed_limit
+		v = v.normalized() * (v.length() - minf(excess, SPEED_LIMIT_DECEL * get_physics_process_delta_time()))
 
 	# Limitation de la vitesse longitudinale
 	# (relevée par l'aspiration)
