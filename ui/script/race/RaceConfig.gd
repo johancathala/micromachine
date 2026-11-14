@@ -21,10 +21,26 @@ enum RaceRules {
 const ELIMINATION_MIN_PLAYERS := 2
 const DEFAULT_TARGET_SCORE := 10
 
+# Pilote d'une IA : un des trois niveaux, ou un fantôme (le meilleur
+# fantôme valide de sa voiture sur le circuit choisi ensuite).
+enum AIPilot {
+	NOVICE,
+	MEDIUM,
+	EXPERT,
+	GHOST
+}
+
+const AI_PILOT_NAMES := ["Novice", "Moyen", "Expert", "Fantôme"]
+
+# Dernière composition des IA, reprise d'une course à l'autre.
+static var last_ai_slots: Array[Dictionary] = []
+static var last_ai_difficulty: int = AIPilot.MEDIUM
+
 
 var mode: GameManager.GameMode = GameManager.GameMode.SINGLE_RACE
 
-var ai_difficulty: int = 0
+# Niveau proposé pour les IA ajoutées (écran des IA).
+var ai_difficulty: int = AIPilot.MEDIUM
 var track: Dictionary = {}
 var lap_count: int = 3
 
@@ -40,8 +56,9 @@ var split_screen: bool = false
 # Course classique : usure des pneus et arrêts au stand.
 var tire_wear: bool = false
 
-# Course classique : nombre d'IA engagées (choisi dans les paramètres).
-var ai_count: int = 0
+# Course classique : IA engagées (écran des IA), dans l'ordre.
+# Chacune : {"pilot": AIPilot, "car_id": String, "color_id": String}.
+var ai_slots: Array[Dictionary] = []
 
 # Contre-la-montre : fantômes affichés (GhostManager.GhostMode :
 # 0 = les deux, 1 = le meilleur, 2 = celui du joueur).
@@ -63,11 +80,32 @@ func get_human_player_count() -> int:
 	return players.size()
 
 
-func get_ai_count() -> int:
+func _init() -> void:
+	ai_slots = last_ai_slots.duplicate(true)
+	ai_difficulty = last_ai_difficulty
+
+
+## Places disponibles pour les IA (course classique uniquement).
+func get_max_ai_count() -> int:
 	if not is_classic():
 		return 0
 
-	return TOTAL_RACE_SLOTS - get_human_player_count()
+	return maxi(TOTAL_RACE_SLOTS - get_human_player_count(), 0)
+
+
+## Mémorise la composition des IA pour les prochaines courses.
+func remember_ai_slots() -> void:
+	last_ai_slots = ai_slots.duplicate(true)
+	last_ai_difficulty = ai_difficulty
+
+
+## Niveau de conduite réel d'une IA : un pilote fantôme roule en
+## Expert tant que la conduite des fantômes n'existe pas.
+static func get_ai_difficulty(pilot: int) -> int:
+	if pilot == AIPilot.GHOST:
+		return AIPilot.EXPERT
+
+	return clampi(pilot, AIPilot.NOVICE, AIPilot.EXPERT)
 
 
 func is_full() -> bool:
@@ -240,40 +278,98 @@ func build_participants() -> void:
 
 		participants.append(participant)
 
-	var ai_count := TOTAL_RACE_SLOTS - players.size()
-
-	# Pas d'IA en élimination (la caméra ne suit que les humains) ni en
-	# contre-la-montre (seul contre son fantôme).
-	if not is_classic():
-		ai_count = 0
+	# IA de l'écran des IA. Pas d'IA en élimination (la caméra ne suit
+	# que les humains) ni en contre-la-montre (seul contre son fantôme).
+	var ai_count := mini(ai_slots.size(), get_max_ai_count())
 
 	for i in range(ai_count):
-		var participant_id := players.size() + i
+		var slot := ai_slots[i]
+		var pilot := int(slot.get("pilot", ai_difficulty))
 
-		var participant := {
-			"participant_id": participant_id,
+		participants.append({
+			"participant_id": players.size() + i,
 			"player_id": -1,
 			"device_type": "ai",
 			"device_id": -1,
 			"nickname": "IA %d" % (i + 1),
 			"is_ai": true,
-			"enabled": false
-		}
+			"enabled": true,
+			"ai_pilot": pilot,
+			"ai_difficulty": get_ai_difficulty(pilot),
+			"car_id": String(slot.get("car_id", "")),
+			"color_id": String(slot.get("color_id", ""))
+		})
 
-		var old := _find_previous_participant(
-			previous,
-			participant_id,
-			true
-		)
+	_resolve_ai_liveries()
 
-		if not old.is_empty():
-			if old.has("car_id"):
-				participant["car_id"] = old["car_id"]
 
-			if old.has("color_id"):
-				participant["color_id"] = old["color_id"]
+## Les IA cèdent leur livrée : une IA dont la voiture ou la couleur
+## manque, ou est déjà prise par un participant précédent (joueurs
+## d'abord), reçoit une couleur libre de son modèle, sinon d'un autre.
+## Le choix est recopié dans `ai_slots`.
+func _resolve_ai_liveries() -> void:
+	var color_ids: Array = []
 
-		participants.append(participant)
+	for color_data in ColorCatalog.get_colors():
+		color_ids.append(String(color_data["id"]))
+
+	var cars := CarCatalog.get_cars()
+	var slot_index := 0
+
+	for i in range(participants.size()):
+		var participant := participants[i]
+
+		if not bool(participant.get("is_ai", false)):
+			continue
+
+		var car_id := String(participant.get("car_id", ""))
+		var color_id := String(participant.get("color_id", ""))
+
+		if (
+			not CarCatalog.has_car(car_id)
+			or not color_ids.has(color_id)
+			or _livery_used_before(car_id, color_id, i)
+		):
+			var candidates: Array[String] = []
+
+			if CarCatalog.has_car(car_id):
+				candidates.append(car_id)
+
+			for car in cars:
+				candidates.append(car.id)
+
+			for candidate in candidates:
+				var free := ""
+
+				for id in color_ids:
+					if not _livery_used_before(candidate, id, i):
+						free = id
+						break
+
+				if not free.is_empty():
+					car_id = candidate
+					color_id = free
+					break
+
+			participant["car_id"] = car_id
+			participant["color_id"] = color_id
+			participants[i] = participant
+
+		if slot_index < ai_slots.size():
+			ai_slots[slot_index]["car_id"] = car_id
+			ai_slots[slot_index]["color_id"] = color_id
+
+		slot_index += 1
+
+
+func _livery_used_before(car_id: String, color_id: String, index: int) -> bool:
+	for i in range(index):
+		var other := participants[i]
+
+		if String(other.get("car_id", "")) == car_id and String(other.get("color_id", "")) == color_id:
+			return true
+
+	return false
 
 
 func _find_previous_participant(
@@ -350,11 +446,12 @@ func get_enabled_ai_count() -> int:
 # LIVRÉES (MODÈLE + COULEUR)
 # ================================================================
 
-## Sur un écran commun (partagé ou élimination), deux voitures
-## identiques seraient indiscernables : un couple modèle + couleur
-## ne peut être utilisé que par un seul participant.
+## Deux voitures identiques seraient indiscernables sur un écran
+## commun : un couple modèle + couleur ne sert qu'à un participant.
+## Les livrées sont choisies avant l'affichage (partagé ou splitté,
+## réglé sur l'écran du circuit) : elles sont donc toujours uniques.
 func requires_unique_liveries() -> bool:
-	return not uses_split_screen()
+	return true
 
 
 func is_livery_taken(
@@ -412,47 +509,6 @@ func has_duplicate_liveries() -> bool:
 	return false
 
 
-## Engage les `ai_count` premières IA (course classique) et leur
-## attribue des livrées distinctes de celles des joueurs (et entre
-## elles en écran commun).
-func enable_ai(color_ids: Array) -> void:
-	var cars := CarCatalog.get_cars()
-	var engaged := 0
-
-	for i in range(participants.size()):
-		var participant := participants[i]
-
-		if not bool(participant.get("is_ai", false)):
-			continue
-
-		var enabled := is_classic() and engaged < ai_count
-		participant["enabled"] = enabled
-		participants[i] = participant
-
-		if not enabled:
-			continue
-
-		engaged += 1
-
-		var taken := requires_unique_liveries() and is_livery_taken(
-			String(participant.get("car_id", "")), String(participant.get("color_id", "")), i
-		)
-
-		if participant.has("car_id") and participant.has("color_id") and not taken:
-			continue
-
-		# Première livrée libre, en parcourant les modèles.
-		for car in cars:
-			var free := find_free_color(car.id, i, color_ids)
-
-			if not free.is_empty():
-				participant["car_id"] = car.id
-				participant["color_id"] = free
-				break
-
-		participants[i] = participant
-
-
 func is_car_selection_valid() -> bool:
 	if requires_unique_liveries() and has_duplicate_liveries():
 		return false
@@ -502,7 +558,7 @@ func duplicate_config() -> RaceConfig:
 	copy.split_screen = split_screen
 	copy.tire_wear = tire_wear
 	copy.ghost_mode = ghost_mode
-	copy.ai_count = ai_count
+	copy.ai_slots = ai_slots.duplicate(true)
 
 	copy.players = players.duplicate(true)
 	copy.participants = participants.duplicate(true)

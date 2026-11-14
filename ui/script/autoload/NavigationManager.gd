@@ -16,6 +16,7 @@ const FADE_OUT_DURATION: float = 0.30
 const FADE_IN_DURATION: float = 0.40
 
 const SCENES: Dictionary = {
+	"AISetup": "res://ui/scene/AISetup.tscn",
 	"Audio": "res://ui/scene/Audio.tscn",
 	"CarSelection": "res://ui/scene/CarSelection.tscn",
 	"ControlBindingRow": "res://ui/scene/ControlBindingRow.tscn",
@@ -30,6 +31,7 @@ const SCENES: Dictionary = {
 	"RaceRecap": "res://ui/scene/RaceRecap.tscn",
 	"BestTimes": "res://ui/scene/BestTimes.tscn",
 	"RaceResultRow": "res://ui/scene/RaceResultRow.tscn",
+	"RaceModeSelect": "res://ui/scene/RaceModeSelect.tscn",
 	"RaceSetup": "res://ui/scene/RaceSetup.tscn",
 	"StartupScreen": "res://ui/scene/StartupScreen.tscn",
 	"PauseOverlay": "res://ui/overlay/PauseOverlay.tscn",
