@@ -93,6 +93,8 @@ const TIRE_PROFILE_STEP := 0.03
 # Stand : vitesse visée dans la voie (px/s), décision prise ce nombre
 # de points avant l'entrée, abandon si le passage dure trop (s).
 const PIT_LANE_SPEED := 900.0
+# Fraction de la limite de la voie des stands visée par l'IA.
+const PIT_LIMIT_MARGIN := 0.92
 # Trajet du stand (chemin A* lissé, moins fluide que la trajectoire) :
 # marge sur les vitesses de virage, et vitesse visée = minimum des
 # prochains points (pas de relance au milieu d'un S).
@@ -137,6 +139,8 @@ var pit_line: RacingLine = null
 var pit_entry_index := -1
 var pit_exit_index := -1
 var pit_stop_index := -1
+# Limite de vitesse en chaque point du trajet du stand (0 : aucune).
+var pit_speed_limits := PackedFloat32Array()
 var strategy: AIPitStrategy = null
 var pit_planned := false
 var _pit_profile_stop := PackedFloat32Array()
@@ -206,6 +210,7 @@ func setup_pit(route: Dictionary) -> void:
 	pit_entry_index = int(route["entry_index"])
 	pit_exit_index = int(route["exit_index"])
 	pit_stop_index = int(route["stop_index"])
+	pit_speed_limits = route.get("speed_limits", PackedFloat32Array())
 	strategy = AIPitStrategy.new(self)
 
 
@@ -262,6 +267,13 @@ func build_profile(
 	if not target.closed:
 		for i in range(4, count - 4):
 			profile[i] = minf(profile[i], PIT_LANE_SPEED)
+
+		# Voie des stands limitée : un peu sous la limite (le freinage
+		# anticipé ci-dessous ralentit avant d'y entrer).
+		if target == pit_line and pit_speed_limits.size() == count:
+			for i in range(count):
+				if pit_speed_limits[i] > 0.0:
+					profile[i] = minf(profile[i], pit_speed_limits[i] * PIT_LIMIT_MARGIN)
 
 		# Arrêt : vitesse nulle à partir de ce point (si la voiture le
 		# dépasse un peu, elle s'arrête quand même dans la zone).

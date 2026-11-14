@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" path="res://level/map/BrissacMap.tscn" id="2_56q13"]
 [ext_resource type="Script" path="res://level/script/RaceSection.gd" id="3_n6ltc"]
 [ext_resource type="Script" path="res://level/script/PitStop.gd" id="4_ju2or"]
+[ext_resource type="Script" path="res://level/script/PitLane.gd" id="pitlane_script"]
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_wmbff"]
 a = Vector2(264, 0)
@@ -69,6 +70,9 @@ size = Vector2(417.5, 587)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_p8cjj"]
 size = Vector2(408, 571)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pitlane"]
+size = Vector2(668, 2440)
 
 [node name="TrackReverse" type="Node2D" unique_id=1381157225]
 
@@ -295,3 +299,10 @@ shape = SubResource("RectangleShape2D_o300m")
 [node name="CollisionShape2D3" type="CollisionShape2D" parent="PitStop" unique_id=1107596053]
 position = Vector2(-89, 850.5)
 shape = SubResource("RectangleShape2D_p8cjj")
+
+[node name="PitLane" type="Area2D" parent="."]
+position = Vector2(-106, 420)
+script = ExtResource("pitlane_script")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PitLane"]
+shape = SubResource("RectangleShape2D_pitlane")
