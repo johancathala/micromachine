@@ -169,6 +169,10 @@ var pit_stops: PitStopManager = null
 # Fantôme (mode contre-la-montre).
 var ghost_manager: GhostManager = null
 
+# Trajectoire suivie par les IA (tracé « RacingLine » du circuit, sinon
+# axe de la chaussée calculé).
+var racing_line: RacingLine = null
+
 const RACE_END_DELAY := 30.0
 
 
@@ -226,6 +230,8 @@ func initialize(
 	if race_config.is_elimination():
 		_initialize_elimination()
 
+	_setup_ai_drivers()
+
 	if race_config.is_time_trial():
 		ghost_manager = GhostManager.new()
 		ghost_manager.name = "GhostManager"
@@ -256,6 +262,32 @@ func _initialize_elimination() -> void:
 	elimination_rules.round_finished.connect(
 		func(_ranking, _awarded): _update_positions()
 	)
+
+
+## Un pilote générique par IA, sur la trajectoire du circuit.
+func _setup_ai_drivers() -> void:
+	var has_ai := false
+
+	for state in participants:
+		if state.is_ai and is_instance_valid(state.car):
+			has_ai = true
+
+	if not has_ai:
+		return
+
+	racing_line = RacingLine.from_track(race_world.current_track, track_progress)
+
+	if not racing_line.is_valid():
+		push_warning("RaceController : pas de trajectoire pour les IA.")
+		return
+
+	print("IA : trajectoire = %s (%d points, %d px)" % [
+		racing_line.source, racing_line.points.size(), racing_line.length
+	])
+
+	for state in participants:
+		if state.is_ai and is_instance_valid(state.car):
+			state.car.ai_driver = AIDriver.new(state.car, racing_line, race_config.ai_difficulty)
 
 
 func is_elimination_mode() -> bool:
@@ -971,6 +1003,9 @@ func request_respawn(car: Car) -> void:
 	print("respawn: destruction en cours ? "+str(state.car._destruction_started))
 	if state.car._destruction_started == false:
 		state.car.respawn_at(state.respawn_transform)
+
+		if state.car.ai_driver != null:
+			state.car.ai_driver.reset_tracking()
 
 		# Après un raccourci : les sections sautées, jusqu'à celle où la
 		# voiture est replacée, sont validées dans l'ordre.

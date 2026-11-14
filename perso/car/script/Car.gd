@@ -643,8 +643,13 @@ func _process_human_input(_delta: float) -> void:
 	handbrake = input_state.handbrake
 	respawn = input_state.respawn
 
+## Pilote IA (AIDriver), fourni par la course.
+var ai_driver: AIDriver = null
+
+
 func _process_ai_input(_delta: float) -> void:
-	pass
+	if ai_driver != null:
+		ai_driver.update(_delta)
 
 # ---------------------------
 # SLIP

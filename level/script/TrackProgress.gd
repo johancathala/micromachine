@@ -47,6 +47,9 @@ var _cumulative: Dictionary = {}
 
 var section_count := 0
 
+# Grille praticable conservée après build() (axe de la chaussée pour l'IA).
+var grid: AStarGrid2D = null
+
 # Raison de l'échec de build(), pour le diagnostic.
 var last_error := ""
 
@@ -66,6 +69,8 @@ func build(track: Node, gate_segments: Dictionary) -> bool:
 
 	if astar == null:
 		return false
+
+	grid = astar
 
 	# Points de passage possibles de chaque porte : une porte peut
 	# couper plusieurs routes ; on garde chaque portion de route coupée.
@@ -381,6 +386,141 @@ func _path_cost(astar: AStarGrid2D, cells: Variant) -> float:
 		total += astar.get_point_weight_scale(cell)
 
 	return total
+
+
+## Axe de la chaussée sur tout le tour : milieu de la route en chaque
+## point du parcours (le parcours A* longe l'intérieur des virages),
+## lissé puis rééchantillonné tous les `spacing` px. Base de la
+## trajectoire de l'IA quand le circuit n'en définit pas.
+func build_centerline(spacing: float = 32.0) -> PackedVector2Array:
+	var route := PackedVector2Array()
+
+	for section_id in range(section_count):
+		route.append_array(get_path(section_id))
+
+	if route.size() < 8 or grid == null:
+		return route
+
+	var count := route.size()
+	var centers := PackedVector2Array()
+	centers.resize(count)
+
+	for i in range(count):
+		var before := route[posmod(i - 3, count)]
+		var after := route[(i + 3) % count]
+		var normal := (after - before).normalized().orthogonal()
+		var left := _drivable_extent(route[i], normal)
+		var right := _drivable_extent(route[i], -normal)
+		centers[i] = route[i] + normal * (left - right) / 2.0
+
+	# Lissage (moyenne glissante, plusieurs passes).
+	for _pass in range(4):
+		var smoothed := PackedVector2Array()
+		smoothed.resize(count)
+
+		for i in range(count):
+			var sum := Vector2.ZERO
+
+			for offset in range(-4, 5):
+				sum += centers[posmod(i + offset, count)]
+
+			smoothed[i] = sum / 9.0
+
+		centers = smoothed
+
+	return resample_closed(centers, spacing)
+
+
+## Trajectoire de course : l'axe de la chaussée est « tendu »
+## (relaxation qui réduit la courbure : extérieur, corde, extérieur),
+## sans sortir de la chaussée (marge `margin` px de chaque bord).
+func build_racing_line(spacing: float = 32.0, margin: float = 75.0, iterations: int = 400) -> PackedVector2Array:
+	var center := build_centerline(spacing)
+	var count := center.size()
+
+	if count < 8 or grid == null:
+		return center
+
+	# Bords de la chaussée en chaque point de l'axe.
+	var normals := PackedVector2Array()
+	var left_room := PackedFloat32Array()
+	var right_room := PackedFloat32Array()
+	normals.resize(count)
+	left_room.resize(count)
+	right_room.resize(count)
+
+	for i in range(count):
+		var normal := (center[(i + 2) % count] - center[posmod(i - 2, count)]).normalized().orthogonal()
+		normals[i] = normal
+		left_room[i] = maxf(_drivable_extent(center[i], normal) - margin, 0.0)
+		right_room[i] = maxf(_drivable_extent(center[i], -normal) - margin, 0.0)
+
+	# Décalage latéral par rapport à l'axe.
+	var offsets := PackedFloat32Array()
+	offsets.resize(count)
+
+	for _iteration in range(iterations):
+		for i in range(count):
+			var previous := center[posmod(i - 1, count)] + normals[posmod(i - 1, count)] * offsets[posmod(i - 1, count)]
+			var next := center[(i + 1) % count] + normals[(i + 1) % count] * offsets[(i + 1) % count]
+			var middle := (previous + next) / 2.0
+			# Projection du milieu sur la normale : nouveau décalage.
+			var wanted := (middle - center[i]).dot(normals[i])
+			offsets[i] = clampf(lerpf(offsets[i], wanted, 0.6), -right_room[i], left_room[i])
+
+	var line := PackedVector2Array()
+	line.resize(count)
+
+	for i in range(count):
+		line[i] = center[i] + normals[i] * offsets[i]
+
+	return resample_closed(line, spacing)
+
+
+## Distance praticable depuis `origin` dans une direction (max 700 px).
+func _drivable_extent(origin: Vector2, direction: Vector2) -> float:
+	var distance := 0.0
+
+	while distance < 700.0:
+		if not is_drivable_cell(grid, world_to_cell(origin + direction * (distance + 8.0))):
+			break
+
+		distance += 8.0
+
+	return distance
+
+
+## Polyligne fermée rééchantillonnée à pas constant.
+static func resample_closed(points: PackedVector2Array, spacing: float) -> PackedVector2Array:
+	var result := PackedVector2Array()
+	var count := points.size()
+
+	if count < 2:
+		return points
+
+	result.append(points[0])
+	var carry := 0.0
+
+	for i in range(count):
+		var a := points[i]
+		var b := points[(i + 1) % count]
+		var length := a.distance_to(b)
+
+		if length <= 0.0001:
+			continue
+
+		var d := spacing - carry
+
+		while d <= length:
+			result.append(a.lerp(b, d / length))
+			d += spacing
+
+		carry = length - (d - spacing)
+
+	if result.size() > 1 and result[result.size() - 1].distance_to(result[0]) < spacing * 0.5:
+		result.remove_at(result.size() - 1)
+
+	return result
 
 
 func is_drivable_cell(astar: AStarGrid2D, cell: Vector2i) -> bool:
