@@ -19,7 +19,7 @@ enum RaceRules {
 }
 
 const ELIMINATION_MIN_PLAYERS := 2
-const DEFAULT_TARGET_SCORE := 10
+const DEFAULT_TARGET_SCORE := 20
 
 # Pilote d'une IA : un des trois niveaux, ou un fantôme (le meilleur
 # fantôme valide de sa voiture sur le circuit choisi ensuite).

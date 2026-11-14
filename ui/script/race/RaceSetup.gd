@@ -16,7 +16,7 @@ enum ScreenMode {
 	SPLIT
 }
 
-const TARGET_SCORES := [5, 10, 15, 20, 30]
+const TARGET_SCORES := [12, 16, 20, 30, 40]
 const LAP_COUNTS := [1, 2, 3, 4, 5, 7, 10, 15, 20]
 ## Sélecteur de tours : « ∞ » grisé hors course classique.
 const INFINITE_LAPS_ID := 9999
