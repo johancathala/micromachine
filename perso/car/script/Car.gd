@@ -730,6 +730,7 @@ func _update_skidmarks(slip):
 		# RIGHT
 		if right_line == null:
 			right_line = Line2D.new()
+			right_line.default_color = color
 			right_line.width = 5
 			right_line.z_index = -1
 			skid_node.add_child(right_line)
