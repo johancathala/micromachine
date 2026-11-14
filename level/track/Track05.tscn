@@ -10,9 +10,9 @@
 a = Vector2(264, 0)
 b = Vector2(-272, 0)
 
-[sub_resource type="SegmentShape2D" id="SegmentShape2D_6omuk"]
-a = Vector2(37.888916, -29.469238)
-b = Vector2(-44.203735, 34.38086)
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_qac7o"]
+a = Vector2(47.361084, -36.836914)
+b = Vector2(-394.67554, 306.9707)
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_s4eaq"]
 a = Vector2(-299.5381, -199.69202)
@@ -26,29 +26,29 @@ b = Vector2(523.2363, -116.27466)
 a = Vector2(-214.96045, -214.96045)
 b = Vector2(175.36255, 175.3623)
 
-[sub_resource type="SegmentShape2D" id="SegmentShape2D_vy7ly"]
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_n6ltc"]
 a = Vector2(40, 0)
-b = Vector2(-80, 0)
+b = Vector2(-460, 0)
 
-[sub_resource type="SegmentShape2D" id="SegmentShape2D_740cp"]
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_ju2or"]
 a = Vector2(0, 40)
-b = Vector2(0, -80)
+b = Vector2(0, -460)
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_lxtvc"]
 a = Vector2(0, -48)
 b = Vector2(0, 40)
 
-[sub_resource type="SegmentShape2D" id="SegmentShape2D_gc33t"]
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_6omuk"]
 a = Vector2(0, 40)
-b = Vector2(0, -48)
+b = Vector2(0, -428)
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_hfphq"]
 a = Vector2(96.166504, 96.16699)
 b = Vector2(-231.93091, -231.93066)
 
-[sub_resource type="SegmentShape2D" id="SegmentShape2D_pjt38"]
-a = Vector2(19.494629, 43.86328)
-b = Vector2(-32.49121, -73.10449)
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_vy7ly"]
+a = Vector2(162.45605, 365.5244)
+b = Vector2(-32.490723, -73.10449)
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_n55nl"]
 a = Vector2(13.251709, -119.26611)
@@ -58,8 +58,8 @@ b = Vector2(-58.30786, 524.7705)
 a = Vector2(79.51074, -8.834473)
 b = Vector2(-238.53198, 26.503662)
 
-[sub_resource type="SegmentShape2D" id="SegmentShape2D_ili1q"]
-a = Vector2(-176, 0)
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_740cp"]
+a = Vector2(-204, 0)
 b = Vector2(168, 0)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_pitstop"]
@@ -102,7 +102,7 @@ script = ExtResource("3_n6ltc")
 section_id = 1
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section01" unique_id=470999731]
-shape = SubResource("SegmentShape2D_6omuk")
+shape = SubResource("SegmentShape2D_qac7o")
 
 [node name="RespawnPoint" type="Marker2D" parent="Sections/Section01" unique_id=314208994]
 rotation = 0.9097532
@@ -150,7 +150,7 @@ script = ExtResource("3_n6ltc")
 section_id = 5
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section05" unique_id=811180758]
-shape = SubResource("SegmentShape2D_vy7ly")
+shape = SubResource("SegmentShape2D_n6ltc")
 
 [node name="RespawnPoint" type="Marker2D" parent="Sections/Section05" unique_id=432889175]
 rotation = 1.5707964
@@ -162,7 +162,7 @@ script = ExtResource("3_n6ltc")
 section_id = 6
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section06" unique_id=1433616103]
-shape = SubResource("SegmentShape2D_740cp")
+shape = SubResource("SegmentShape2D_ju2or")
 
 [node name="RespawnPoint" type="Marker2D" parent="Sections/Section06" unique_id=958626458]
 rotation = 3.1415927
@@ -185,7 +185,7 @@ script = ExtResource("3_n6ltc")
 section_id = 8
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section08" unique_id=745589741]
-shape = SubResource("SegmentShape2D_gc33t")
+shape = SubResource("SegmentShape2D_6omuk")
 
 [node name="RespawnPoint" type="Marker2D" parent="Sections/Section08" unique_id=492329998]
 rotation = 3.1415927
@@ -209,7 +209,7 @@ script = ExtResource("3_n6ltc")
 section_id = 10
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section10" unique_id=107315177]
-shape = SubResource("SegmentShape2D_pjt38")
+shape = SubResource("SegmentShape2D_vy7ly")
 
 [node name="RespawnPoint" type="Marker2D" parent="Sections/Section10" unique_id=1708193393]
 rotation = 2.7233684
@@ -245,7 +245,7 @@ script = ExtResource("3_n6ltc")
 section_id = 13
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section13" unique_id=1679931304]
-shape = SubResource("SegmentShape2D_ili1q")
+shape = SubResource("SegmentShape2D_740cp")
 
 [node name="RespawnPoint" type="Marker2D" parent="Sections/Section13" unique_id=761150473]
 rotation = -1.5707964
@@ -300,9 +300,9 @@ shape = SubResource("RectangleShape2D_o300m")
 position = Vector2(-89, 850.5)
 shape = SubResource("RectangleShape2D_p8cjj")
 
-[node name="PitLane" type="Area2D" parent="."]
+[node name="PitLane" type="Area2D" parent="." unique_id=1749282712]
 position = Vector2(-106, 420)
 script = ExtResource("pitlane_script")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="PitLane"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PitLane" unique_id=1879951121]
 shape = SubResource("RectangleShape2D_pitlane")

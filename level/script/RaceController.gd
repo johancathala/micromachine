@@ -310,7 +310,10 @@ func _setup_ai_drivers() -> void:
 
 	for state in participants:
 		if state.is_ai and is_instance_valid(state.car):
-			var driver := AIDriver.new(state.car, racing_line, _get_ai_difficulty(state))
+			var driver := AIDriver.new(
+				state.car, racing_line, _get_ai_difficulty(state),
+				race_world.current_track.scene_file_path
+			)
 			driver.participant = state
 			driver.learning_key = AILearning.make_key(
 				race_world.current_track.scene_file_path, state.car.definition.id
@@ -892,8 +895,8 @@ func on_car_entered_section(
 	# --------------------------------------------------------
 	# La voiture doit franchir les sections dans l'ordre.
 	# --------------------------------------------------------
-	# Variantes de circuit : la carte intégrée contient aussi les sections
-	# du circuit d'origine ; seules celles du circuit courant comptent.
+	# Seules comptent les sections du circuit courant (garde-fou si une
+	# scène intégrée contenait ses propres sections).
 	if (
 		respawn_point != null
 		and _sections.get(section_id) != respawn_point.get_parent()
@@ -1117,6 +1120,12 @@ func _punish_shortcut(state: RaceParticipantState, stopping_section: int) -> voi
 		state.pending_section_validation = target
 
 	shortcut_detected.emit(state, target)
+
+	# IA : un raccourci est une sortie de trajectoire (virage manqué) ;
+	# elle apprend à ralentir avant l'endroit où elle l'a perdue.
+	if state.car.ai_driver != null:
+		state.car.ai_driver.on_crash()
+
 	state.car.explosion()
 
 

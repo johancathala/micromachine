@@ -46,6 +46,8 @@ var _paths: Dictionary = {}
 var _cumulative: Dictionary = {}
 
 var section_count := 0
+# Portes des sections (section_id -> [a, b], coordonnées globales).
+var gates: Dictionary = {}
 
 # Grille praticable conservée après build() (axe de la chaussée pour l'IA).
 var grid: AStarGrid2D = null
@@ -63,6 +65,7 @@ func build(track: Node, gate_segments: Dictionary) -> bool:
 	_paths.clear()
 	_cumulative.clear()
 	section_count = gate_segments.size()
+	gates = gate_segments.duplicate()
 
 	if section_count < 2:
 		last_error = "moins de 2 sections"
@@ -487,6 +490,30 @@ func build_centerline(spacing: float = 32.0) -> PackedVector2Array:
 	return resample_closed(centers, spacing)
 
 
+## Distance (px) gardée par la trajectoire aux obstacles durs.
+const HARD_MARGIN := 120.0
+
+
+## Distance jusqu'à la première case bloquante (obstacle dur) dans une
+## direction (max 700 px) ; l'herbe et le gravier ne l'arrêtent pas.
+func _hard_extent(origin: Vector2, direction: Vector2) -> float:
+	var distance := 0.0
+
+	while distance < 700.0:
+		if hard_cells.has(world_to_cell(origin + direction * (distance + 8.0))):
+			break
+
+		distance += 8.0
+
+	return distance
+
+
+## Marge (px) gardée aux extrémités d'une porte, et nombre de points
+## de la trajectoire contraints de part et d'autre de la porte.
+const GATE_MARGIN := 60.0
+const GATE_CONSTRAINT_POINTS := 1
+
+
 ## Trajectoire de course : l'axe de la chaussée est « tendu »
 ## (relaxation qui réduit la courbure : extérieur, corde, extérieur),
 ## sans sortir de la chaussée (marge `margin` px de chaque bord).
@@ -508,12 +535,79 @@ func build_racing_line(spacing: float = 32.0, margin: float = 75.0, iterations: 
 	for i in range(count):
 		var normal := (center[(i + 2) % count] - center[posmod(i - 2, count)]).normalized().orthogonal()
 		normals[i] = normal
-		left_room[i] = maxf(_drivable_extent(center[i], normal) - margin, 0.0)
-		right_room[i] = maxf(_drivable_extent(center[i], -normal) - margin, 0.0)
+		# Bord de chaussée : `margin` ; obstacle dur (mur, bâtiment,
+		# arbre...) : HARD_MARGIN, un écart y est fatal.
+		left_room[i] = maxf(minf(_drivable_extent(center[i], normal) - margin, _hard_extent(center[i], normal) - HARD_MARGIN), 0.0)
+		right_room[i] = maxf(minf(_drivable_extent(center[i], -normal) - margin, _hard_extent(center[i], -normal) - HARD_MARGIN), 0.0)
+
+	# Portes des sections : la trajectoire doit les franchir (sinon le
+	# passage compte comme un raccourci). Près de chaque porte, le
+	# décalage est limité à la portion de porte praticable.
+	var gate_low := PackedFloat32Array()
+	var gate_high := PackedFloat32Array()
+	gate_low.resize(count)
+	gate_high.resize(count)
+	gate_low.fill(-INF)
+	gate_high.fill(INF)
+
+	for section_id in gates:
+		var a: Vector2 = gates[section_id][0]
+		var b: Vector2 = gates[section_id][1]
+		var nearest := 0
+		var nearest_distance := INF
+
+		for i in range(count):
+			var distance := center[i].distance_squared_to(Geometry2D.get_closest_point_to_segment(center[i], a, b))
+
+			if distance < nearest_distance:
+				nearest_distance = distance
+				nearest = i
+
+		for k in range(-GATE_CONSTRAINT_POINTS, GATE_CONSTRAINT_POINTS + 1):
+			var i := posmod(nearest + k, count)
+			var t_a := (a - center[i]).dot(normals[i])
+			var t_b := (b - center[i]).dot(normals[i])
+			var low := minf(t_a, t_b) + GATE_MARGIN
+			var high := maxf(t_a, t_b) - GATE_MARGIN
+
+			if low > high:
+				low = (t_a + t_b) / 2.0
+				high = low
+
+			gate_low[i] = maxf(gate_low[i], low)
+			gate_high[i] = minf(gate_high[i], maxf(high, gate_low[i]))
+
+	# Bornes finales : chaussée, et porte s'il y en a une (la porte
+	# l'emporte si les deux sont incompatibles).
+	var low_bound := PackedFloat32Array()
+	var high_bound := PackedFloat32Array()
+	low_bound.resize(count)
+	high_bound.resize(count)
+
+	for i in range(count):
+		var low := -right_room[i]
+		var high := left_room[i]
+
+		if gate_low[i] > -INF:
+			var clamped_low := maxf(low, gate_low[i])
+			var clamped_high := minf(high, gate_high[i])
+
+			if clamped_low <= clamped_high:
+				low = clamped_low
+				high = clamped_high
+			else:
+				low = gate_low[i]
+				high = gate_high[i]
+
+		low_bound[i] = low
+		high_bound[i] = high
 
 	# Décalage latéral par rapport à l'axe.
 	var offsets := PackedFloat32Array()
 	offsets.resize(count)
+
+	for i in range(count):
+		offsets[i] = clampf(0.0, low_bound[i], high_bound[i])
 
 	for _iteration in range(iterations):
 		for i in range(count):
@@ -522,7 +616,7 @@ func build_racing_line(spacing: float = 32.0, margin: float = 75.0, iterations: 
 			var middle := (previous + next) / 2.0
 			# Projection du milieu sur la normale : nouveau décalage.
 			var wanted := (middle - center[i]).dot(normals[i])
-			offsets[i] = clampf(lerpf(offsets[i], wanted, 0.6), -right_room[i], left_room[i])
+			offsets[i] = clampf(lerpf(offsets[i], wanted, 0.6), low_bound[i], high_bound[i])
 
 	var line := PackedVector2Array()
 	line.resize(count)

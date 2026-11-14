@@ -9,9 +9,9 @@
 a = Vector2(200, 0)
 b = Vector2(-208, 0)
 
-[sub_resource type="SegmentShape2D" id="SegmentShape2D_o18ye"]
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_mdtsh"]
 a = Vector2(392.30176, -112.08618)
-b = Vector2(-707.68164, 202.19482)
+b = Vector2(-834.60254, 238.45825)
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_4rjay"]
 a = Vector2(0, -144)
@@ -82,7 +82,7 @@ script = ExtResource("3_skds4")
 section_id = 1
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section01" unique_id=2089513804]
-shape = SubResource("SegmentShape2D_o18ye")
+shape = SubResource("SegmentShape2D_mdtsh")
 
 [node name="RespawnPoint" type="Marker2D" parent="Sections/Section01" unique_id=537385936]
 rotation = 1.2924967
