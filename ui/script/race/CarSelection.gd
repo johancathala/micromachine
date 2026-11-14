@@ -523,7 +523,8 @@ func _refresh_start_button() -> void:
 
 ## Prêt à partir : nombre de joueurs conforme au mode, tous prêts.
 func _can_start() -> bool:
-	if not race_config.is_valid():
+	# Le circuit est choisi plus tard : seuls les joueurs comptent ici.
+	if not race_config.are_players_valid():
 		return false
 
 	for picker in _pickers:

@@ -183,10 +183,7 @@ func get_next_player_id() -> int:
 # ================================================================
 
 func is_valid() -> bool:
-	if players.is_empty():
-		return false
-
-	if players.size() > MAX_HUMAN_PLAYERS:
+	if not are_players_valid():
 		return false
 
 	if track.is_empty():
@@ -195,12 +192,20 @@ func is_valid() -> bool:
 	if lap_count <= 0:
 		return false
 
-	if is_elimination():
-		if players.size() < ELIMINATION_MIN_PLAYERS:
-			return false
+	if is_elimination() and target_score <= 0:
+		return false
 
-		if target_score <= 0:
-			return false
+	return true
+
+
+## Nombre de joueurs conforme au mode (écran des joueurs, avant le
+## choix du circuit).
+func are_players_valid() -> bool:
+	if players.is_empty() or players.size() > MAX_HUMAN_PLAYERS:
+		return false
+
+	if is_elimination() and players.size() < ELIMINATION_MIN_PLAYERS:
+		return false
 
 	# Contre-la-montre : un seul joueur.
 	if is_time_trial() and players.size() != 1:
