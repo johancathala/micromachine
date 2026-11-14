@@ -8,16 +8,75 @@ signal gamepad_connected(device_id: int)
 signal gamepad_disconnected(device_id: int)
 
 
+# Touches PHYSIQUES (position sur le clavier, indépendante de la disposition).
+# Les commentaires donnent l'équivalent AZERTY.
+# La réapparition est placée près des touches de chaque joueur.
+#
+# Un binding clavier est un entier : physical_keycode, auquel s'ajoute
+# éventuellement le côté de la touche (KeyLocation) décalé de
+# KEY_LOCATION_SHIFT bits. Cela permet de distinguer Ctrl gauche et
+# Ctrl droit (même physical_keycode pour Godot).
+const KEY_LOCATION_SHIFT := 28
+const KEY_BINDING_CODE_MASK := (1 << KEY_LOCATION_SHIFT) - 1
+
+const KEY_CTRL_LEFT := KEY_CTRL | (KEY_LOCATION_LEFT << KEY_LOCATION_SHIFT)
+const KEY_CTRL_RIGHT := KEY_CTRL | (KEY_LOCATION_RIGHT << KEY_LOCATION_SHIFT)
+
+# Joueur clavier 1 : Z Q S D, frein à main Ctrl gauche, réapparition R.
+# Pause et confirmation sont communes et portées par le clavier 1.
 const DEFAULT_KEY_BINDINGS := {
-	"accelerate": KEY_UP,
-	"brake": KEY_DOWN,
-	"left": KEY_LEFT,
-	"right": KEY_RIGHT,
-	"handbrake": KEY_SPACE,
+	"accelerate": KEY_W,
+	"brake": KEY_S,
+	"left": KEY_A,
+	"right": KEY_D,
+	"handbrake": KEY_CTRL_LEFT,
 	"respawn": KEY_R,
 	"pause": KEY_ESCAPE,
 	"confirm": KEY_ENTER
 }
+
+# Joueur clavier 2 : O K L M, frein à main U, réapparition P.
+const DEFAULT_KEY_BINDINGS_P2 := {
+	"accelerate": KEY_O,
+	"brake": KEY_L,
+	"left": KEY_K,
+	"right": KEY_SEMICOLON,
+	"handbrake": KEY_U,
+	"respawn": KEY_P
+}
+
+# Joueur clavier 3 : flèches, frein à main Ctrl droit, réapparition Page suiv.
+const DEFAULT_KEY_BINDINGS_P3 := {
+	"accelerate": KEY_UP,
+	"brake": KEY_DOWN,
+	"left": KEY_LEFT,
+	"right": KEY_RIGHT,
+	"handbrake": KEY_CTRL_RIGHT,
+	"respawn": KEY_PAGEDOWN
+}
+
+# Joueur clavier 4 : pavé numérique 8 4 5 6, frein à main 0, réapparition -.
+const DEFAULT_KEY_BINDINGS_P4 := {
+	"accelerate": KEY_KP_8,
+	"brake": KEY_KP_5,
+	"left": KEY_KP_4,
+	"right": KEY_KP_6,
+	"handbrake": KEY_KP_0,
+	"respawn": KEY_KP_SUBTRACT
+}
+
+const KEYBOARD_DEFAULTS := [
+	DEFAULT_KEY_BINDINGS,
+	DEFAULT_KEY_BINDINGS_P2,
+	DEFAULT_KEY_BINDINGS_P3,
+	DEFAULT_KEY_BINDINGS_P4
+]
+
+
+# Nombre de joueurs pouvant partager le clavier.
+# device_id clavier : 0..3 = clavier 1..4
+# (-1 est accepté comme clavier 1 pour compatibilité).
+const KEYBOARD_PLAYER_COUNT := 4
 
 
 const DEFAULT_GAMEPAD_BINDINGS := {
@@ -35,17 +94,80 @@ const DEFAULT_GAMEPAD_BINDINGS := {
 const GAMEPAD_STICK_DEADZONE := 0.15
 
 
-var keyboard_bindings: Dictionary = {}
+# Un dictionnaire de bindings par joueur clavier.
+var keyboard_bindings: Array[Dictionary] = []
 var gamepad_bindings: Dictionary = {}
 
 var custom_confirm_keyboard_event: InputEventKey = null
 var custom_confirm_gamepad_events: Dictionary = {}
 
+# État des touches avec côté (binding encodé -> enfoncée).
+# Input.is_physical_key_pressed() ne distingue pas gauche / droite.
+var _located_keys_pressed: Dictionary = {}
+
 
 func _ready() -> void:
+	# Continuer à suivre les relâchements de touches pendant la pause.
+	process_mode = Node.PROCESS_MODE_ALWAYS
+
 	Input.joy_connection_changed.connect(
 		_on_joy_connection_changed
 	)
+
+
+func _input(event: InputEvent) -> void:
+	var key_event := event as InputEventKey
+
+	if key_event == null or key_event.echo:
+		return
+
+	var keycode := int(key_event.physical_keycode)
+
+	if key_event.location == KEY_LOCATION_UNSPECIFIED:
+		# Côté inconnu (dépend du système) : on considère les deux.
+		for location in [KEY_LOCATION_LEFT, KEY_LOCATION_RIGHT]:
+			_located_keys_pressed[
+				encode_key_binding(keycode, location)
+			] = key_event.pressed
+		return
+
+	_located_keys_pressed[
+		encode_key_binding(keycode, key_event.location)
+	] = key_event.pressed
+
+
+func _notification(what: int) -> void:
+	# Évite les touches « bloquées » si la fenêtre perd le focus.
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		_located_keys_pressed.clear()
+
+
+# ============================================================
+# CLAVIER : ENCODAGE DES TOUCHES (CODE + CÔTÉ)
+# ============================================================
+
+func encode_key_binding(keycode: int, location: int) -> int:
+	return keycode | (location << KEY_LOCATION_SHIFT)
+
+
+func get_binding_keycode(binding: int) -> int:
+	return binding & KEY_BINDING_CODE_MASK
+
+
+func get_binding_location(binding: int) -> int:
+	return binding >> KEY_LOCATION_SHIFT
+
+
+func is_key_binding_pressed(binding: int) -> bool:
+	var keycode := get_binding_keycode(binding)
+
+	if keycode == KEY_NONE:
+		return false
+
+	if get_binding_location(binding) == KEY_LOCATION_UNSPECIFIED:
+		return Input.is_physical_key_pressed(keycode as Key)
+
+	return bool(_located_keys_pressed.get(binding, false))
 
 
 func initialize() -> void:
@@ -65,13 +187,63 @@ func _load_bindings() -> void:
 func _load_keyboard_bindings() -> void:
 	keyboard_bindings.clear()
 
-	for action in DEFAULT_KEY_BINDINGS:
-		var saved_value = SaveManager.get_keyboard_binding(
-			action,
-			DEFAULT_KEY_BINDINGS[action]
+	for keyboard_index in range(KEYBOARD_PLAYER_COUNT):
+		var defaults := get_default_keyboard_bindings(
+			keyboard_index
 		)
+		var bindings: Dictionary = {}
 
-		keyboard_bindings[action] = int(saved_value)
+		for action in defaults:
+			var default_binding := int(defaults[action])
+
+			var saved_value := int(SaveManager.get_keyboard_binding(
+				action,
+				default_binding,
+				keyboard_index
+			))
+
+			# Ancienne sauvegarde sans côté (ex. « Ctrl ») identique
+			# à la touche par défaut : on reprend le côté par défaut.
+			if (
+				get_binding_location(saved_value) == KEY_LOCATION_UNSPECIFIED
+				and saved_value == get_binding_keycode(default_binding)
+			):
+				saved_value = default_binding
+
+			bindings[action] = saved_value
+
+		keyboard_bindings.append(bindings)
+
+
+# ============================================================
+# CLAVIER : JOUEURS MULTIPLES
+# ============================================================
+
+## Convertit un device_id clavier en index de joueur clavier.
+## -1 (ancien format) et 0 désignent le clavier 1.
+func get_keyboard_index(device_id: int) -> int:
+	return clampi(device_id, 0, KEYBOARD_PLAYER_COUNT - 1)
+
+
+func get_default_keyboard_bindings(
+	keyboard_index: int
+) -> Dictionary:
+
+	return KEYBOARD_DEFAULTS[
+		clampi(keyboard_index, 0, KEYBOARD_DEFAULTS.size() - 1)
+	]
+
+
+## Indique si une action est configurable pour ce joueur clavier
+## (seul le clavier 1 a la pause et la confirmation).
+func has_keyboard_action(
+	action_name: String,
+	device_id: int
+) -> bool:
+
+	return get_default_keyboard_bindings(
+		get_keyboard_index(device_id)
+	).has(action_name)
 
 
 func _load_connected_gamepads() -> void:
@@ -144,22 +316,34 @@ func get_connected_gamepads() -> Array[int]:
 
 func set_keyboard_binding(
 	action_name: String,
-	event: InputEventKey
+	event: InputEventKey,
+	device_id: int = 0
 ) -> void:
 
-	if not DEFAULT_KEY_BINDINGS.has(action_name):
+	var keyboard_index := get_keyboard_index(device_id)
+
+	if not has_keyboard_action(action_name, keyboard_index):
 		push_warning(
 			"Action clavier inconnue : " + action_name
 		)
 		return
 
-	var keycode := event.physical_keycode
+	if keyboard_bindings.size() <= keyboard_index:
+		_load_keyboard_bindings()
 
-	keyboard_bindings[action_name] = keycode
+	# Le côté n'est conservé que pour les touches doubles
+	# (Ctrl, Shift, Alt, Méta) ; il vaut UNSPECIFIED pour les autres.
+	var keycode := encode_key_binding(
+		int(event.physical_keycode),
+		int(event.location)
+	)
+
+	keyboard_bindings[keyboard_index][action_name] = keycode
 
 	SaveManager.set_keyboard_binding(
 		action_name,
-		keycode
+		keycode,
+		keyboard_index
 	)
 
 	if action_name == "confirm":
@@ -167,13 +351,23 @@ func set_keyboard_binding(
 
 
 func get_keyboard_binding(
-	action_name: String
+	action_name: String,
+	device_id: int = 0
 ) -> int:
 
+	var keyboard_index := get_keyboard_index(device_id)
+
+	var defaults := get_default_keyboard_bindings(
+		keyboard_index
+	)
+
+	if keyboard_bindings.size() <= keyboard_index:
+		return int(defaults.get(action_name, KEY_NONE))
+
 	return int(
-		keyboard_bindings.get(
+		keyboard_bindings[keyboard_index].get(
 			action_name,
-			DEFAULT_KEY_BINDINGS.get(
+			defaults.get(
 				action_name,
 				KEY_NONE
 			)
@@ -256,7 +450,10 @@ func get_player_input(
 
 	match device_type:
 		"keyboard":
-			_fill_keyboard_input(input_state)
+			_fill_keyboard_input(
+				input_state,
+				device_id
+			)
 
 		"gamepad":
 			_fill_gamepad_input(
@@ -278,65 +475,71 @@ func get_player_input(
 # ============================================================
 
 func _fill_keyboard_input(
-	input_state: PlayerInputState
+	input_state: PlayerInputState,
+	device_id: int
 ) -> void:
 
 	input_state.throttle = (
 		_get_keyboard_action_strength(
-			"accelerate"
+			"accelerate",
+			device_id
 		)
 	)
 
 	input_state.brake = (
 		_get_keyboard_action_strength(
-			"brake"
+			"brake",
+			device_id
 		)
 	)
 
 	input_state.steering = (
-		_get_keyboard_action_strength("right")
+		_get_keyboard_action_strength("right", device_id)
 		-
-		_get_keyboard_action_strength("left")
+		_get_keyboard_action_strength("left", device_id)
 	)
 
 	input_state.handbrake = (
 		_is_keyboard_action_pressed(
-			"handbrake"
+			"handbrake",
+			device_id
 		)
 	)
 
 	input_state.respawn = (
 		_is_keyboard_action_pressed(
-			"respawn"
+			"respawn",
+			device_id
 		)
 	)
 
 
 
 func _get_keyboard_action_strength(
-	action_name: String
+	action_name: String,
+	device_id: int
 ) -> float:
 
-	var physical_keycode := get_keyboard_binding(
-		action_name
+	var binding := get_keyboard_binding(
+		action_name,
+		device_id
 	)
 
-	if physical_keycode == KEY_NONE:
-		return 0.0
-
-	if Input.is_physical_key_pressed(physical_keycode):
+	if is_key_binding_pressed(binding):
 		return 1.0
 
 	return 0.0
 
 
 func _is_keyboard_action_pressed(
-	action_name: String
+	action_name: String,
+	device_id: int
 ) -> bool:
 
 	return (
 		_get_keyboard_action_strength(
-			action_name
+			action_name,
+			device_id
 		) > 0.5
 	)
 
@@ -516,8 +719,8 @@ func _apply_confirm_bindings() -> void:
 	# CLAVIER
 	# --------------------------------------------------------
 
-	var keyboard_keycode := get_keyboard_binding(
-		"confirm"
+	var keyboard_keycode := get_binding_keycode(
+		get_keyboard_binding("confirm")
 	)
 
 	if keyboard_keycode != KEY_NONE:
@@ -603,7 +806,8 @@ func get_binding_display_name(
 
 	if device_type == "keyboard":
 		return _get_keyboard_display_name(
-			action_name
+			action_name,
+			device_id
 		)
 
 	if device_type == "gamepad":
@@ -617,21 +821,40 @@ func get_binding_display_name(
 
 
 func _get_keyboard_display_name(
-	action_name: String
+	action_name: String,
+	device_id: int
 ) -> String:
 
-	var physical_keycode := get_keyboard_binding(
-		action_name
+	var binding := get_keyboard_binding(
+		action_name,
+		device_id
 	)
+
+	var physical_keycode := get_binding_keycode(binding)
 
 	if physical_keycode == KEY_NONE:
 		return "Non configuré"
 
-	var key_label := DisplayServer.keyboard_get_label_from_physical(
-		physical_keycode
-	)
+	var text := ""
+	var physical_name := OS.get_keycode_string(physical_keycode as Key)
 
-	return OS.get_keycode_string(key_label)
+	# Pavé numérique : nom explicite (sinon « Left », « Clear »... selon
+	# l'état du Verr. Num).
+	if physical_name.begins_with("Kp "):
+		text = "Pavé " + physical_name.substr(3).replace("Subtract", "-").replace("Add", "+").replace("Multiply", "*").replace("Divide", "/").replace("Period", ".").replace("Enter", "Entrée")
+	else:
+		var key_label := DisplayServer.keyboard_get_label_from_physical(
+			physical_keycode as Key
+		)
+		text = OS.get_keycode_string(key_label)
+
+	match get_binding_location(binding):
+		KEY_LOCATION_LEFT:
+			text += " gauche"
+		KEY_LOCATION_RIGHT:
+			text += " droit"
+
+	return text
 
 
 func _get_gamepad_display_name(
@@ -717,12 +940,20 @@ func reset_bindings(
 
 	if device_type == "keyboard":
 
-		keyboard_bindings = (
-			DEFAULT_KEY_BINDINGS.duplicate()
+		var keyboard_index := get_keyboard_index(device_id)
+
+		var defaults := get_default_keyboard_bindings(
+			keyboard_index
 		)
 
+		if keyboard_bindings.size() <= keyboard_index:
+			_load_keyboard_bindings()
+
+		keyboard_bindings[keyboard_index] = defaults.duplicate()
+
 		SaveManager.reset_keyboard_bindings(
-			DEFAULT_KEY_BINDINGS
+			defaults,
+			keyboard_index
 		)
 
 		_apply_confirm_bindings()

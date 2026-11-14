@@ -33,6 +33,56 @@ var solo_lookahead_distance: float = 150.0
 @export_range(100.0, 3000.0, 50.0)
 var solo_lookahead_speed: float = 1200.0
 
+@export_category("Anticipation du joueur en tête (multijoueur)")
+
+# Échelle du jeu : une voiture (~4,2 m) mesure ~141 px de long.
+@export_range(1.0, 200.0, 0.5)
+var pixels_per_meter: float = 34.0
+
+# Distance minimale visible devant le joueur humain en tête,
+# pour voir arriver les virages.
+@export_range(0.0, 60.0, 0.5)
+var leader_lookahead_meters: float = 15.0
+
+# En dessous de cette vitesse (px/s), on utilise l'orientation
+# de la voiture plutôt que sa direction de déplacement.
+@export_range(0.0, 500.0, 10.0)
+var leader_direction_min_speed: float = 120.0
+
+# Lissage du point d'anticipation (évite les à-coups quand
+# la voiture tourne ou que le joueur en tête change).
+@export_range(0.1, 20.0, 0.1)
+var leader_lookahead_smoothing_speed: float = 4.0
+
+# Changement de leader : le nouveau leader doit le rester un instant
+# (évite le va-et-vient entre deux voitures côte à côte), puis la
+# caméra glisse progressivement vers lui au lieu de sauter.
+@export_range(0.0, 2.0, 0.05)
+var leader_switch_confirm_time: float = 0.3
+
+@export_range(0.05, 3.0, 0.05)
+var leader_switch_blend_time: float = 0.8
+
+@export_category("Mode élimination")
+
+# Zoom fixe : la caméra suit le leader sans dézoomer pour cadrer
+# les autres (sinon personne ne sortirait de l'écran).
+# À 0.5, l'écran couvre ~113 m x 64 m.
+@export_range(0.1, 2.0, 0.01)
+var elimination_zoom: float = 0.5
+
+# Le centre de l'écran est placé devant le leader : il voit loin
+# devant lui, les poursuivants disparaissent par l'arrière.
+@export_range(0.0, 40.0, 0.5)
+var elimination_center_ahead_meters: float = 10.0
+
+@export_category("Écran splitté")
+
+# Centre de la vue placé devant la voiture suivie, pour voir les
+# virages arriver malgré une vue plus étroite.
+@export_range(0.0, 40.0, 0.5)
+var split_center_ahead_meters: float = 6.0
+
 @export_category("Zoom")
 
 @export_range(0.05, 2.0, 0.01)
@@ -56,10 +106,33 @@ var zoom_smoothing_speed: float = 10.0
 var cars_root: Node2D = null
 var camera_initialized: bool = false
 
+# Fourni par Race : donne le classement des participants.
+var race_controller: RaceController = null
+
+# Écran splitté : la caméra suit uniquement cette voiture.
+# use_target_car doit être activé avant l'ajout dans l'arbre.
+var use_target_car: bool = false
+var target_car: Car = null
+
+# Transition entre deux leaders suivis.
+var _anchor_car: Car = null
+var _previous_anchor_car: Car = null
+var _anchor_blend: float = 1.0
+var _candidate_car: Car = null
+var _candidate_time: float = 0.0
+
+# Décalage lissé entre le joueur en tête et le point à garder visible.
+var _leader_lookahead_offset: Vector2 = Vector2.ZERO
+var _lookahead_initialized: bool = false
+
 
 func _ready() -> void:
 	# Nous gérons nous-mêmes le lissage.
 	position_smoothing_enabled = false
+
+	# Caméra d'une vue splittée : pas besoin de la liste des voitures.
+	if use_target_car:
+		return
 
 	cars_root = get_parent().get_node_or_null("Cars") as Node2D
 
@@ -76,6 +149,21 @@ func _process(delta: float) -> void:
 	if not follow_cars:
 		return
 
+	if use_target_car:
+		if target_car == null or not is_instance_valid(target_car):
+			return
+
+		_move_towards(
+			_get_smoothed_lookahead_point(
+				target_car,
+				split_center_ahead_meters,
+				delta
+			),
+			_calculate_solo_zoom(target_car),
+			delta
+		)
+		return
+
 	if cars_root == null:
 		return
 
@@ -89,15 +177,48 @@ func _process(delta: float) -> void:
 	var target_position: Vector2
 	var target_zoom: float
 
-	if cars.size() == 1:
+	if _is_elimination_mode():
+		var leader_state := race_controller.elimination_rules.get_leader_state()
+
+		# Leader en cours d'explosion / réapparition : on ne bouge pas.
+		if leader_state == null:
+			return
+
+		target_position = _get_smoothed_lookahead_point(
+			leader_state.car,
+			elimination_center_ahead_meters,
+			delta
+		)
+		target_zoom = elimination_zoom
+
+	elif cars.size() == 1:
 		var car := cars[0] as Car
 
 		target_position = _calculate_solo_target(car)
 		target_zoom = _calculate_solo_zoom(car)
 	else:
-		# En multijoueur, on conserve le cadrage collectif.
+		# En multijoueur, on conserve le cadrage collectif,
+		# en gardant visible la route devant le joueur en tête.
+		var lookahead_point: Variant = _get_leader_lookahead_point(
+			cars,
+			delta
+		)
+
+		if lookahead_point != null:
+			bounds = bounds.expand(lookahead_point)
+
 		target_position = bounds.get_center()
 		target_zoom = _calculate_zoom(bounds)
+
+	_move_towards(target_position, target_zoom, delta)
+
+
+## Déplacement et zoom lissés vers la cible.
+func _move_towards(
+	target_position: Vector2,
+	target_zoom: float,
+	delta: float
+) -> void:
 
 	# Initialisation sans déplacement depuis (0, 0).
 	if not camera_initialized:
@@ -184,6 +305,160 @@ func _calculate_solo_target(car: Car) -> Vector2:
 	)
 
 	return car.global_position - forward * lookahead
+
+
+# ------------------------------------------------------------------
+# Joueur en tête
+# ------------------------------------------------------------------
+
+## Point situé leader_lookahead_meters devant le joueur humain en tête,
+## ou null s'il n'y a pas de joueur en tête identifiable.
+func _get_leader_lookahead_point(
+	cars: Array[Node2D],
+	delta: float
+) -> Variant:
+
+	var leader := _find_leader_car(cars)
+
+	if leader == null:
+		_lookahead_initialized = false
+		return null
+
+	return _get_smoothed_lookahead_point(
+		leader,
+		leader_lookahead_meters,
+		delta
+	)
+
+
+## Point situé `meters` devant la voiture, dans sa direction de
+## déplacement, avec un décalage lissé.
+func _get_smoothed_lookahead_point(
+	leader: Car,
+	meters: float,
+	delta: float
+) -> Vector2:
+
+	var target_offset: Vector2 = (
+		_get_travel_direction(leader)
+		* meters
+		* pixels_per_meter
+	)
+
+	if not _lookahead_initialized:
+		_leader_lookahead_offset = target_offset
+		_lookahead_initialized = true
+	else:
+		var weight: float = (
+			1.0 - exp(-leader_lookahead_smoothing_speed * delta)
+		)
+
+		_leader_lookahead_offset = _leader_lookahead_offset.lerp(
+			target_offset,
+			weight
+		)
+
+	return _get_blended_anchor(leader, delta) + _leader_lookahead_offset
+
+
+## Position suivie : celle du leader, avec une transition douce
+## lorsqu'il change.
+func _get_blended_anchor(leader: Car, delta: float) -> Vector2:
+	# Premier leader : adopté immédiatement.
+	if _anchor_car == null or not is_instance_valid(_anchor_car):
+		_anchor_car = leader
+		_anchor_blend = 1.0
+
+	if leader != _anchor_car:
+		if leader != _candidate_car:
+			_candidate_car = leader
+			_candidate_time = 0.0
+
+		_candidate_time += delta
+
+		# L'ancien leader n'est plus suivable (explosé...) : on bascule.
+		var anchor_lost := (
+			_anchor_car._destruction_started or not _anchor_car.visible
+		)
+
+		if _candidate_time >= leader_switch_confirm_time or anchor_lost:
+			_previous_anchor_car = _anchor_car
+			_anchor_car = leader
+			_anchor_blend = 0.0
+			_candidate_car = null
+	else:
+		_candidate_car = null
+
+	_anchor_blend = minf(
+		_anchor_blend + delta / leader_switch_blend_time,
+		1.0
+	)
+
+	if (
+		_anchor_blend >= 1.0
+		or _previous_anchor_car == null
+		or not is_instance_valid(_previous_anchor_car)
+	):
+		return _anchor_car.global_position
+
+	return _previous_anchor_car.global_position.lerp(
+		_anchor_car.global_position,
+		smoothstep(0.0, 1.0, _anchor_blend)
+	)
+
+
+## Joueur humain le mieux classé parmi les voitures cadrées.
+## Les joueurs ayant terminé passent après ceux encore en course.
+func _find_leader_car(cars: Array[Node2D]) -> Car:
+	if race_controller == null:
+		return null
+
+	var leader: Car = null
+	var best_score := -INF
+
+	for state in race_controller.get_participant_states():
+		if state.is_ai or state.car == null:
+			continue
+
+		if not cars.has(state.car):
+			continue
+
+		# Progression continue, calculée à chaque image.
+		var score: float = race_controller.get_progress(state)
+
+		if state.finished:
+			score -= 100000.0
+
+		if score > best_score:
+			best_score = score
+			leader = state.car
+
+	return leader
+
+
+## Direction de déplacement (ou orientation à basse vitesse).
+func _get_travel_direction(car: Car) -> Vector2:
+	if car.velocity.length() >= leader_direction_min_speed:
+		return car.velocity.normalized()
+
+	return Vector2.RIGHT.rotated(car.global_rotation)
+
+
+func _is_elimination_mode() -> bool:
+	return (
+		race_controller != null
+		and race_controller.is_elimination_mode()
+	)
+
+
+## Zone du monde actuellement visible à l'écran.
+func get_visible_world_rect() -> Rect2:
+	var size: Vector2 = get_viewport_rect().size / zoom
+
+	return Rect2(
+		get_screen_center_position() - size / 2.0,
+		size
+	)
 
 
 func _calculate_bounds(cars: Array[Node2D]) -> Rect2:

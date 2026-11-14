@@ -27,6 +27,20 @@ var has_started_lap: bool = false
 var race_position: int = 0
 var last_progress_time: float = 0.0
 
+# Départ : temps de réaction au feu vert, en secondes.
+# Négatif = accélérateur déjà enfoncé au vert (départ anticipé).
+var start_reaction_time: float = NAN
+var start_judged: bool = false
+# Début de l'appui en cours sur l'accélérateur (-1 = relâché).
+var start_press_usec: int = -1
+
+# Raccourci : section sautée, à valider à la réapparition (-1 = aucune).
+var pending_section_validation: int = -1
+
+# Mode élimination.
+var points: int = 0
+var eliminated: bool = false
+
 
 # ============================================================
 # CHRONOMÉTRAGE DU TOUR COURANT
@@ -47,6 +61,10 @@ var last_section_delta = 0.0
 var last_section_index = -1
 
 var respawn_transform: Transform2D = Transform2D.IDENTITY
+
+# Place de départ sur la grille (contre-la-montre : retour au fond de
+# grille à chaque réapparition).
+var grid_transform: Transform2D = Transform2D.IDENTITY
 var has_respawn_point: bool = false
 var respawn_in_progress: bool = false
 

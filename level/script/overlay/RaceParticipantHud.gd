@@ -74,6 +74,28 @@ func refresh() -> void:
 		% participant.current_lap
 	)
 
+	# Usure des pneus (option de course classique).
+	if (
+		race_controller.pit_stops != null
+		and not participant.is_ai
+		and is_instance_valid(participant.car)
+	):
+		lap_label.text += " | PNEUS %d%%" % int(participant.car.tire_wear * 100.0)
+
+	# Voie des stands : vitesse bridée.
+	if not participant.is_ai and is_instance_valid(participant.car) and participant.car.is_speed_limited():
+		lap_label.text += " | LIMITEUR"
+
+	# Mode élimination : points et état dans la manche.
+	if race_controller.is_elimination_mode():
+		lap_label.text = " | %d PTS" % participant.points
+		lap_time_label.text = (
+			" | ÉLIMINÉ" if participant.eliminated else " | EN PISTE"
+		)
+		delta_label.text = ""
+		best_lap_label.text = ""
+		return
+
 
 	# ============================================================
 	# TEMPS DU TOUR EN COURS

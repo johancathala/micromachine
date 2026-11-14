@@ -78,6 +78,9 @@ var last_collision_time: float = 0.0
 # Coefficient de rebond (0 = pas de rebond, 1 = rebond parfait)
 @export_range(0.0, 3.0, 0.01) var bounce_factor: float = 0.8
 
+# Rebond sur les pneus et sacs de sable (jamais d'explosion).
+@export_range(0.0, 3.0, 0.01) var tire_bounce_factor: float = 0.7
+
 # Vitesse minimale de l'impact, mesurée sur l'axe de collision,
 # pour déclencher l'explosion. Unité : pixels/seconde.
 @export_range(0.0, 3000.0, 10.0) var explosion_impact_speed: float = 700.0
@@ -85,6 +88,9 @@ var last_collision_time: float = 0.0
 # Vélocité juste avant move_and_slide(), nécessaire pour mesurer
 # la vitesse réelle de l'impact après résolution physique.
 var _velocity_before_move: Vector2 = Vector2.ZERO
+
+# Touche de réapparition active (désactivée en mode élimination).
+var manual_respawn_enabled: bool = true
 
 # ---------------------------
 # ANIMATIONS
@@ -114,6 +120,124 @@ var _respawning := false
 @export_range(0.0, 1000.0, 0.1) var rolling_resistance: float = 140.0
 # Résistance de l'air (freinage aérodynamique à haute vitesse)
 @export_range(0.0, 0.01, 0.0001) var air_drag: float = 0.0009
+
+# ---------------------------
+# ASPIRATION
+# ---------------------------
+# Derrière une autre voiture, la résistance de l'air diminue :
+# la vitesse de pointe (limitée par la traînée) augmente.
+# Distance maximale d'effet (px, ~34 px/m : 500 px ≈ 15 m).
+@export_range(0.0, 2000.0, 10.0) var slipstream_range: float = 500.0
+# Demi-angle du cône derrière la voiture de devant (degrés).
+@export_range(0.0, 90.0, 1.0) var slipstream_angle_deg: float = 15.0
+# Réduction maximale de la traînée (0.3 = -30 % collé à la voiture).
+@export_range(0.0, 1.0, 0.01) var slipstream_drag_reduction: float = 0.3
+# Vitesse maximale gagnée collé à la voiture de devant (0.1 = +10 %).
+@export_range(0.0, 1.0, 0.01) var slipstream_max_speed_bonus: float = 0.1
+# Vitesse minimale pour profiter de l'aspiration (px/s).
+@export_range(0.0, 2000.0, 10.0) var slipstream_min_speed: float = 300.0
+# Vitesse d'établissement / de perte de l'effet (lissage).
+@export_range(0.1, 20.0, 0.1) var slipstream_smoothing: float = 4.0
+
+# Intensité courante de l'aspiration (0 à 1), lissée.
+var slipstream_factor: float = 0.0
+
+# ---------------------------
+# USURE DES PNEUS
+# ---------------------------
+# Activée par la course (option « Usure des pneus »).
+var tire_wear_enabled: bool = false
+# 0 = pneus neufs, 1 = pneus complètement usés.
+var tire_wear: float = 0.0
+# Nombre de tours pour user complètement les pneus sur la route sans
+# glisser : l'usure est proportionnelle au circuit (« BOX » à 60 % vers
+# le 3e ou 4e tour, quelle que soit la longueur du tour : un arrêt sur
+# une course de 5 tours, aucun d'obligatoire sur 3 tours).
+@export_range(0.5, 50.0, 0.1) var tire_wear_laps: float = 7.0
+# Distance (px) correspondante, fixée par la course selon la longueur
+# du tour (set_lap_length). Valeur par défaut : tour de Brissac.
+var tire_wear_distance: float = 150000.0
+# La glisse use plus vite (x3 en pleine glisse).
+@export_range(0.0, 10.0, 0.1) var tire_wear_slip_factor: float = 2.0
+# Jusqu'à ce niveau d'usure, la voiture se conduit normalement.
+@export_range(0.0, 1.0, 0.01) var tire_degradation_start: float = 0.6
+# Performances restantes avec des pneus complètement usés (100 %).
+# Entre tire_degradation_start et 100 %, la chute est linéaire.
+@export_range(0.0, 1.0, 0.01) var worn_tire_grip: float = 0.1
+@export_range(0.0, 1.0, 0.01) var worn_tire_brake: float = 0.4
+@export_range(0.0, 1.0, 0.01) var worn_tire_traction: float = 0.4
+# Usure selon la surface : la route use peu, l'herbe davantage,
+# le gravier abîme le plus les pneus.
+@export_range(0.0, 20.0, 0.1) var tire_wear_mul_asphalt: float = 1.0
+@export_range(0.0, 20.0, 0.1) var tire_wear_mul_grass: float = 3.0
+@export_range(0.0, 20.0, 0.1) var tire_wear_mul_gravel: float = 6.0
+## Effet de l'usure sur une caractéristique : 100 % jusqu'à
+## tire_degradation_start, puis chute linéaire jusqu'à worn_value
+## à 100 % d'usure.
+func _tire_effect(worn_value: float) -> float:
+	if not tire_wear_enabled or tire_wear <= tire_degradation_start:
+		return 1.0
+
+	var degradation := (
+		(tire_wear - tire_degradation_start)
+		/ maxf(1.0 - tire_degradation_start, 0.001)
+	)
+
+	return lerpf(1.0, worn_value, clampf(degradation, 0.0, 1.0))
+
+
+## Multiplicateur d'usure de la surface roulée.
+func _get_surface_wear_multiplier() -> float:
+	if _surface == SurfaceCatalog.ASPHALT:
+		return tire_wear_mul_asphalt
+
+	if _surface == SurfaceCatalog.GRAVEL:
+		return tire_wear_mul_gravel
+
+	# Herbe, terre... (surface par défaut hors piste).
+	return tire_wear_mul_grass
+
+
+func reset_tires() -> void:
+	tire_wear = 0.0
+
+
+## Usure proportionnelle au circuit : `length` = longueur d'un tour (px).
+func set_lap_length(length: float) -> void:
+	if length > 0.0:
+		tire_wear_distance = length * tire_wear_laps
+
+# ---------------------------
+# DÉPART (réaction au feu vert)
+# ---------------------------
+# Modificateur de puissance moteur appliqué au départ :
+# > 0 bonus, < 0 malus. Il s'estompe linéairement sur sa durée.
+var _start_engine_bonus: float = 0.0
+var _start_effect_duration: float = 0.0
+var _start_effect_time_left: float = 0.0
+var _start_wheelspin: bool = false
+
+
+## Bonus (> 0) ou malus (< 0) de puissance au départ.
+## wheelspin : la voiture patine (fumée, crissement).
+func apply_start_effect(
+	engine_bonus: float,
+	duration: float,
+	wheelspin: bool
+) -> void:
+
+	_start_engine_bonus = engine_bonus
+	_start_effect_duration = maxf(duration, 0.01)
+	_start_effect_time_left = _start_effect_duration
+	_start_wheelspin = wheelspin
+
+
+## Intensité restante de l'effet de départ (1 au début, 0 à la fin).
+func _get_start_effect_fade() -> float:
+	if _start_effect_time_left <= 0.0:
+		return 0.0
+
+	return _start_effect_time_left / _start_effect_duration
 
 # Grip "de base" (asphalte-like)
 # Adhérence latérale de base (résistance au dérapage à basse vitesse)
@@ -217,6 +341,7 @@ func _apply_car_definition() -> void:
 
 	max_speed = definition.max_speed
 	max_reverse_speed = definition.max_reverse_speed
+	mass = definition.mass
 
 	rolling_resistance = definition.rolling_resistance
 	air_drag = definition.air_drag
@@ -287,7 +412,8 @@ func _physics_process(delta: float) -> void:
 		_process_human_input(delta)
 
 	# Le respawn est déclenché une seule fois par appui.
-	if not is_ai:
+	# Désactivé en mode élimination (le joueur serait trop loin).
+	if not is_ai and manual_respawn_enabled:
 		if respawn and not _respawn_was_pressed:
 			explosion()
 
@@ -325,9 +451,22 @@ func _process_movement(_delta: float) -> void:
 	var v_long: Vector2 = fwd * v_long_scalar
 	var v_lat: Vector2 = right * v_lat_scalar
 
+	# Aspiration derrière une autre voiture
+	_update_slipstream(_delta, fwd)
+
+	# Effet de départ (bonus / malus) qui s'estompe
+	if _start_effect_time_left > 0.0:
+		_start_effect_time_left = maxf(_start_effect_time_left - _delta, 0.0)
+
 	# Forces longitudinales
 	var force_long: float = _calculate_longitudinal_forces(speed, v_long_scalar)
 	var grip_mult: float = 1.0 if not handbrake else handbrake_grip_multiplier
+	grip_mult *= _tire_effect(worn_tire_grip)
+
+	# Pneus décrochés par un choc : l'adhérence revient progressivement.
+	if _impact_grip_loss > 0.0:
+		grip_mult *= 1.0 - _impact_grip_loss
+		_impact_grip_loss = maxf(_impact_grip_loss - _delta / IMPACT_GRIP_RECOVERY * IMPACT_GRIP_MAX_LOSS, 0.0)
 
 	# Apply longitudinal acceleration
 	v_long += fwd * (force_long * _delta)
@@ -355,6 +494,21 @@ func _process_movement(_delta: float) -> void:
 	# FX SYSTEM
 	# ======================
 	var slip = _compute_slip_intensity(v_lat_scalar, speed)
+
+	# Usure des pneus : distance parcourue, selon la surface,
+	# accélérée par la glisse.
+	if tire_wear_enabled and speed > 1.0:
+		tire_wear = minf(
+			tire_wear
+			+ speed * _delta / tire_wear_distance
+			* _get_surface_wear_multiplier()
+			* (1.0 + tire_wear_slip_factor * slip),
+			1.0
+		)
+
+	# Faux départ : les roues patinent (fumée, traces, crissement).
+	if _start_wheelspin and throttle > 0.1:
+		slip = maxf(slip, 0.8 * _get_start_effect_fade())
 
 	_apply_surface_fx()
 	_update_skidmarks(slip)
@@ -401,6 +555,42 @@ func _get_impact_speed(
 	return maxf(velocity_toward_collider, 0.0)
 
 
+# ---------------------------
+# CHOCS ENTRE VOITURES
+# ---------------------------
+# Choc entre deux corps : échange de vitesse selon les masses (rebond
+# partiel), frottement au point de contact, et rotation si le choc est
+# décentré. Jamais d'explosion entre voitures.
+
+## Part de la vitesse de rapprochement rendue en rebond (0 : les
+## voitures restent collées, 1 : rebond parfait).
+const CAR_RESTITUTION := 0.15
+## Frottement au contact : part de la vitesse de glissement transmise
+## (une voiture touchée en biais est entraînée).
+const CAR_FRICTION := 0.3
+## Dimensions (px) d'une voiture pour son inertie de rotation.
+const CAR_LENGTH := 141.0
+const CAR_WIDTH := 53.0
+## Rotation due aux chocs : plafond (rad/s) et amortissement (1/s).
+const MAX_IMPACT_SPIN := 5.0
+const IMPACT_SPIN_DAMPING := 3.5
+## Décrochage des pneus : perte maximale d'adhérence latérale, atteinte
+## pour une variation de vitesse de IMPACT_GRIP_FULL_LOSS px/s, et durée
+## de récupération (s).
+const IMPACT_GRIP_MAX_LOSS := 0.6
+const IMPACT_GRIP_FULL_LOSS := 900.0
+const IMPACT_GRIP_RECOVERY := 0.6
+
+@export_range(200.0, 3000.0, 10.0) var mass: float = 1200.0
+
+# Rotation (rad/s) donnée par un choc décentré, qui s'amortit.
+var _impact_spin := 0.0
+# Adhérence latérale perdue après un choc (0 à 1), qui revient.
+var _impact_grip_loss := 0.0
+# Dernière image où un choc avec une voiture donnée a été résolu.
+var _car_impact_frames: Dictionary = {}
+
+
 func _handle_car_collision(
 	collision: KinematicCollision2D,
 	other_car: Car
@@ -408,12 +598,105 @@ func _handle_car_collision(
 	if _destruction_started or _respawning:
 		return
 
-	var other_velocity := other_car.velocity
-	var impact_speed := _get_impact_speed(collision, other_velocity)
+	_last_car_contact_msec = Time.get_ticks_msec()
+	other_car._last_car_contact_msec = _last_car_contact_msec
 
-	if impact_speed >= explosion_impact_speed:
-		explosion()
+	var impact_speed := _get_impact_speed(collision, other_car.velocity)
 
+	if impact_speed > 100.0:
+		_play_collision_sound()
+
+	if other_car._destruction_started or other_car._respawning:
+		return
+
+	# Un même contact peut être vu par les deux voitures dans la même
+	# image : il n'est résolu qu'une fois.
+	var frame := Engine.get_physics_frames()
+
+	if (
+		int(other_car._car_impact_frames.get(get_instance_id(), -1)) == frame
+		or int(_car_impact_frames.get(other_car.get_instance_id(), -1)) == frame
+	):
+		return
+
+	_car_impact_frames[other_car.get_instance_id()] = frame
+
+	_resolve_car_impact(collision, other_car)
+
+
+## Impulsion de choc entre cette voiture et `other` (normale de
+## `other` vers nous) : vitesses et rotations des deux voitures.
+func _resolve_car_impact(collision: KinematicCollision2D, other: Car) -> void:
+	var normal := collision.get_normal()
+	var tangent := normal.orthogonal()
+	var own_velocity := _velocity_before_move
+	var relative := own_velocity - other.velocity
+	var approach := relative.dot(normal)
+
+	# Elles s'éloignent déjà : rien à faire.
+	if approach >= 0.0:
+		return
+
+	var inverse_own := 1.0 / maxf(mass, 1.0)
+	var inverse_other := 1.0 / maxf(other.mass, 1.0)
+	var inverse_sum := inverse_own + inverse_other
+
+	# Impulsion normale (rebond partiel), puis frottement tangentiel
+	# borné par la loi de Coulomb.
+	var normal_impulse := -(1.0 + CAR_RESTITUTION) * approach / inverse_sum
+	var tangent_impulse := clampf(
+		-relative.dot(tangent) / inverse_sum,
+		-CAR_FRICTION * normal_impulse,
+		CAR_FRICTION * normal_impulse
+	)
+	var impulse := normal * normal_impulse + tangent * tangent_impulse
+
+	velocity = own_velocity + impulse * inverse_own
+	other.velocity -= impulse * inverse_other
+	_velocity_before_move = velocity
+
+	# Les pneus décrochent sous le choc : la voiture glisse au lieu de
+	# s'arrêter net (d'autant plus que sa vitesse a changé).
+	_loosen_grip(impulse.length() * inverse_own)
+	other._loosen_grip(impulse.length() * inverse_other)
+
+	# Choc décentré : rotation (moment de l'impulsion / inertie).
+	var contact := collision.get_position()
+	_add_impact_spin((contact - global_position).cross(impulse) / _inertia())
+	other._add_impact_spin((contact - other.global_position).cross(-impulse) / other._inertia())
+
+
+## Perte d'adhérence après un choc (variation de vitesse `delta_v`
+## px/s) : adhérence latérale réduite, rétablie en IMPACT_GRIP_RECOVERY s.
+func _loosen_grip(delta_v: float) -> void:
+	var loss := clampf(delta_v / IMPACT_GRIP_FULL_LOSS, 0.0, 1.0) * IMPACT_GRIP_MAX_LOSS
+	_impact_grip_loss = maxf(_impact_grip_loss, loss)
+
+
+func _inertia() -> float:
+	return mass * (CAR_LENGTH * CAR_LENGTH + CAR_WIDTH * CAR_WIDTH) / 12.0
+
+
+func _add_impact_spin(spin: float) -> void:
+	_impact_spin = clampf(_impact_spin + spin, -MAX_IMPACT_SPIN, MAX_IMPACT_SPIN)
+
+
+
+## Dernier contact avec une autre voiture (une IA poussée dans un
+## obstacle n'en tire pas de leçon).
+var _last_car_contact_msec := -100000
+const CAR_CONTACT_EXCUSE_MSEC := 1500
+
+
+## IA détruite seule contre un obstacle : elle apprend à ralentir là.
+func _notify_ai_crash() -> void:
+	if ai_driver == null:
+		return
+
+	if Time.get_ticks_msec() - _last_car_contact_msec < CAR_CONTACT_EXCUSE_MSEC:
+		return
+
+	ai_driver.on_crash()
 
 
 func _handle_obstacle_collision(collision: KinematicCollision2D) -> void:
@@ -433,15 +716,32 @@ func _handle_obstacle_collision(collision: KinematicCollision2D) -> void:
 		obstacle.detonate()
 
 		# Le contact direct avec le baril détruit toujours la voiture.
+		_notify_ai_crash()
 		explosion()
+		return
+
+	var impact_speed := _get_impact_speed(collision)
+
+	# --------------------------------------------------------
+	# PNEUS / SACS : rebond, jamais d'explosion
+	# --------------------------------------------------------
+	var bouncy := (
+		collider is Node
+		and (collider as Node).is_in_group("bouncy_obstacle")
+	)
+
+	if bouncy:
+		if impact_speed <= 30.0:
+			return
+
+		_bounce(collision, tire_bounce_factor, true)
 		return
 
 	# --------------------------------------------------------
 	# OBSTACLE CLASSIQUE
 	# --------------------------------------------------------
-	var impact_speed := _get_impact_speed(collision)
-
 	if impact_speed >= explosion_impact_speed:
+		_notify_ai_crash()
 		explosion()
 		return
 
@@ -449,14 +749,30 @@ func _handle_obstacle_collision(collision: KinematicCollision2D) -> void:
 	if impact_speed <= 100.0:
 		return
 
+	_bounce(collision, bounce_factor)
+
+
+## Renvoie la voiture symétriquement à la surface touchée.
+## from_impact_velocity : part de la vitesse d'avant l'impact
+## (move_and_slide() a pu annuler la composante vers l'obstacle),
+## pour un vrai rebond même en choc frontal.
+func _bounce(
+	collision: KinematicCollision2D,
+	factor: float,
+	from_impact_velocity: bool = false
+) -> void:
+
 	var normal: Vector2 = collision.get_normal()
-	var velocity_into_surface: float = velocity.dot(normal)
+	var base_velocity: Vector2 = (
+		_velocity_before_move if from_impact_velocity else velocity
+	)
+	var velocity_into_surface: float = base_velocity.dot(normal)
 
 	if velocity_into_surface >= 0.0:
 		return
 
-	velocity = velocity - 2.0 * velocity_into_surface * normal
-	velocity *= bounce_factor
+	velocity = base_velocity - 2.0 * velocity_into_surface * normal
+	velocity *= factor
 
 	_play_collision_sound()
 
@@ -473,8 +789,13 @@ func _process_human_input(_delta: float) -> void:
 	handbrake = input_state.handbrake
 	respawn = input_state.respawn
 
+## Pilote IA (AIDriver), fourni par la course.
+var ai_driver: AIDriver = null
+
+
 func _process_ai_input(_delta: float) -> void:
-	pass
+	if ai_driver != null:
+		ai_driver.update(_delta)
 
 # ---------------------------
 # SLIP
@@ -524,6 +845,7 @@ func _update_skidmarks(slip):
 		# RIGHT
 		if right_line == null:
 			right_line = Line2D.new()
+			right_line.default_color = color
 			right_line.width = 5
 			right_line.z_index = -1
 			skid_node.add_child(right_line)
@@ -736,12 +1058,16 @@ func _calculate_longitudinal_forces(_speed: float, v_long_scalar: float) -> floa
 	# Engine (forward)
 	if throttle > 0.001:
 		var engine_fade: float = 1.0 - clamp(_speed / max_speed, 0.0, 1.0) * 0.35
-		force_long += engine_force * _current_engine_mul * throttle * engine_fade
+		var start_mul: float = maxf(
+			1.0 + _start_engine_bonus * _get_start_effect_fade(),
+			0.0
+		)
+		force_long += engine_force * _current_engine_mul * throttle * engine_fade * start_mul * _tire_effect(worn_tire_traction)
 
 	# Brake or reverse
 	if brake > 0.001:
 		if v_long_scalar > 60.0:
-			force_long -= brake_force * _current_brake_mul * brake
+			force_long -= brake_force * _current_brake_mul * brake * _tire_effect(worn_tire_brake)
 		else:
 			if v_long_scalar < 10.0:
 				var rev_fade: float = 1.0 - clamp(_speed / max_reverse_speed, 0.0, 1.0) * 0.35
@@ -762,16 +1088,64 @@ func _apply_resistances(delta: float, right: Vector2, v_long: Vector2, v_lat_sca
 		var new_len: float = max(v_long.length() - rr, 0.0)
 		v_long = v_long.normalized() * new_len
 
-	# Air drag (global)
+	# Air drag (global), réduite par l'aspiration
 	var v: Vector2 = v_long + v_lat
 	var _speed: float = v.length()
-	v -= v * (air_drag * _speed * delta)
+	var drag: float = air_drag * (
+		1.0 - slipstream_drag_reduction * slipstream_factor
+	)
+	v -= v * (drag * _speed * delta)
 
 	# Recompute lateral component after drag
 	v_lat_scalar = v.dot(right)
 	v_lat = right * v_lat_scalar
 
 	return [v_long, v_lat]
+
+## Cherche une voiture devant, dans un cône étroit et dans le même sens :
+## plus elle est proche, plus l'aspiration est forte.
+func _update_slipstream(delta: float, fwd: Vector2) -> void:
+	var target_factor := 0.0
+
+	var parent := get_parent()
+
+	if parent != null and speed >= slipstream_min_speed:
+		var cos_limit := cos(deg_to_rad(slipstream_angle_deg))
+
+		for node in parent.get_children():
+			var other := node as Car
+
+			if other == null or other == self:
+				continue
+
+			if other._destruction_started or not other.visible:
+				continue
+
+			var to_other: Vector2 = other.global_position - global_position
+			var distance := to_other.length()
+
+			if distance <= 1.0 or distance > slipstream_range:
+				continue
+
+			# Devant nous, dans l'axe.
+			if fwd.dot(to_other / distance) < cos_limit:
+				continue
+
+			# Elle roule dans le même sens que nous.
+			if other.velocity.dot(fwd) < slipstream_min_speed * 0.5:
+				continue
+
+			target_factor = maxf(
+				target_factor,
+				1.0 - distance / slipstream_range
+			)
+
+	slipstream_factor = lerpf(
+		slipstream_factor,
+		target_factor,
+		1.0 - exp(-slipstream_smoothing * delta)
+	)
+
 
 func _apply_lateral_grip(delta: float, _speed: float, grip_mult: float, v_lat: Vector2) -> Vector2:
 	var grip_t: float = inverse_lerp(high_speed_grip_start, high_speed_grip_end, _speed)
@@ -795,19 +1169,49 @@ func _apply_rotation(delta: float, v_long_after: float, steer_eff: float) -> voi
 		var yaw_rate: float = (v_long_after / max(wheel_base, 1.0)) * tan(effective_steer)
 		rotation += yaw_rate * delta
 
+	# Rotation donnée par un choc décentré, amortie.
+	if absf(_impact_spin) > 0.001:
+		rotation += _impact_spin * delta
+		_impact_spin *= exp(-IMPACT_SPIN_DAMPING * delta)
+
+## Vitesse limitée (voie des stands, PitLane) : à rappeler à chaque
+## image physique tant que la voiture est dans la zone.
+const SPEED_LIMIT_DECEL := 3000.0
+var _speed_limit := 0.0
+var _speed_limit_frame := -10
+
+
+func apply_speed_limit(limit: float) -> void:
+	_speed_limit = limit
+	_speed_limit_frame = Engine.get_physics_frames()
+
+
+func is_speed_limited() -> bool:
+	return Engine.get_physics_frames() - _speed_limit_frame <= 1
+
+
 func _clamp_velocity(fwd: Vector2, v_long: Vector2, v_lat: Vector2) -> void:
 	var v: Vector2 = v_long + v_lat
 
+	# Limiteur de la voie des stands : freinage ferme jusqu'à la limite.
+	if is_speed_limited() and v.length() > _speed_limit:
+		var excess := v.length() - _speed_limit
+		v = v.normalized() * (v.length() - minf(excess, SPEED_LIMIT_DECEL * get_physics_process_delta_time()))
+
 	# Limitation de la vitesse longitudinale
+	# (relevée par l'aspiration)
+	var effective_max_speed: float = max_speed * (
+		1.0 + slipstream_max_speed_bonus * slipstream_factor
+	)
 	var v_long_final: float = v.dot(fwd)
 
-	if v_long_final > max_speed:
-		v -= fwd * (v_long_final - max_speed)
+	if v_long_final > effective_max_speed:
+		v -= fwd * (v_long_final - effective_max_speed)
 	elif v_long_final < -max_reverse_speed:
 		v -= fwd * (v_long_final + max_reverse_speed)
 
 	# Limitation globale de sécurité
-	var v_max_total: float = max_speed * 1.15
+	var v_max_total: float = effective_max_speed * 1.15
 
 	if v.length() > v_max_total:
 		v = v.normalized() * v_max_total
@@ -819,7 +1223,14 @@ func _clamp_velocity(fwd: Vector2, v_long: Vector2, v_lat: Vector2) -> void:
 	velocity = v
 
 	# Unique déplacement physique de la voiture.
+	var velocity_before_slide := velocity
 	move_and_slide()
+
+	# Dégagement d'une superposition (réapparition sur une autre
+	# voiture...) : le moteur physique peut produire une vitesse
+	# aberrante ; on garde celle d'avant le déplacement.
+	if velocity.length() > maxf(velocity_before_slide.length(), effective_max_speed) * 1.5:
+		velocity = velocity_before_slide
 
 
 # Info affichées si le débug est activé
@@ -886,6 +1297,8 @@ func get_node_animation() -> Node2D:
 	return animation
 
 func respawn_at(target: Transform2D) -> void:
+	_impact_spin = 0.0
+	_impact_grip_loss = 0.0
 	_respawning = true
 	_destruction_started = true
 	_velocity_before_move = Vector2.ZERO
@@ -910,6 +1323,28 @@ func respawn_at(target: Transform2D) -> void:
 	_respawning = false
 	_destruction_started = false
 	set_can_move(true)
+
+## Replace la voiture (visible, collisions actives) pour un nouveau
+## départ. Elle reste immobilisée jusqu'à set_can_move(true).
+func place_for_restart(target: Transform2D) -> void:
+	_impact_spin = 0.0
+	_impact_grip_loss = 0.0
+	_respawning = false
+	_destruction_started = false
+	_velocity_before_move = Vector2.ZERO
+
+	set_can_move(false)
+	velocity = Vector2.ZERO
+	speed = 0.0
+	acceleration = 0.0
+	previous_speed = 0.0
+
+	global_position = target.origin
+	global_rotation = target.get_rotation()
+
+	show()
+	set_colision(true)
+
 
 func explosion() -> void:
 	if _destruction_started or _respawning:

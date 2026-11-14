@@ -9,6 +9,9 @@ const CAR_SCENE := preload("res://perso/car/Car.tscn")
 
 var race_config: RaceConfig = null
 
+# Écran splitté (course classique, 2 joueurs humains ou plus).
+var split_screen: SplitScreen = null
+
 
 func _ready() -> void:
 	AudioManager.bind_sound_btt()
@@ -24,6 +27,12 @@ func _ready() -> void:
 
 func _initialize_race() -> void:
 	print("Initialisation de la course")
+
+	# Les vues splittées doivent exister avant le chargement du circuit :
+	# le monde de course est déplacé dans la première vue.
+	if race_config.uses_split_screen():
+		_setup_split_screen()
+
 	if not _load_track():
 		return
 
@@ -34,6 +43,10 @@ func _initialize_race() -> void:
 
 	race_controller.initialize(race_config, race_world, pause_overlay)
 
+	if split_screen != null:
+		split_screen.attach_players(race_controller)
+
+	race_hud.split_screen = split_screen
 	race_hud.initialize(race_controller, race_world)
 
 	# Les voitures restent bloquées tant que le compte à rebours
@@ -89,10 +102,25 @@ func _spawn_cars() -> bool:
 		)
 		return false
 
+	var spawn_count := race_world.current_track.get_node("SpawnPoints").get_child_count()
+
+	# Places sur la grille tirées au sort à chaque départ (joueurs et IA
+	# mélangés). Contre-la-montre : seul, en fond de grille.
+	var grid_slots: Array[int] = []
+
+	for slot in range(participants.size()):
+		grid_slots.append(slot)
+
+	grid_slots.shuffle()
+
 	for spawn_index in range(participants.size()):
 		var participant: Dictionary = participants[spawn_index]
-		
-		if not _spawn_participant(participant, spawn_index):
+		var grid_index := grid_slots[spawn_index]
+
+		if race_config.is_time_trial():
+			grid_index = spawn_count - 1 - spawn_index
+
+		if not _spawn_participant(participant, grid_index):
 			return false
 
 	return true
@@ -167,6 +195,20 @@ func _spawn_participant(
 	return true
 
 
+func _setup_split_screen() -> void:
+	split_screen = SplitScreen.new()
+	split_screen.name = "SplitScreen"
+
+	add_child(split_screen)
+	# Sous le HUD et la pause (CanvasLayer), à la place du monde.
+	move_child(split_screen, race_world.get_index())
+
+	split_screen.build(
+		race_world,
+		race_config.get_human_player_count()
+	)
+
+
 func _initialize_camera() -> void:
 	var camera := race_world.race_camera as RaceCamera
 
@@ -175,6 +217,9 @@ func _initialize_camera() -> void:
 			"Race : RaceCamera n'utilise pas le script RaceCamera."
 		)
 		return
+
+	# La caméra a besoin du classement pour connaître le joueur en tête.
+	camera.race_controller = race_controller
 
 func _on_race_finished() -> void:
 	# Pause l'exécution de la fonction pendant 2 secondes

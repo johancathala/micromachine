@@ -1,0 +1,115 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://ui/script/race/AISetup.gd" id="1_ai"]
+[ext_resource type="Script" path="res://ui/script/MenuFocusManager.gd" id="2_focus"]
+
+[sub_resource type="SystemFont" id="SystemFont_ai"]
+font_names = PackedStringArray("Impact")
+
+[sub_resource type="Theme" id="Theme_ai"]
+default_font = SubResource("SystemFont_ai")
+default_font_size = 32
+
+[node name="AISetup" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_ai")
+script = ExtResource("1_ai")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.36862746, 0.5058824, 1, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 45.0
+offset_top = 45.0
+offset_right = -45.0
+offset_bottom = -50.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 60
+text = "INTELLIGENCES ARTIFICIELLES"
+horizontal_alignment = 1
+
+[node name="Toolbar" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="LevelLabel" type="Label" parent="MarginContainer/VBoxContainer/Toolbar"]
+layout_mode = 2
+text = "Niveau des IA ajoutées"
+
+[node name="Level" type="OptionButton" parent="MarginContainer/VBoxContainer/Toolbar"]
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+
+[node name="AddButton" type="Button" parent="MarginContainer/VBoxContainer/Toolbar" groups=["audio_confirm"]]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "+ AJOUTER"
+
+[node name="FillButton" type="Button" parent="MarginContainer/VBoxContainer/Toolbar" groups=["audio_confirm"]]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "REMPLIR"
+
+[node name="ClearButton" type="Button" parent="MarginContainer/VBoxContainer/Toolbar" groups=["audio_back"]]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "TOUT RETIRER"
+
+[node name="EmptyLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Aucune IA : course entre joueurs."
+horizontal_alignment = 1
+
+[node name="Scroll" type="ScrollContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="Rows" type="VBoxContainer" parent="MarginContainer/VBoxContainer/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="Footer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="BackButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" groups=["audio_back"]]
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+text = "RETOUR"
+
+[node name="HelpLabel" type="Label" parent="MarginContainer/VBoxContainer/Footer"]
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 1
+
+[node name="NextButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" groups=["audio_confirm"]]
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+text = "CIRCUIT ›"
+
+[node name="MenuFocusManager" type="Node" parent="."]
+script = ExtResource("2_focus")

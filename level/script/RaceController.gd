@@ -31,6 +31,18 @@ signal race_end_countdown_started(
 
 signal race_finished()
 
+# Contre-la-montre : réapparition = retour au fond de grille, le tour
+# en cours est annulé.
+signal time_trial_lap_cancelled(state: RaceParticipantState)
+
+# Un participant a coupé : il a franchi une section plus loin que celle
+# qu'il devait passer. Il explose et réapparaît à la section sautée.
+signal shortcut_detected(state: RaceParticipantState, missed_section: int)
+
+# Départ : résultats de réaction au feu vert (humains).
+# Chaque entrée : {state, reaction, effect} ; effect > 0 bonus, < 0 malus.
+signal start_reactions_judged(results: Array)
+
 signal quit_race()
 
 signal return_to_main_menu()
@@ -71,6 +83,60 @@ var participants: Array[RaceParticipantState] = []
 # ============================================================
 var section_count: int = 0
 
+# Position de chaque section (section_id -> Vector2), pour mesurer
+# la progression continue entre deux sections.
+var _section_positions: Dictionary = {}
+
+# Sections du circuit (section_id -> RaceSection).
+var _sections: Dictionary = {}
+
+# Portes des sections (section_id -> [a, b] en coordonnées globales).
+var _gate_segments: Dictionary = {}
+
+# Distance maximale (px) entre la voiture et la porte pour valider un
+# passage : écarte les contacts « fantômes » signalés juste après une
+# réapparition, alors que la voiture est déjà ailleurs.
+const GATE_MAX_DISTANCE := 300.0
+
+# Progression mesurée le long de la route (chemin réel entre deux
+# sections). null si le circuit ne permet pas de la calculer :
+# on retombe alors sur l'estimation à vol d'oiseau.
+var track_progress: TrackProgress = null
+
+# Cache : progression calculée une fois par image physique.
+var _progress_cache: Dictionary = {}
+var _progress_cache_frame: int = -1
+
+# ============================================================
+# CLASSEMENT EN CONTINU
+# ============================================================
+# Le classement est recalculé régulièrement (pas seulement au
+# franchissement d'une section) : les dépassements apparaissent
+# en temps réel.
+const POSITION_UPDATE_INTERVAL := 0.2
+
+# ============================================================
+# RÉACTION AU DÉPART
+# ============================================================
+# Réaction (s) en dessous de laquelle le bonus est maximal.
+const START_REACTION_PERFECT := 0.12
+# Réaction (s) au-delà de laquelle il n'y a plus de bonus.
+const START_REACTION_WINDOW := 0.40
+# Bonus de puissance maximal (+60 %).
+const START_BONUS_MAX := 0.6
+# Faux départ : malus de puissance de 50 % (juste avant le vert)
+# à 85 % (0,6 s d'avance ou plus).
+const START_MALUS_MIN := 0.5
+const START_MALUS_MAX := 0.85
+const START_EARLY_FULL := 0.6
+# Durée de l'effet (il s'estompe progressivement).
+const START_EFFECT_DURATION := 1.5
+
+var _judging_start := false
+
+var _position_update_timer: float = 0.0
+var _last_order: Array[int] = []
+
 # ============================================================
 # CHRONOMÉTRAGE
 # ============================================================
@@ -90,6 +156,22 @@ var pause_end_usec: int = 0
 @onready var timer_race_end: Timer = $TimerRaceEnd
 
 var start_lights: RaceStartLights = null
+
+# ============================================================
+# MODE ÉLIMINATION
+# ============================================================
+# Créé uniquement si race_config.is_elimination().
+var elimination_rules: EliminationRules = null
+
+# Usure des pneus et arrêts au stand (option de course classique).
+var pit_stops: PitStopManager = null
+
+# Fantôme (mode contre-la-montre).
+var ghost_manager: GhostManager = null
+
+# Trajectoire suivie par les IA (tracé « RacingLine » du circuit, sinon
+# axe de la chaussée calculé).
+var racing_line: RacingLine = null
 
 const RACE_END_DELAY := 30.0
 
@@ -145,7 +227,118 @@ func initialize(
 	if not _initialize_participants():
 		return false
 
+	if race_config.is_elimination():
+		_initialize_elimination()
+
+	if race_config.uses_tire_wear():
+		_scale_tire_wear()
+
+	_setup_ai_drivers()
+
+	if race_config.is_time_trial():
+		ghost_manager = GhostManager.new()
+		ghost_manager.name = "GhostManager"
+		add_child(ghost_manager)
+		ghost_manager.setup(self, race_config.ghost_mode)
+
+	if race_config.uses_tire_wear():
+		pit_stops = PitStopManager.new()
+		pit_stops.name = "PitStopManager"
+		add_child(pit_stops)
+		pit_stops.setup(self)
+
 	return true
+
+
+func _initialize_elimination() -> void:
+	elimination_rules = EliminationRules.new()
+	elimination_rules.name = "EliminationRules"
+	add_child(elimination_rules)
+
+	elimination_rules.setup(
+		self,
+		race_world.race_camera as RaceCamera,
+		race_config.target_score
+	)
+
+	# Le classement affiché suit les points.
+	elimination_rules.round_finished.connect(
+		func(_ranking, _awarded): _update_positions()
+	)
+
+
+## Usure des pneus proportionnelle au circuit : même nombre de tours
+## par train de pneus sur un circuit court ou long.
+func _scale_tire_wear() -> void:
+	if track_progress == null:
+		return
+
+	var lap_length := track_progress.get_lap_length()
+
+	for state in participants:
+		if is_instance_valid(state.car):
+			state.car.set_lap_length(lap_length)
+
+
+## Un pilote générique par IA, sur la trajectoire du circuit.
+func _setup_ai_drivers() -> void:
+	var has_ai := false
+
+	for state in participants:
+		if state.is_ai and is_instance_valid(state.car):
+			has_ai = true
+
+	if not has_ai:
+		return
+
+	racing_line = RacingLine.from_track(race_world.current_track, track_progress)
+
+	if not racing_line.is_valid():
+		push_warning("RaceController : pas de trajectoire pour les IA.")
+		return
+
+	print("IA : trajectoire = %s (%d points, %d px)" % [
+		racing_line.source, racing_line.points.size(), racing_line.length
+	])
+
+	# Passage au stand (course avec usure des pneus).
+	var pit_route: Dictionary = {}
+
+	if race_config.uses_tire_wear():
+		pit_route = track_progress.build_pit_route(race_world.current_track, racing_line.points)
+		print("IA : passage au stand %s" % ("calculé" if not pit_route.is_empty() else "introuvable"))
+
+	for state in participants:
+		if state.is_ai and is_instance_valid(state.car):
+			var driver := AIDriver.new(
+				state.car, racing_line, _get_ai_difficulty(state),
+				race_world.current_track.scene_file_path
+			)
+			driver.participant = state
+			driver.learning_key = AILearning.make_key(
+				race_world.current_track.scene_file_path, state.car.definition.id
+			)
+			driver.lap_count = 0 if race_config.has_infinite_laps() else race_config.lap_count
+			driver.setup_pit(pit_route)
+			state.car.ai_driver = driver
+
+
+## Niveau de l'IA choisi sur l'écran des IA.
+func _get_ai_difficulty(state: RaceParticipantState) -> int:
+	for participant in race_config.participants:
+		if int(participant.get("participant_id", -1)) == state.participant_id:
+			return int(participant.get("ai_difficulty", race_config.ai_difficulty))
+
+	return race_config.ai_difficulty
+
+
+func is_elimination_mode() -> bool:
+	return elimination_rules != null
+
+
+## Fin de partie en mode élimination (score cible atteint).
+func finish_elimination_race() -> void:
+	_finish_race()
 
 
 # ============================================================
@@ -249,7 +442,41 @@ func _initialize_sections() -> bool:
 
 			return false
 
+	_section_positions.clear()
+
+	var gate_segments: Dictionary = {}
+
+	for child in sections_root.get_children():
+		var section := child as RaceSection
+		_section_positions[section.section_id] = section.global_position
+		_sections[section.section_id] = section
+		gate_segments[section.section_id] = _get_gate_segment(section)
+		_gate_segments[section.section_id] = gate_segments[section.section_id]
+
+	track_progress = TrackProgress.new()
+
+	if not track_progress.build(race_world.current_track, gate_segments):
+		push_warning(
+			"RaceController : progression le long de la route indisponible (%s), "
+			% track_progress.last_error
+			+ "estimation à vol d'oiseau utilisée."
+		)
+		track_progress = null
+
 	return true
+
+
+## Porte d'une section : son SegmentShape2D en coordonnées globales
+## (ou un segment nul à la position de la section).
+func _get_gate_segment(section: RaceSection) -> Array:
+	for child in section.get_children():
+		var shape := child as CollisionShape2D
+
+		if shape != null and shape.shape is SegmentShape2D:
+			var segment := shape.shape as SegmentShape2D
+			return [shape.to_global(segment.a), shape.to_global(segment.b)]
+
+	return [section.global_position, section.global_position]
 
 
 # ============================================================
@@ -301,6 +528,13 @@ func _initialize_participants() -> bool:
 		var spawn := race_world.get_spawn_point(car.participant_id)
 		update_respawn_point(state,spawn)
 
+		# Place réelle sur la grille (elle peut différer de l'ordre des
+		# participants, ex. contre-la-montre en fond de grille).
+		state.grid_transform = car.global_transform
+
+		if race_config.is_time_trial():
+			state.respawn_transform = state.grid_transform
+
 	if participants.is_empty():
 
 		push_error(
@@ -350,6 +584,14 @@ func start_countdown() -> void:
 	race_state = RaceState.COUNTDOWN
 
 	race_start_usec = 0
+
+	# Suivi de l'accélérateur des joueurs pendant les feux.
+	_judging_start = true
+
+	for state in participants:
+		state.start_reaction_time = NAN
+		state.start_judged = state.is_ai
+		state.start_press_usec = -1
 
 	# --------------------------------------------------------
 	# Toutes les voitures sont bloquées.
@@ -492,6 +734,11 @@ func _on_quit_race() -> void:
 
 	# On fige le classement final.
 	_update_positions()
+
+	# Contre-la-montre (tours illimités) : on quitte toujours avant la
+	# fin ; les résultats de la session sont figés pour le récapitulatif.
+	if race_config != null and race_config.is_time_trial():
+		GameManager.store_race_results(build_race_results())
 	
 	#pause_overlay.close()
 	
@@ -561,6 +808,18 @@ func _start_race() -> void:
 	# Origine du chronométrage.
 	# --------------------------------------------------------
 	race_start_usec = Time.get_ticks_usec()
+
+	# Accélérateur déjà enfoncé au vert : faux départ.
+	_track_start_throttle()
+
+	for state in participants:
+		if state.start_judged or state.start_press_usec < 0:
+			continue
+
+		_judge_start(
+			state,
+			float(state.start_press_usec - race_start_usec) / 1_000_000.0
+		)
 	# --------------------------------------------------------
 	# Le HUD reçoit d'abord l'ordre de passer les feux au vert.
 	# --------------------------------------------------------
@@ -574,6 +833,9 @@ func _start_race() -> void:
 			state.car.set_can_move(
 				true
 			)
+
+	if is_elimination_mode():
+		elimination_rules.start_round()
 
 
 # ============================================================
@@ -592,10 +854,13 @@ func get_race_time() -> float:
 # ============================================================
 # DÉTECTION D'UNE SECTION
 # ============================================================
+## trusted : appel du jeu lui-même (validation après un raccourci),
+## sans contrôle de distance à la porte.
 func on_car_entered_section(
 	car: Car,
 	section_id: int,
-	respawn_point: Marker2D
+	respawn_point: Marker2D,
+	trusted: bool = false
 ) -> void:
 	# --------------------------------------------------------
 	# Une section n'a aucun effet avant le départ.
@@ -630,7 +895,20 @@ func on_car_entered_section(
 	# --------------------------------------------------------
 	# La voiture doit franchir les sections dans l'ordre.
 	# --------------------------------------------------------
+	# Seules comptent les sections du circuit courant (garde-fou si une
+	# scène intégrée contenait ses propres sections).
+	if (
+		respawn_point != null
+		and _sections.get(section_id) != respawn_point.get_parent()
+	):
+		return
+
+	if not trusted and not _is_car_near_gate(state.car, section_id):
+		return
+
 	if section_id != state.next_section:
+		if _is_shortcut(state, section_id):
+			_punish_shortcut(state, section_id)
 		return
 
 	var current_time := get_race_time()
@@ -734,6 +1012,11 @@ func request_respawn(car: Car) -> void:
 		print("respawn: voiture a fini la course")
 		return
 
+	# Élimination : jamais de réapparition (accident = élimination,
+	# le joueur attend le restart de la manche).
+	if is_elimination_mode():
+		return
+
 	if not state.has_respawn_point:
 		push_warning(
 			"Respawn impossible : aucun point enregistré pour %s."
@@ -745,9 +1028,105 @@ func request_respawn(car: Car) -> void:
 		print("respawn: voiture invalide")
 		return
 	
+	# Contre-la-montre : une erreur gâche le chrono. Retour au fond de
+	# grille, le tour en cours est annulé (le chrono repartira au
+	# prochain passage de la ligne).
+	if race_config.is_time_trial():
+		state.respawn_transform = state.grid_transform
+		state.pending_section_validation = -1
+
+		if state.has_started_lap:
+			state.current_lap = maxi(state.current_lap - 1, 0)
+			state.has_started_lap = false
+			state.next_section = 0
+			state.section_times.clear()
+			time_trial_lap_cancelled.emit(state)
+
 	print("respawn: destruction en cours ? "+str(state.car._destruction_started))
 	if state.car._destruction_started == false:
 		state.car.respawn_at(state.respawn_transform)
+
+		if state.car.ai_driver != null:
+			state.car.ai_driver.reset_tracking()
+
+		# Après un raccourci : les sections sautées, jusqu'à celle où la
+		# voiture est replacée, sont validées dans l'ordre.
+		if state.pending_section_validation >= 0:
+			var target := state.pending_section_validation
+			state.pending_section_validation = -1
+
+			for i in range(section_count):
+				var section_id := state.next_section
+				var section: RaceSection = _sections.get(section_id)
+
+				if section == null:
+					break
+
+				on_car_entered_section(state.car, section_id, section.respawn_point, true)
+
+				if section_id == target or state.finished:
+					break
+
+
+# ============================================================
+# RACCOURCIS
+# ============================================================
+
+## La voiture franchit une section située plus loin (au plus un
+## demi-tour) que celle qu'elle devait passer. Repasser une section
+## déjà franchie (tête-à-queue, retour en arrière) n'est pas un
+## raccourci.
+func _is_shortcut(state: RaceParticipantState, section_id: int) -> bool:
+	if race_state != RaceState.RUNNING or section_count < 2:
+		return false
+
+	if not is_instance_valid(state.car):
+		return false
+
+	if state.car._destruction_started or state.car._respawning:
+		return false
+
+	if state.pending_section_validation >= 0:
+		return false
+
+	var ahead := posmod(section_id - state.next_section, section_count)
+
+	return ahead >= 1 and ahead <= section_count / 2
+
+
+func _is_car_near_gate(car: Car, section_id: int) -> bool:
+	var gate: Array = _gate_segments.get(section_id, [])
+
+	if gate.is_empty() or not is_instance_valid(car):
+		return true
+
+	var closest := Geometry2D.get_closest_point_to_segment(
+		car.global_position, gate[0], gate[1]
+	)
+
+	return car.global_position.distance_to(closest) <= GATE_MAX_DISTANCE
+
+
+## Explosion, puis réapparition à la section précédant celle qui a
+## arrêté la voiture (la section qu'elle était censée prendre). Les
+## sections sautées jusqu'à celle-ci sont validées à la réapparition.
+func _punish_shortcut(state: RaceParticipantState, stopping_section: int) -> void:
+	var target := posmod(stopping_section - 1, section_count)
+	var section: RaceSection = _sections.get(target)
+
+	if section != null and section.respawn_point != null:
+		state.respawn_transform = section.respawn_point.global_transform
+		state.has_respawn_point = true
+		state.pending_section_validation = target
+
+	shortcut_detected.emit(state, target)
+
+	# IA : un raccourci est une sortie de trajectoire (virage manqué) ;
+	# elle apprend à ralentir avant l'endroit où elle l'a perdue.
+	if state.car.ai_driver != null:
+		state.car.ai_driver.on_crash()
+
+	state.car.explosion()
 
 
 # ============================================================
@@ -760,7 +1139,9 @@ func _start_first_lap(
 
 	state.has_started_lap = true
 
-	state.current_lap = 1
+	# 0 -> 1 au départ ; en contre-la-montre, un tour annulé est refait
+	# sans compter un tour de plus.
+	state.current_lap += 1
 
 	state.lap_start_time = current_time
 
@@ -845,10 +1226,20 @@ func _finish_lap(
 		state
 	)
 
+	# Contre-la-montre : le meilleur tour est enregistré tout de suite,
+	# il reste acquis même si l'on quitte la course avant la fin.
+	if race_config.is_time_trial() and not state.is_ai:
+		_save_best_lap_now(state)
+
 	# --------------------------------------------------------
 	# Dernier tour de la course.
 	# --------------------------------------------------------
-	if state.current_lap >= race_config.lap_count:
+	# Tours illimités (élimination, contre-la-montre) : pas de fin
+	# aux tours.
+	if (
+		not race_config.has_infinite_laps()
+		and state.current_lap >= race_config.lap_count
+	):
 		_finish_participant(
 			state,
 			current_time
@@ -1060,7 +1451,128 @@ func _get_finished_count() -> int:
 # CLASSEMENT
 # ============================================================
 
-func _update_positions() -> void:
+func _physics_process(delta: float) -> void:
+	if _judging_start:
+		_update_start_judging()
+
+	if race_state != RaceState.RUNNING or race_is_paused:
+		return
+
+	_position_update_timer += delta
+
+	if _position_update_timer < POSITION_UPDATE_INTERVAL:
+		return
+
+	_position_update_timer = 0.0
+
+	# Signal seulement si l'ordre a changé.
+	_update_positions(false)
+
+
+# ============================================================
+# RÉACTION AU DÉPART
+# ============================================================
+
+## Mémorise le début de l'appui en cours sur l'accélérateur.
+func _track_start_throttle() -> void:
+	var now := Time.get_ticks_usec()
+
+	for state in participants:
+		if state.start_judged or state.car == null:
+			continue
+
+		var input := InputManager.get_player_input(
+			state.car.input_device_type,
+			state.car.input_device_id
+		)
+
+		if input.throttle > 0.5:
+			if state.start_press_usec < 0:
+				state.start_press_usec = now
+		else:
+			state.start_press_usec = -1
+
+
+func _update_start_judging() -> void:
+	_track_start_throttle()
+
+	# Avant le vert : on se contente de suivre les appuis.
+	if race_start_usec <= 0:
+		return
+
+	var elapsed := float(Time.get_ticks_usec() - race_start_usec) / 1_000_000.0
+
+	for state in participants:
+		if state.start_judged:
+			continue
+
+		# Appui commencé après le vert : temps de réaction.
+		if state.start_press_usec >= race_start_usec:
+			_judge_start(
+				state,
+				float(state.start_press_usec - race_start_usec) / 1_000_000.0
+			)
+		# Trop tard pour un bonus : départ neutre.
+		elif elapsed > START_REACTION_WINDOW:
+			_judge_start(state, INF)
+
+	for state in participants:
+		if not state.start_judged:
+			return
+
+	_judging_start = false
+
+	var results: Array = []
+
+	for state in participants:
+		if state.is_ai:
+			continue
+
+		results.append({
+			"state": state,
+			"reaction": state.start_reaction_time,
+			"effect": get_start_effect(state.start_reaction_time)
+		})
+
+	start_reactions_judged.emit(results)
+
+
+## Bonus (> 0) / malus (< 0) de puissance selon la réaction (s).
+## reaction < 0 : accélérateur enfoncé avant le vert.
+static func get_start_effect(reaction: float) -> float:
+	if is_nan(reaction) or is_inf(reaction):
+		return 0.0
+
+	if reaction < 0.0:
+		var early := clampf(-reaction / START_EARLY_FULL, 0.0, 1.0)
+		return -lerpf(START_MALUS_MIN, START_MALUS_MAX, early)
+
+	var quality := 1.0 - clampf(
+		(reaction - START_REACTION_PERFECT)
+		/ (START_REACTION_WINDOW - START_REACTION_PERFECT),
+		0.0,
+		1.0
+	)
+
+	return START_BONUS_MAX * quality
+
+
+func _judge_start(state: RaceParticipantState, reaction: float) -> void:
+	state.start_judged = true
+	state.start_reaction_time = reaction
+
+	var effect := get_start_effect(reaction)
+
+	if effect != 0.0 and is_instance_valid(state.car):
+		state.car.apply_start_effect(
+			effect,
+			START_EFFECT_DURATION,
+			effect < 0.0
+		)
+
+
+## always_emit = false : n'émet positions_changed que si l'ordre change.
+func _update_positions(always_emit: bool = true) -> void:
 
 	var ordered := (
 		participants.duplicate()
@@ -1069,18 +1581,121 @@ func _update_positions() -> void:
 		_compare_participants
 	)
 
+	var order: Array[int] = []
+
 	for i in range(
 		ordered.size()
 	):
 		ordered[i].race_position = i + 1
+		order.append(ordered[i].participant_id)
+
+	if not always_emit and order == _last_order:
+		return
+
+	_last_order = order
 
 	positions_changed.emit(ordered[0])
+
+
+## Progression continue sur la course, en « sections » :
+## tours x sections + sections franchies dans le tour + fraction
+## parcourue vers la prochaine section (0 à 1).
+##
+## Corrige l'ancien classement où, après la dernière section
+## (next_section revenu à 0), une voiture en fin de tour passait
+## derrière celles encore en milieu de tour.
+func get_progress(state: RaceParticipantState) -> float:
+	if section_count <= 0:
+		return 0.0
+
+	# Même valeur pour tous les appels d'une image (classement, caméras).
+	var frame := Engine.get_physics_frames()
+
+	if frame != _progress_cache_frame:
+		_progress_cache.clear()
+		_progress_cache_frame = frame
+
+	if _progress_cache.has(state):
+		return _progress_cache[state]
+
+	var progress := _compute_progress(state)
+	_progress_cache[state] = progress
+	return progress
+
+
+func _compute_progress(state: RaceParticipantState) -> float:
+
+	# Avant le premier passage sur la ligne : on approche la section 0.
+	if not state.has_started_lap:
+		return -1.0 + _get_fraction_to_section(state, 0, -1)
+
+	# next_section = 0 : il ne reste que la ligne d'arrivée,
+	# c'est le dernier segment du tour (pas le premier).
+	var segment_index := state.next_section
+
+	if segment_index == 0:
+		segment_index = section_count
+
+	var target := state.next_section
+	var previous := (target - 1 + section_count) % section_count
+
+	# Distance réellement parcourue le long de la route dans le tronçon.
+	if track_progress != null and is_instance_valid(state.car):
+		return (
+			float(state.current_lap * section_count)
+			+ float(segment_index - 1)
+			+ track_progress.get_fraction(previous, state.car.global_position)
+		)
+
+	return (
+		float(state.current_lap * section_count)
+		+ float(segment_index - 1)
+		+ _get_fraction_to_section(state, target, previous)
+	)
+
+
+## Fraction (0 à 1) du segment previous -> target déjà parcourue,
+## estimée à vol d'oiseau. previous = -1 : distance seule.
+func _get_fraction_to_section(
+	state: RaceParticipantState,
+	target: int,
+	previous: int
+) -> float:
+
+	if state.car == null or not is_instance_valid(state.car):
+		return 0.0
+
+	var target_position: Variant = _section_positions.get(target)
+
+	if target_position == null:
+		return 0.0
+
+	var distance := state.car.global_position.distance_to(target_position)
+
+	var previous_position: Variant = _section_positions.get(previous)
+
+	if previous_position == null:
+		# Plus on est proche, plus on est avancé (reste < 1).
+		return 1.0 / (1.0 + distance / 1000.0)
+
+	var segment_length: float = maxf(
+		(previous_position as Vector2).distance_to(target_position),
+		1.0
+	)
+
+	return clampf(1.0 - distance / segment_length, 0.0, 0.999)
 
 
 func _compare_participants(
 	a: RaceParticipantState,
 	b: RaceParticipantState
 ) -> bool:
+	# --------------------------------------------------------
+	# Élimination : classement aux points.
+	# --------------------------------------------------------
+	if is_elimination_mode() and a.points != b.points:
+		return a.points > b.points
+
 	# --------------------------------------------------------
 	# Les participants arrivés sont devant ceux qui courent.
 	# --------------------------------------------------------
@@ -1099,27 +1714,16 @@ func _compare_participants(
 		)
 
 	# --------------------------------------------------------
-	# Nombre de tours.
+	# Progression continue (tours, sections, fraction du segment).
 	# --------------------------------------------------------
-	if a.current_lap != b.current_lap:
-		return (
-			a.current_lap
-			>
-			b.current_lap
-		)
+	var progress_a := get_progress(a)
+	var progress_b := get_progress(b)
+
+	if not is_equal_approx(progress_a, progress_b):
+		return progress_a > progress_b
 
 	# --------------------------------------------------------
-	# Section atteinte.
-	# --------------------------------------------------------
-	if a.next_section != b.next_section:
-		return (
-			a.next_section
-			>
-			b.next_section
-		)
-	# --------------------------------------------------------
-	# Même section :
-	# celui qui l'a atteinte en premier est devant.
+	# Égalité parfaite : celui qui a progressé en premier.
 	# --------------------------------------------------------
 	return (
 		a.last_progress_time
@@ -1154,6 +1758,24 @@ func _finish_race() -> void:
 	
 	race_finished.emit()
 
+## Enregistre le meilleur tour d'un joueur dans le tableau des meilleurs
+## temps (seulement s'il améliore son record sur ce circuit avec cette
+## voiture).
+func _save_best_lap_now(state: RaceParticipantState) -> void:
+	if state.best_lap_time <= 0.0 or not is_instance_valid(state.car):
+		return
+
+	var car_id := state.car.definition.id if state.car.definition else ""
+
+	BestTimesManager.save_race_results([{
+		"participant_id": state.participant_id,
+		"nickname": state.nickname,
+		"is_ai": false,
+		"best_lap_time": state.best_lap_time,
+		"car_id": car_id
+	}], race_config)
+
+
 func build_race_results() -> Array[Dictionary]:
 
 	var results: Array[Dictionary] = []
@@ -1180,6 +1802,8 @@ func build_race_results() -> Array[Dictionary]:
 			),
 
 			"finish_time": state.finish_time,
+
+			"points": state.points,
 
 			"lap_count": state.lap_records.size()
 		})
@@ -1232,11 +1856,22 @@ func get_participant_count() -> int:
 	return participants.size()
 
 
+## Nombre de tours de la course (0 = illimité).
 func get_lap_count() -> int:
-	if race_config == null:
+	if race_config == null or race_config.has_infinite_laps():
 		return 0
 
 	return race_config.lap_count
+
+
+## « 3/5 », ou « 3 » si les tours sont illimités.
+func format_lap(current_lap: int) -> String:
+	var lap_count := get_lap_count()
+
+	if lap_count <= 0:
+		return str(current_lap)
+
+	return "%d/%d" % [current_lap, lap_count]
 
 
 # ============================================================

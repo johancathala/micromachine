@@ -52,7 +52,7 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 60
-text = "COURSE SIMPLE"
+text = "CIRCUIT"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -104,29 +104,8 @@ layout_mode = 2
 [node name="SectionTitle" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox" unique_id=1086399134]
 layout_mode = 2
 theme_override_font_sizes/font_size = 40
-text = "PARAMETRES"
+text = "PARAMÈTRES DE LA COURSE"
 horizontal_alignment = 1
-
-[node name="AIDifficultyRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox" unique_id=1219653095]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/AIDifficultyRow" unique_id=320343461]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Difficulté IA"
-horizontal_alignment = 1
-
-[node name="AIDifficulty" type="OptionButton" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/AIDifficultyRow" unique_id=425584660]
-layout_mode = 2
-size_flags_horizontal = 3
-selected = 0
-item_count = 3
-popup/item_0/text = "Facile"
-popup/item_0/id = 0
-popup/item_1/text = "Moyen"
-popup/item_1/id = 1
-popup/item_2/text = "Difficile"
-popup/item_2/id = 2
 
 [node name="TrackRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox" unique_id=829994446]
 layout_mode = 2
@@ -184,6 +163,58 @@ popup/item_8/id = 8
 popup/item_9/text = "10"
 popup/item_9/id = 9
 
+[node name="ScreenModeRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/ScreenModeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Affichage"
+horizontal_alignment = 1
+
+[node name="ScreenMode" type="OptionButton" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/ScreenModeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TireWearRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TireWearRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Usure des pneus"
+horizontal_alignment = 1
+
+[node name="TireWear" type="OptionButton" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TireWearRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="GhostRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/GhostRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Fantôme"
+horizontal_alignment = 1
+
+[node name="GhostMode" type="OptionButton" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/GhostRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TargetScoreRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TargetScoreRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Score à atteindre"
+horizontal_alignment = 1
+
+[node name="TargetScore" type="OptionButton" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TargetScoreRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
 [node name="TrackPreview" type="PanelContainer" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox" unique_id=758373392]
 layout_mode = 2
 size_flags_vertical = 3
@@ -225,7 +256,7 @@ horizontal_alignment = 1
 [node name="StartButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" unique_id=678058027 groups=["audio_confirm"]]
 layout_mode = 2
 theme_override_font_sizes/font_size = 40
-text = "CHOIX DES VOITURES"
+text = "DÉPART"
 
 [node name="PlayerJoinOverlay" type="Control" parent="." unique_id=294078709]
 anchors_preset = 0
@@ -234,4 +265,4 @@ offset_bottom = 40.0
 
 [node name="MenuFocusManager" type="Node" parent="." unique_id=1044521647]
 script = ExtResource("3_p1law")
-initial_focus_path = NodePath("../MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/AIDifficultyRow/AIDifficulty")
+initial_focus_path = NodePath("../MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TrackRow/Track")
