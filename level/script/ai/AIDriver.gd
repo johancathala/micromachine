@@ -27,7 +27,7 @@ class_name AIDriver
 enum Difficulty { NOVICE, MEDIUM, EXPERT }
 
 # Fraction de la vitesse « limite » visée, selon la difficulté.
-const PACE := [0.80, 0.90, 0.97]
+const PACE := [0.82, 0.92, 1.0]
 
 # Marge de braquage gardée pour corriger la trajectoire.
 static var steer_margin := 1.3
@@ -36,8 +36,25 @@ const ASPHALT_UNDERSTEER := 0.85
 # Dérive : dans le modèle de voiture, l'adhérence ne ramène la vitesse
 # dans l'axe que progressivement ; la courbure de chemin possible vaut
 # au plus ~ adhérence x sinβ cosβ / vitesse. L'IA vise
-# vitesse <= max_slip x adhérence / courbure (0,5 = limite théorique).
-static var max_slip := 0.5
+# vitesse <= glisse x adhérence / courbure (0,5 = limite théorique du
+# régime établi). En pratique, chaque voiture tient davantage : glisse
+# calibrée par voiture sur Brissac (plus haute valeur sans sortie, avec
+# une marge), DEFAULT_CORNER_SLIP pour une voiture inconnue.
+const DEFAULT_CORNER_SLIP := 0.5
+# Dans le trafic : glisse prudente (une voiture bousculée en pleine
+# dérive part dans le décor), à moins de TRAFFIC_RANGE px.
+const TRAFFIC_SLIP := 0.5
+const TRAFFIC_RANGE := 220.0
+const CAR_CORNER_SLIP := {
+	"clio": 1.3,
+	"dacia": 1.0,
+	"laguna": 0.7,
+	"police": 0.7,
+	"ferrari": 0.6,
+	"f1": 1.2
+}
+# Essais : glisse imposée à toutes les voitures (< 0 : calibrage).
+static var max_slip := -1.0
 # Vitesse minimale visée, même dans un virage très serré.
 const MIN_CORNER_SPEED := 220.0
 # Freinage réellement disponible (fraction de brake_force).
@@ -140,7 +157,20 @@ var _reverse_time := 0.0
 var _no_progress_time := 0.0
 var _last_progress_index := -1
 
+# Apprentissage des virages (AILearning) : facteur de vitesse par
+# point de la trajectoire, pour ce circuit et cette voiture.
+var learning_key := ""
+var _safe_profile := PackedFloat32Array()
+var _slip_override := -1.0
+# Dernier point où la voiture suivait encore la trajectoire (perte de
+# contrôle) : c'est là qu'il faut ralentir, pas où elle finit sa course.
+const ON_LINE_DISTANCE := 150.0
+var _last_on_line_index := -1
+var _learned := PackedFloat32Array()
+var _learned_version := -1
+
 # Statistiques (réglages / tests).
+var crash_count := 0
 var respawn_count := 0
 var pit_count := 0
 
@@ -150,8 +180,20 @@ func _init(p_car: Car, p_line: RacingLine, p_difficulty: int) -> void:
 	line = p_line
 	_line = line
 	difficulty = clampi(p_difficulty, 0, PACE.size() - 1)
+	_build_safe_profile()
 	_precompute_corner_limits()
 	speed_profile = build_profile(line, 1.0, 1.0)
+
+
+## Profil prudent (trafic) : glisse TRAFFIC_SLIP, sans apprentissage.
+func _build_safe_profile() -> void:
+	if corner_slip() <= TRAFFIC_SLIP:
+		return
+
+	_slip_override = TRAFFIC_SLIP
+	_precompute_corner_limits()
+	_safe_profile = build_profile(line, 1.0, 1.0)
+	_slip_override = -1.0
 
 
 ## Passage au stand (course avec usure des pneus) : trajet calculé par
@@ -205,6 +247,9 @@ func build_profile(
 
 		if precomputed:
 			corner = minf(_kinematic_limit[i], _grip_limit[i] * grip_scale)
+
+			if not _learned.is_empty():
+				corner *= _learned[i]
 		else:
 			var k := target.curvature[i]
 			corner = minf(_kinematic_speed(k), _grip_speed(k) * grip_scale)
@@ -275,10 +320,24 @@ func _grip_speed(k: float) -> float:
 
 	var speed := car.max_speed
 
+	var slip := corner_slip()
+
 	for _i in range(8):
-		speed = max_slip * _grip_at(speed) / k
+		speed = slip * _grip_at(speed) / k
 
 	return speed
+
+
+## Glisse visée en virage pour cette voiture.
+func corner_slip() -> float:
+	if _slip_override > 0.0:
+		return _slip_override
+
+	if max_slip > 0.0:
+		return max_slip
+
+	var car_id := car.definition.id if car.definition != null else ""
+	return float(CAR_CORNER_SLIP.get(car_id, DEFAULT_CORNER_SLIP))
 
 
 ## Adhérence latérale de la voiture à une vitesse donnée (Car.gd).
@@ -298,16 +357,47 @@ func tire_effect(wear: float, worn_value: float) -> float:
 
 ## Pneus usés : le profil suit la perte d'adhérence et de freinage.
 func _refresh_tire_profile() -> void:
+	var learned_changed := _refresh_learning()
+
 	if not car.tire_wear_enabled:
+		if learned_changed:
+			speed_profile = build_profile(line, 1.0, 1.0)
 		return
 
 	var grip := tire_effect(car.tire_wear, car.worn_tire_grip)
 
-	if absf(grip - _profile_grip) < TIRE_PROFILE_STEP:
+	if absf(grip - _profile_grip) < TIRE_PROFILE_STEP and not learned_changed:
 		return
 
 	_profile_grip = grip
 	speed_profile = build_profile(line, grip, tire_effect(car.tire_wear, car.worn_tire_brake))
+
+
+## Virages appris (par cette IA ou une autre de la même voiture) :
+## true si les facteurs ont changé.
+func _refresh_learning() -> bool:
+	if learning_key.is_empty():
+		return false
+
+	var current := AILearning.version(learning_key)
+
+	if current == _learned_version:
+		return false
+
+	_learned_version = current
+	_learned = AILearning.factors(learning_key, line)
+	return true
+
+
+## Détruite seule contre un obstacle : ralentir la portion qui précède
+## (sur la trajectoire, pas dans la voie des stands).
+func on_crash() -> void:
+	crash_count += 1
+
+	if learning_key.is_empty() or _on_pit_route or _last_on_line_index < 0:
+		return
+
+	AILearning.record_crash(learning_key, line, _last_on_line_index)
 
 
 ## Durée (s) pour parcourir un profil entre deux indices.
@@ -349,6 +439,9 @@ func update(delta: float) -> void:
 	else:
 		_update_pit_plan()
 
+		if position.distance_to(line.point(_index)) < ON_LINE_DISTANCE:
+			_last_on_line_index = _index
+
 	var profile := speed_profile
 
 	if _on_pit_route:
@@ -369,6 +462,10 @@ func update(delta: float) -> void:
 
 	var avoid := _avoid_cars(speed)
 	target_speed = minf(target_speed, avoid["speed_cap"])
+
+	# Dans le trafic (contacts possibles), vitesse de virage prudente.
+	if bool(avoid["traffic"]) and not _on_pit_route and not _safe_profile.is_empty():
+		target_speed = minf(target_speed, _safe_profile[_line.wrap_index(_index + 2)])
 	var wanted_offset: float = 0.0 if _on_pit_route else float(avoid["offset"])
 
 	# Pas de décalage au-delà de la chaussée (arbres, murs...).
@@ -635,7 +732,7 @@ func estimated_qte_time(length: int) -> float:
 ## Voiture devant, dans l'axe : ralentir à sa vitesse si elle est
 ## proche, sinon se décaler du côté libre pour la dépasser.
 func _avoid_cars(speed: float) -> Dictionary:
-	var result := {"speed_cap": INF, "offset": 0.0}
+	var result := {"speed_cap": INF, "offset": 0.0, "traffic": false}
 	var parent := car.get_parent()
 
 	if parent == null:
@@ -652,6 +749,10 @@ func _avoid_cars(speed: float) -> Dictionary:
 
 		var to_other := other.global_position - car.global_position
 		var gap := to_other.length()
+
+		# Voiture toute proche, devant ou à côté : prudence en virage.
+		if gap < TRAFFIC_RANGE and forward.dot(to_other) > -TRAFFIC_RANGE * 0.3:
+			result["traffic"] = true
 
 		if gap > AVOID_RANGE or gap < 1.0:
 			continue
@@ -721,6 +822,7 @@ func reset_tracking() -> void:
 
 	_index = -1
 	_previous_index = -1
+	_last_on_line_index = -1
 	_lateral_offset = 0.0
 	_reverse_time = 0.0
 	_stuck_time = 0.0

@@ -312,6 +312,9 @@ func _setup_ai_drivers() -> void:
 		if state.is_ai and is_instance_valid(state.car):
 			var driver := AIDriver.new(state.car, racing_line, _get_ai_difficulty(state))
 			driver.participant = state
+			driver.learning_key = AILearning.make_key(
+				race_world.current_track.scene_file_path, state.car.definition.id
+			)
 			driver.lap_count = 0 if race_config.has_infinite_laps() else race_config.lap_count
 			driver.setup_pit(pit_route)
 			state.car.ai_driver = driver
