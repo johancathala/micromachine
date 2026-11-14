@@ -393,23 +393,8 @@ func _weight_pit_lane(track: Node, astar: AStarGrid2D, weight: float = PIT_LANE_
 	if pit == null:
 		return
 
-	for child in pit.get_children():
-		var shape := child as CollisionShape2D
-
-		if shape == null or not shape.shape is RectangleShape2D:
-			continue
-
-		var half := (shape.shape as RectangleShape2D).size / 2.0
-		var corners := [
-			shape.to_global(Vector2(-half.x, -half.y)), shape.to_global(Vector2(half.x, -half.y)),
-			shape.to_global(Vector2(half.x, half.y)), shape.to_global(Vector2(-half.x, half.y))
-		]
-		var area := Rect2(corners[0], Vector2.ZERO)
-
-		for corner in corners:
-			area = area.expand(corner)
-
-		area = area.grow_individual(
+	for shape in _pit_shapes(pit):
+		var area := _shape_bounds(shape).grow_individual(
 			PIT_WEIGHT_MARGIN.x, PIT_WEIGHT_MARGIN.y,
 			PIT_WEIGHT_MARGIN.x, PIT_WEIGHT_MARGIN.y
 		)
@@ -422,6 +407,31 @@ func _weight_pit_lane(track: Node, astar: AStarGrid2D, weight: float = PIT_LANE_
 
 				if astar.is_in_boundsv(cell) and not astar.is_point_solid(cell):
 					astar.set_point_weight_scale(cell, weight)
+
+
+## Zones d'arrêt du stand (rectangles ; un stand peut en avoir
+## plusieurs, une par emplacement).
+static func _pit_shapes(pit: Node) -> Array[CollisionShape2D]:
+	var shapes: Array[CollisionShape2D] = []
+
+	for child in pit.get_children():
+		var shape := child as CollisionShape2D
+
+		if shape != null and shape.shape is RectangleShape2D and not shape.disabled:
+			shapes.append(shape)
+
+	return shapes
+
+
+## Rectangle englobant (coordonnées globales) d'une zone.
+static func _shape_bounds(shape: CollisionShape2D) -> Rect2:
+	var half := (shape.shape as RectangleShape2D).size / 2.0
+	var area := Rect2(shape.to_global(-half), Vector2.ZERO)
+
+	for corner in [Vector2(half.x, -half.y), half, Vector2(-half.x, half.y)]:
+		area = area.expand(shape.to_global(corner))
+
+	return area
 
 
 ## Coût d'un chemin : somme des poids des cases (voie des stands plus chère).
@@ -553,19 +563,20 @@ func build_pit_route(track: Node, line: PackedVector2Array, spacing: float = 32.
 	if pit == null or grid == null or line.size() < 8:
 		return {}
 
-	var shape: CollisionShape2D = null
+	var shapes := _pit_shapes(pit)
 
-	for child in pit.get_children():
-		if child is CollisionShape2D and (child as CollisionShape2D).shape is RectangleShape2D:
-			shape = child
-			break
-
-	if shape == null:
+	if shapes.is_empty():
 		return {}
 
-	var size := (shape.shape as RectangleShape2D).size
-	var center := shape.global_position
-	var axis := shape.global_transform.y.normalized() if size.y >= size.x else shape.global_transform.x.normalized()
+	# Voie des stands : ensemble des zones (alignées le long de la voie).
+	var bounds := _shape_bounds(shapes[0])
+
+	for shape in shapes:
+		bounds = bounds.merge(_shape_bounds(shape))
+
+	var size := bounds.size
+	var center := bounds.get_center()
+	var axis := Vector2.DOWN if size.y >= size.x else Vector2.RIGHT
 	var half_length := maxf(size.x, size.y) / 2.0
 	var count := line.size()
 
@@ -644,15 +655,12 @@ func build_pit_route(track: Node, line: PackedVector2Array, spacing: float = 32.
 	var smooth := _push_from_hard_cells(_smooth_open(route, 3, 3))
 	var points := resample_open(smooth, spacing)
 
+	# Arrêt : premier point bien engagé dans une des zones d'arrêt.
 	var stop_index := -1
 	var inside_run := 0
-	var inverse := shape.global_transform.affine_inverse()
-	var inner := size / 2.0 - Vector2(PIT_STOP_INSET, PIT_STOP_INSET)
 
 	for i in range(points.size()):
-		var local := inverse * points[i]
-
-		if absf(local.x) <= inner.x and absf(local.y) <= inner.y:
+		if _inside_pit_zone(shapes, points[i]):
 			inside_run += 1
 
 			if inside_run > PIT_STOP_ALIGNED:
@@ -670,6 +678,17 @@ func build_pit_route(track: Node, line: PackedVector2Array, spacing: float = 32.
 		"exit_index": exit_index,
 		"stop_index": stop_index
 	}
+
+
+static func _inside_pit_zone(shapes: Array[CollisionShape2D], point: Vector2) -> bool:
+	for shape in shapes:
+		var local := shape.global_transform.affine_inverse() * point
+		var inner := (shape.shape as RectangleShape2D).size / 2.0 - Vector2(PIT_STOP_INSET, PIT_STOP_INSET)
+
+		if absf(local.x) <= inner.x and absf(local.y) <= inner.y:
+			return true
+
+	return false
 
 
 func _grid_path(from: Vector2, to: Vector2) -> PackedVector2Array:
