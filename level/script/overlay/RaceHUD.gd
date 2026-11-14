@@ -351,6 +351,10 @@ func _refresh_qte_label(notice: Dictionary = {}) -> void:
 	var lines: PackedStringArray = []
 
 	for state in race_controller.get_participant_states():
+		# Les IA font leur QTE sans affichage.
+		if state.is_ai:
+			continue
+
 		var qte := race_controller.pit_stops.get_qte(state)
 
 		if qte.is_empty():
@@ -383,7 +387,9 @@ func _on_pit_changed(state: RaceParticipantState, _sequence: Variant, notice: St
 
 func _on_pit_finished(state: RaceParticipantState) -> void:
 	_refresh_qte_label()
-	show_player_message(state, "PNEUS NEUFS !", 2.0)
+
+	if not state.is_ai:
+		show_player_message(state, "PNEUS NEUFS !", 2.0)
 
 
 func _on_start_reactions_judged(results: Array) -> void:
