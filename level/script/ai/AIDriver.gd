@@ -77,6 +77,11 @@ const TRACKING_MAX := 450.0
 const STEER_PREVIEW_TIME := 0.08
 const GRIP_LAG_FACTOR := 0.4
 const TRACKING_MAX_ERROR := 160.0
+# Rejoindre la trajectoire de loin (au-delà de REJOIN_DISTANCE px : sortie,
+# réapparition) : point visé proche, vitesse modérée.
+const REJOIN_DISTANCE := 300.0
+const REJOIN_LOOKAHEAD := 200.0
+const REJOIN_SPEED := 600.0
 const TRACKING_MAX_ANGLE := 0.7
 
 # Adversaires.
@@ -489,8 +494,18 @@ func update(delta: float) -> void:
 
 	# ---- Point visé, décalé pour dépasser si besoin ----
 	var lookahead := clampf(LOOKAHEAD_BASE + LOOKAHEAD_SPEED * speed, LOOKAHEAD_BASE, LOOKAHEAD_MAX)
-	var target_index := _index + int(lookahead / RacingLine.SPACING)
 	var target_speed := profile[_line.wrap_index(_index + 2)]
+
+	# Loin de la trajectoire (sortie, réapparition) : la rejoindre par le
+	# plus court et sans hâte, plutôt que viser loin devant à travers le
+	# décor.
+	var wanted_point := _line.point(_index) + _line.direction(_index).orthogonal() * _lateral_offset
+
+	if not _on_pit_route and position.distance_to(wanted_point) > REJOIN_DISTANCE:
+		lookahead = REJOIN_LOOKAHEAD
+		target_speed = minf(target_speed, REJOIN_SPEED)
+
+	var target_index := _index + int(lookahead / RacingLine.SPACING)
 
 	if _on_pit_route:
 		for ahead in range(PIT_SPEED_WINDOW):
