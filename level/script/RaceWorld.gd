@@ -78,5 +78,12 @@ func add_car(car: Node2D) -> void:
 func get_cars_root() -> Node2D:
 	return cars_root
 
+func _ready() -> void:
+	# Traces de pneus effacées progressivement au fil de la course.
+	var fader := SkidMarkFader.new()
+	fader.name = "SkidMarkFader"
+	skid_marks.add_child(fader)
+
+
 func get_skid_marks() -> Node2D:
 	return skid_marks
