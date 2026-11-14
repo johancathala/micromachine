@@ -56,8 +56,9 @@ Ne jamais les supprimer ni les modifier sans demande explicite.
 
 ## Git
 
-- `develop` : intégration générale ; `develop-ia` : chantier IA, avec une
-  sous-branche par sujet (`feature/ia-*`), fusionnée au fur et à mesure.
+- `develop` : branche d'intégration. Une sous-branche par sujet, partie
+  de `develop` (`feature/*`, `fix/*`, `refacto/*`), fusionnée au fur et
+  à mesure puis supprimée.
 - Ne jamais pousser sans demande.
 - Ne jamais committer les fichiers d'export locaux : `export_presets.cfg`,
   `Micro Racer.pck`, `Micro Racer.sh`, `Micro Racer.x86_64`.
