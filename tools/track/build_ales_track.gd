@@ -1,6 +1,9 @@
 extends SceneTree
 
 # ============================================================
+# Après construction, lancer tools/track/split_track_maps.gd : la carte
+# (décor) part dans level/map/AlesMap.tscn, le circuit garde sa logique.
+#
 # Construit level/track/TrackAles.tscn à partir des données de
 # tools/track/make_ales_masks.py (level/track/ales/build/).
 #

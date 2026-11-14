@@ -1,7 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="PackedScene" path="res://level/scene/RaceStartLightsMap.tscn" id="1_6g8tl"]
-[ext_resource type="PackedScene" path="res://level/track/Track01.tscn" id="2_5f1ub"]
+[ext_resource type="PackedScene" path="res://level/map/BrissacMap.tscn" id="2_6g8tl"]
 [ext_resource type="Script" path="res://level/script/RaceSection.gd" id="3_1hul5"]
 [ext_resource type="Script" path="res://level/script/PitStop.gd" id="4_j5m1u"]
 
@@ -61,17 +61,22 @@ b = Vector2(-69.93262, 38.851563)
 a = Vector2(53.25122, 35.500732)
 b = Vector2(-79.87671, -53.250977)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_v8wgf"]
-size = Vector2(160, 2000)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pitstop"]
+size = Vector2(421, 578)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_o300m"]
+size = Vector2(417.5, 587)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_p8cjj"]
+size = Vector2(408, 571)
 
 [node name="TrackPaddock2" type="Node2D" unique_id=168625439]
 
-[node name="RaceStartLightsMap" type="Node2D" parent="." unique_id=901997129 groups=["race_start_lights_map"] instance=ExtResource("1_6g8tl")]
+[node name="RaceStartLightsMap" parent="." unique_id=901997129 instance=ExtResource("1_6g8tl")]
 z_index = 3
 position = Vector2(1983, -76)
 
-[node name="Brissac" type="Node2D" parent="." unique_id=1561549427 instance=ExtResource("2_5f1ub")]
-y_sort_enabled = true
+[node name="Brissac" parent="." unique_id=126388196 instance=ExtResource("2_6g8tl")]
 
 [node name="Sections" type="Node2D" parent="." unique_id=1185291706]
 
@@ -275,9 +280,18 @@ rotation = 1.5707964
 position = Vector2(1998, -1496)
 rotation = 1.5707964
 
-[node name="PitStop" type="Area2D" parent="." unique_id=1975579396]
+[node name="PitStop" type="Area2D" parent="." unique_id=2088961299]
 position = Vector2(100, 385)
 script = ExtResource("4_j5m1u")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="PitStop" unique_id=861360664]
-shape = SubResource("RectangleShape2D_v8wgf")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PitStop" unique_id=1236730052]
+position = Vector2(-82.5, -791)
+shape = SubResource("RectangleShape2D_pitstop")
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="PitStop" unique_id=1214470217]
+position = Vector2(-80.75, 23.5)
+shape = SubResource("RectangleShape2D_o300m")
+
+[node name="CollisionShape2D3" type="CollisionShape2D" parent="PitStop" unique_id=863032515]
+position = Vector2(-89, 850.5)
+shape = SubResource("RectangleShape2D_p8cjj")
