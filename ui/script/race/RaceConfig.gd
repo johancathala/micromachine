@@ -8,7 +8,7 @@ const MAX_HUMAN_PLAYERS := 8
 enum RaceRules {
 	# Course classique au nombre de tours.
 	CLASSIC,
-	# Élimination (écran partagé, humains uniquement) :
+	# Élimination (écran partagé, joueurs et IA) :
 	# un joueur qui sort de l'écran explose. Quand il ne reste qu'un
 	# joueur, la manche est terminée, les points sont distribués et
 	# la course repart en grille inversée à la position du leader.
@@ -85,9 +85,15 @@ func _init() -> void:
 	ai_difficulty = last_ai_difficulty
 
 
-## Places disponibles pour les IA (course classique uniquement).
+## Les IA courent en course classique et en élimination (pas en
+## contre-la-montre : seul contre son fantôme).
+func allows_ai() -> bool:
+	return is_classic() or is_elimination()
+
+
+## Places disponibles pour les IA.
 func get_max_ai_count() -> int:
-	if not is_classic():
+	if not allows_ai():
 		return 0
 
 	return maxi(TOTAL_RACE_SLOTS - get_human_player_count(), 0)
@@ -192,8 +198,13 @@ func is_valid() -> bool:
 	if lap_count <= 0:
 		return false
 
-	if is_elimination() and target_score <= 0:
-		return false
+	if is_elimination():
+		if target_score <= 0:
+			return false
+
+		# Au moins deux voitures (joueurs et IA).
+		if players.size() + mini(ai_slots.size(), get_max_ai_count()) < ELIMINATION_MIN_PLAYERS:
+			return false
 
 	return true
 
@@ -202,9 +213,6 @@ func is_valid() -> bool:
 ## choix du circuit).
 func are_players_valid() -> bool:
 	if players.is_empty() or players.size() > MAX_HUMAN_PLAYERS:
-		return false
-
-	if is_elimination() and players.size() < ELIMINATION_MIN_PLAYERS:
 		return false
 
 	# Contre-la-montre : un seul joueur.
@@ -283,8 +291,8 @@ func build_participants() -> void:
 
 		participants.append(participant)
 
-	# IA de l'écran des IA. Pas d'IA en élimination (la caméra ne suit
-	# que les humains) ni en contre-la-montre (seul contre son fantôme).
+	# IA de l'écran des IA (pas en contre-la-montre : seul contre son
+	# fantôme).
 	var ai_count := mini(ai_slots.size(), get_max_ai_count())
 
 	for i in range(ai_count):

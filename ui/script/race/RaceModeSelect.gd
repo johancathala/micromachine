@@ -18,7 +18,7 @@ const MODES := [
 	{
 		"rules": RaceConfig.RaceRules.ELIMINATION,
 		"title": "ÉLIMINATION",
-		"text": "%d joueurs minimum : qui sort de l'écran explose" % RaceConfig.ELIMINATION_MIN_PLAYERS
+		"text": "Joueurs et IA : qui sort de l'écran explose"
 	},
 	{
 		"rules": RaceConfig.RaceRules.TIME_TRIAL,
