@@ -8,12 +8,16 @@ class_name EliminationRules
 # - Écran partagé, joueurs humains et IA.
 # - Un joueur dont la voiture sort de l'écran explose et est éliminé
 #   de la manche.
-# - Quand il ne reste qu'un joueur, la manche est terminée :
-#   le survivant marque 4 points, le dernier éliminé 2, l'avant-dernier
-#   1, les autres 0 (ROUND_POINTS), quel que soit le nombre de voitures.
+# - La manche est terminée quand il ne reste qu'un joueur, ou dès qu'une
+#   voiture a bouclé un tour complet depuis le début de la manche (sinon
+#   des voitures de même niveau pourraient rouler ensemble sans fin).
+# - Classement de la manche : voitures encore en piste dans l'ordre de
+#   course, puis éliminés du dernier au premier. Le 1er marque 4 points,
+#   le 2e 2, le 3e 1, les autres 0 (ROUND_POINTS), quel que soit le
+#   nombre de voitures.
 # - Si personne n'a atteint le score cible, la course repart à la
-#   position du survivant, en grille inversée : le premier éliminé
-#   devant, le survivant derrière.
+#   position du premier, en grille inversée : le dernier du classement
+#   devant, le premier derrière.
 # ============================================================
 
 signal player_eliminated(state: RaceParticipantState)
@@ -62,6 +66,9 @@ var elimination_order: Array[RaceParticipantState] = []
 
 var _grace_time := 0.0
 
+# participant_id -> progression au début de la manche (en sections).
+var _round_start_progress: Dictionary = {}
+
 # participant_id -> PackedVector2Array (le plus récent en dernier).
 var _trails: Dictionary = {}
 
@@ -87,11 +94,15 @@ func start_round() -> void:
 	elimination_order.clear()
 	_grace_time = START_GRACE_TIME
 
+	_round_start_progress.clear()
+
 	for state in controller.participants:
 		state.eliminated = false
 
 		if is_instance_valid(state.car):
 			state.car.manual_respawn_enabled = false
+
+		_round_start_progress[state.participant_id] = controller.get_progress(state)
 
 	round_started.emit()
 
@@ -120,8 +131,19 @@ func _physics_process(delta: float) -> void:
 	else:
 		_check_offscreen_players()
 
-	if get_alive_states().size() <= 1:
+	if get_alive_states().size() <= 1 or _lap_completed():
 		_end_round()
+
+
+## Une voiture a bouclé un tour complet depuis le début de la manche.
+func _lap_completed() -> bool:
+	for state in get_alive_states():
+		var start: float = _round_start_progress.get(state.participant_id, 0.0)
+
+		if controller.get_progress(state) - start >= float(controller.section_count):
+			return true
+
+	return false
 
 
 func _check_crashed_players() -> void:
@@ -176,8 +198,10 @@ func _end_round() -> void:
 
 	var alive := get_alive_states()
 
-	# Classement de la manche : survivant, puis éliminés du dernier
+	# Classement de la manche : voitures en piste dans l'ordre de course
+	# (une seule si les autres sont éliminées), puis éliminés du dernier
 	# au premier.
+	alive.sort_custom(func(a, b): return _is_ahead(a, b))
 	var ranking: Array[RaceParticipantState] = []
 	ranking.append_array(alive)
 
@@ -193,14 +217,10 @@ func _end_round() -> void:
 
 	round_finished.emit(ranking, awarded)
 
-	var survivor: RaceParticipantState = (
-		ranking[0] if not ranking.is_empty() else null
-	)
-
-	_after_round(survivor)
+	_after_round(ranking)
 
 
-func _after_round(survivor: RaceParticipantState) -> void:
+func _after_round(ranking: Array[RaceParticipantState]) -> void:
 	await get_tree().create_timer(ROUND_END_DELAY, false).timeout
 
 	# Attendre la fin des explosions : une voiture dont l'effet se
@@ -222,23 +242,30 @@ func _after_round(survivor: RaceParticipantState) -> void:
 		controller.finish_elimination_race()
 		return
 
-	await _restart_round(survivor)
+	await _restart_round(ranking)
 
 
 # ============================================================
 # RESTART EN GRILLE INVERSÉE
 # ============================================================
 
-func _restart_round(survivor: RaceParticipantState) -> void:
-	if survivor == null or not is_instance_valid(survivor.car):
+func _restart_round(ranking: Array[RaceParticipantState]) -> void:
+	if ranking.is_empty():
+		return
+
+	var survivor: RaceParticipantState = ranking[0]
+
+	if not is_instance_valid(survivor.car):
 		return
 
 	round_restarting.emit()
 
-	# Grille : premier éliminé devant, survivant derrière.
+	# Grille inversée : dernier du classement devant, premier derrière.
 	var grid: Array[RaceParticipantState] = []
-	grid.append_array(elimination_order)
-	grid.append(survivor)
+
+	for i in range(ranking.size() - 1, -1, -1):
+		if is_instance_valid(ranking[i].car):
+			grid.append(ranking[i])
 
 	var trail: PackedVector2Array = _trails.get(
 		survivor.participant_id,
