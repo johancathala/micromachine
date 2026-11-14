@@ -79,7 +79,7 @@ text = "COURSE SIMPLE"
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_font_sizes/font_size = 60
-text = "CHAMPIONNAT"
+text = "CARRIÈRE"
 
 [node name="LeaderboardsButton" type="Button" parent="MarginContainer/VBoxContainer/MenuContainer" unique_id=155026297]
 layout_mode = 2
