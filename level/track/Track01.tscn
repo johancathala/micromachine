@@ -1,34 +1,35 @@
-[gd_scene format=3 uid="uid://ce1hta04w1240"]
+[gd_scene format=4 uid="uid://ce1hta04w1240"]
 
-[ext_resource type="PackedScene" path="res://level/map/BrissacMap.tscn" id="1_u5tnh"]
-[ext_resource type="PackedScene" path="res://level/scene/RaceStartLightsMap.tscn" id="8_qiq11"]
-[ext_resource type="PackedScene" path="res://level/scene/RaceSection.tscn" id="9_qiq11"]
-[ext_resource type="Script" path="res://level/script/PitStop.gd" id="pitstop_script"]
-[ext_resource type="Script" path="res://level/script/PitLane.gd" id="pitlane_script"]
+[ext_resource type="PackedScene" uid="uid://xu6inpaxhg6k" path="res://level/map/BrissacMap.tscn" id="1_u5tnh"]
+[ext_resource type="PackedScene" uid="uid://blt3kj7q32jp4" path="res://level/sprite/tilemap/pneu_sac.tscn" id="3_hgwmh"]
+[ext_resource type="PackedScene" uid="uid://d2perx6hj7kx8" path="res://level/scene/RaceStartLightsMap.tscn" id="8_qiq11"]
+[ext_resource type="PackedScene" uid="uid://bp8cw2gqrqg1h" path="res://level/scene/RaceSection.tscn" id="9_qiq11"]
+[ext_resource type="Script" uid="uid://bu8b5jqrgamk7" path="res://level/script/PitLane.gd" id="pitlane_script"]
+[ext_resource type="Script" uid="uid://bccf5ygro7jqh" path="res://level/script/PitStop.gd" id="pitstop_script"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_pitstop"]
-size = Vector2(421, 578)
+size = Vector2(421, 441)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_o300m"]
-size = Vector2(417.5, 587)
+size = Vector2(417.5, 436)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_p8cjj"]
-size = Vector2(408, 571)
+size = Vector2(408, 433)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_pitlane"]
-size = Vector2(668, 2440)
+size = Vector2(668, 3037)
 
-[node name="Track01" type="Node2D" unique_id=1561549427]
-y_sort_enabled = true
-
-[node name="Brissac" parent="." unique_id=126388196 instance=ExtResource("1_u5tnh")]
-
-[node name="Cars" type="Node2D" parent="." unique_id=370003878]
+[node name="BrissacClassique" type="Node2D" unique_id=1561549427]
 y_sort_enabled = true
 
 [node name="RaceStartLightsMap" parent="." unique_id=901997129 instance=ExtResource("8_qiq11")]
 z_index = 3
 position = Vector2(670, 1855)
+
+[node name="Brissac" parent="." unique_id=126388196 instance=ExtResource("1_u5tnh")]
+
+[node name="Pneu_sac" parent="." unique_id=1834524238 instance=ExtResource("3_hgwmh")]
+tile_map_data = PackedByteArray("AABx/4T+AQADAAwAAABx/4L+AQADAAsAAABx/4D+AQADAAoAAABz/4T+AQAEAAwAAABz/4L+AQAEAAsAAABz/4D+AQAEAAoAAAB2/4D+AQADAAoAAAB2/4L+AQADAAsAAAB2/4T+AQADAAwAAAB4/4D+AQAEAAoAAAB4/4L+AQAEAAsAAAB4/4T+AQAEAAwAAAB7/4D+AQADAAoAAAB7/4L+AQADAAsAAAB7/4T+AQADAAwAAAB9/4D+AQAEAAoAAAB9/4L+AQAEAAsAAAB9/4T+AQAEAAwAAACA/4D+AQADAAoAAACA/4L+AQADAAsAAACA/4T+AQADAAwAAACC/4D+AQAEAAoAAACC/4L+AQAEAAsAAACC/4T+AQAEAAwAAACG/4D+AQADAAoAAACG/4L+AQADAAsAAACG/4T+AQADAAwAAACI/4D+AQAEAAoAAACI/4L+AQAEAAsAAACI/4T+AQAEAAwAAACq/n7+AQADAAoAAACq/oD+AQADAAsAAACq/oL+AQADAAwAAACs/n7+AQAEAAoAAACs/oD+AQAEAAsAAACs/oL+AQAEAAwAAACw/n7+AQADAAoAAACw/oD+AQADAAsAAACw/oL+AQADAAwAAACy/n7+AQAEAAoAAACy/oD+AQAEAAsAAACy/oL+AQAEAAwAAAC2/n7+AQADAAoAAAC2/oD+AQADAAsAAAC2/oL+AQADAAwAAAC4/n7+AQAEAAoAAAC4/oD+AQAEAAsAAAC4/oL+AQAEAAwAAAC8/n7+AQADAAoAAAC8/oD+AQADAAsAAAC8/oL+AQADAAwAAAC+/n7+AQAEAAoAAAC+/oD+AQAEAAsAAAC+/oL+AQAEAAwAAADC/n7+AQADAAoAAADC/oD+AQADAAsAAADC/oL+AQADAAwAAADE/n7+AQAEAAoAAADE/oD+AQAEAAsAAADE/oL+AQAEAAwAAADI/n7+AQADAAoAAADI/oD+AQADAAsAAADI/oL+AQADAAwAAADK/n7+AQAEAAoAAADK/oD+AQAEAAsAAADK/oL+AQAEAAwAAADN/n7+AQADAAoAAADN/oD+AQADAAsAAADN/oL+AQADAAwAAADP/n7+AQAEAAoAAADP/oD+AQAEAAsAAADP/oL+AQAEAAwAAAALABMBAQADAAoAAAALABUBAQADAAsAAAALABcBAQADAAwAAAANABMBAQAEAAoAAAANABUBAQAEAAsAAAANABcBAQAEAAwAAAALAA0BAQADAAoAAAALAA8BAQADAAsAAAALABEBAQADAAwAAAANAA0BAQAEAAoAAAANAA8BAQAEAAsAAAANABEBAQAEAAwAAAALAAcBAQADAAoAAAALAAkBAQADAAsAAAALAAsBAQADAAwAAAANAAcBAQAEAAoAAAANAAkBAQAEAAsAAAANAAsBAQAEAAwAAAALAAEBAQADAAoAAAALAAMBAQADAAsAAAALAAUBAQADAAwAAAANAAEBAQAEAAoAAAANAAMBAQAEAAsAAAANAAUBAQAEAAwAAADD/0L+AQADAAoAAADD/0T+AQADAAsAAADD/0b+AQADAAwAAADF/0L+AQAEAAoAAADF/0T+AQAEAAsAAADF/0b+AQAEAAwAAADH/0L+AQADAAoAAADH/0T+AQADAAsAAADH/0b+AQADAAwAAADJ/0L+AQAEAAoAAADJ/0T+AQAEAAsAAADJ/0b+AQAEAAwAAADL/0L+AQADAAoAAADL/0T+AQADAAsAAADL/0b+AQADAAwAAADN/0L+AQAEAAoAAADN/0T+AQAEAAsAAADN/0b+AQAEAAwAAADP/0L+AQADAAoAAADP/0T+AQADAAsAAADP/0b+AQADAAwAAADR/0L+AQAEAAoAAADR/0T+AQAEAAsAAADR/0b+AQAEAAwAAADT/0L+AQADAAoAAADT/0T+AQADAAsAAADT/0b+AQADAAwAAADV/0L+AQAEAAoAAADV/0T+AQAEAAsAAADV/0b+AQAEAAwAAADX/0L+AQADAAoAAADX/0T+AQADAAsAAADX/0b+AQADAAwAAADZ/0L+AQAEAAoAAADZ/0T+AQAEAAsAAADZ/0b+AQAEAAwAAADb/0L+AQADAAoAAADb/0T+AQADAAsAAADb/0b+AQADAAwAAADd/0L+AQAEAAoAAADd/0T+AQAEAAsAAADd/0b+AQAEAAwAAAA=")
 
 [node name="Sections" type="Node2D" parent="." unique_id=161296413]
 unique_name_in_owner = true
@@ -210,20 +211,21 @@ position = Vector2(100, 385)
 script = ExtResource("pitstop_script")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PitStop" unique_id=70988048]
-position = Vector2(-82.5, -791)
+position = Vector2(-82.5, -772.5)
 shape = SubResource("RectangleShape2D_pitstop")
 
 [node name="CollisionShape2D2" type="CollisionShape2D" parent="PitStop" unique_id=104548829]
-position = Vector2(-80.75, 23.5)
+position = Vector2(-80.75, 56)
 shape = SubResource("RectangleShape2D_o300m")
 
 [node name="CollisionShape2D3" type="CollisionShape2D" parent="PitStop" unique_id=2132445969]
-position = Vector2(-89, 850.5)
+position = Vector2(-89, 888.5)
 shape = SubResource("RectangleShape2D_p8cjj")
 
-[node name="PitLane" type="Area2D" parent="."]
+[node name="PitLane" type="Area2D" parent="." unique_id=1799160284]
 position = Vector2(-106, 420)
 script = ExtResource("pitlane_script")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="PitLane"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PitLane" unique_id=1764382556]
+position = Vector2(0, -252.5)
 shape = SubResource("RectangleShape2D_pitlane")

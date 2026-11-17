@@ -1,86 +1,90 @@
-[gd_scene format=3]
+[gd_scene format=4 uid="uid://de12v32dg5ynv"]
 
-[ext_resource type="PackedScene" path="res://level/scene/RaceStartLightsMap.tscn" id="1_56q13"]
-[ext_resource type="PackedScene" path="res://level/map/BrissacMap.tscn" id="2_56q13"]
-[ext_resource type="Script" path="res://level/script/RaceSection.gd" id="3_n6ltc"]
-[ext_resource type="Script" path="res://level/script/PitStop.gd" id="4_ju2or"]
-[ext_resource type="Script" path="res://level/script/PitLane.gd" id="pitlane_script"]
+[ext_resource type="PackedScene" uid="uid://d2perx6hj7kx8" path="res://level/scene/RaceStartLightsMap.tscn" id="1_56q13"]
+[ext_resource type="PackedScene" uid="uid://xu6inpaxhg6k" path="res://level/map/BrissacMap.tscn" id="2_56q13"]
+[ext_resource type="PackedScene" uid="uid://blt3kj7q32jp4" path="res://level/sprite/tilemap/pneu_sac.tscn" id="3_ju2or"]
+[ext_resource type="Script" uid="uid://jyuy34812vjy" path="res://level/script/RaceSection.gd" id="3_n6ltc"]
+[ext_resource type="Script" uid="uid://bccf5ygro7jqh" path="res://level/script/PitStop.gd" id="4_ju2or"]
+[ext_resource type="Script" uid="uid://bu8b5jqrgamk7" path="res://level/script/PitLane.gd" id="pitlane_script"]
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_qac7o"]
 a = Vector2(708, 0)
-b = Vector2(-564, 0)
+b = Vector2(-1331, 12)
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_n6ltc"]
 a = Vector2(47.361084, -36.836914)
 b = Vector2(-729.36035, 567.2822)
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_ju2or"]
-a = Vector2(-482.5891, -321.72595)
-b = Vector2(742.1887, 494.79285)
+a = Vector2(-442.53198, 31.532104)
+b = Vector2(729.468, -28.467896)
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_wmbff"]
-a = Vector2(-292.8562, 65.07886)
+a = Vector2(-327, 75.91528)
 b = Vector2(917.6157, -203.91455)
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_6omuk"]
-a = Vector2(-478.00415, -478.0039)
-b = Vector2(336.583, 336.583)
+a = Vector2(-522.50977, -261.49023)
+b = Vector2(581.49023, 222.50977)
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_s4eaq"]
-a = Vector2(454, 0)
-b = Vector2(-930, 0)
+a = Vector2(454, 46)
+b = Vector2(-607, -94)
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_mnkel"]
-a = Vector2(0, 262)
-b = Vector2(0, -898)
+a = Vector2(-5, 434)
+b = Vector2(-28, -657)
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_121ml"]
-a = Vector2(0, -676)
-b = Vector2(0, 40)
+a = Vector2(-6, -639)
+b = Vector2(3, 450)
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_vy7ly"]
-a = Vector2(0, 358)
-b = Vector2(0, -898)
+a = Vector2(7, 750)
+b = Vector2(-4, -959)
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_740cp"]
-a = Vector2(333.7544, 333.75488)
-b = Vector2(-514.77344, -514.77344)
+a = Vector2(434, 713)
+b = Vector2(-378, -612)
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_lxtvc"]
-a = Vector2(201.44531, 453.25)
-b = Vector2(-194.94678, -438.6289)
+a = Vector2(1251, -46)
+b = Vector2(-1066, 37)
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_gc33t"]
-a = Vector2(42.847412, -385.62744)
-b = Vector2(-102.92212, 926.2993)
+a = Vector2(-12, -1464)
+b = Vector2(13, 299)
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_kwa76"]
-a = Vector2(79.51074, -8.834473)
-b = Vector2(-238.53198, 26.503662)
+a = Vector2(567, 24)
+b = Vector2(-408, -2)
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_hfphq"]
-a = Vector2(-204, 0)
-b = Vector2(550, 0)
+a = Vector2(-1362, -17)
+b = Vector2(402, 1)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_pitstop"]
-size = Vector2(421, 578)
+size = Vector2(421, 441)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_o300m"]
-size = Vector2(417.5, 587)
+size = Vector2(417.5, 462)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_p8cjj"]
-size = Vector2(408, 571)
+size = Vector2(408, 466)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_pitlane"]
-size = Vector2(668, 2440)
+size = Vector2(668, 3162)
 
 [node name="TrackReverse" type="Node2D" unique_id=1381157225]
 
 [node name="RaceStartLightsMap" parent="." unique_id=901997129 instance=ExtResource("1_56q13")]
 z_index = 3
-position = Vector2(671, 1300)
+position = Vector2(671, 1855)
 
 [node name="Brissac" parent="." unique_id=126388196 instance=ExtResource("2_56q13")]
+
+[node name="Pneu_sac" parent="." unique_id=1834524238 instance=ExtResource("3_ju2or")]
+tile_map_data = PackedByteArray("AABx/4T+AQADAAwAAABx/4L+AQADAAsAAABx/4D+AQADAAoAAABz/4T+AQAEAAwAAABz/4L+AQAEAAsAAABz/4D+AQAEAAoAAAB2/4D+AQADAAoAAAB2/4L+AQADAAsAAAB2/4T+AQADAAwAAAB4/4D+AQAEAAoAAAB4/4L+AQAEAAsAAAB4/4T+AQAEAAwAAAB7/4D+AQADAAoAAAB7/4L+AQADAAsAAAB7/4T+AQADAAwAAAB9/4D+AQAEAAoAAAB9/4L+AQAEAAsAAAB9/4T+AQAEAAwAAACA/4D+AQADAAoAAACA/4L+AQADAAsAAACA/4T+AQADAAwAAACC/4D+AQAEAAoAAACC/4L+AQAEAAsAAACC/4T+AQAEAAwAAACG/4D+AQADAAoAAACG/4L+AQADAAsAAACG/4T+AQADAAwAAACI/4D+AQAEAAoAAACI/4L+AQAEAAsAAACI/4T+AQAEAAwAAACq/n7+AQADAAoAAACq/oD+AQADAAsAAACq/oL+AQADAAwAAACs/n7+AQAEAAoAAACs/oD+AQAEAAsAAACs/oL+AQAEAAwAAACw/n7+AQADAAoAAACw/oD+AQADAAsAAACw/oL+AQADAAwAAACy/n7+AQAEAAoAAACy/oD+AQAEAAsAAACy/oL+AQAEAAwAAAC2/n7+AQADAAoAAAC2/oD+AQADAAsAAAC2/oL+AQADAAwAAAC4/n7+AQAEAAoAAAC4/oD+AQAEAAsAAAC4/oL+AQAEAAwAAAC8/n7+AQADAAoAAAC8/oD+AQADAAsAAAC8/oL+AQADAAwAAAC+/n7+AQAEAAoAAAC+/oD+AQAEAAsAAAC+/oL+AQAEAAwAAADC/n7+AQADAAoAAADC/oD+AQADAAsAAADC/oL+AQADAAwAAADE/n7+AQAEAAoAAADE/oD+AQAEAAsAAADE/oL+AQAEAAwAAADI/n7+AQADAAoAAADI/oD+AQADAAsAAADI/oL+AQADAAwAAADK/n7+AQAEAAoAAADK/oD+AQAEAAsAAADK/oL+AQAEAAwAAADN/n7+AQADAAoAAADN/oD+AQADAAsAAADN/oL+AQADAAwAAADP/n7+AQAEAAoAAADP/oD+AQAEAAsAAADP/oL+AQAEAAwAAAALABMBAQADAAoAAAALABUBAQADAAsAAAALABcBAQADAAwAAAANABMBAQAEAAoAAAANABUBAQAEAAsAAAANABcBAQAEAAwAAAALAA0BAQADAAoAAAALAA8BAQADAAsAAAALABEBAQADAAwAAAANAA0BAQAEAAoAAAANAA8BAQAEAAsAAAANABEBAQAEAAwAAAALAAcBAQADAAoAAAALAAkBAQADAAsAAAALAAsBAQADAAwAAAANAAcBAQAEAAoAAAANAAkBAQAEAAsAAAANAAsBAQAEAAwAAAALAAEBAQADAAoAAAALAAMBAQADAAsAAAALAAUBAQADAAwAAAANAAEBAQAEAAoAAAANAAMBAQAEAAsAAAANAAUBAQAEAAwAAADD/0H+AQADAAoAAADD/0P+AQADAAsAAADD/0X+AQADAAwAAADF/0H+AQAEAAoAAADF/0P+AQAEAAsAAADF/0X+AQAEAAwAAADH/0H+AQADAAoAAADH/0P+AQADAAsAAADH/0X+AQADAAwAAADJ/0H+AQAEAAoAAADJ/0P+AQAEAAsAAADJ/0X+AQAEAAwAAADL/0H+AQADAAoAAADL/0P+AQADAAsAAADL/0X+AQADAAwAAADN/0H+AQAEAAoAAADN/0P+AQAEAAsAAADN/0X+AQAEAAwAAADP/0H+AQADAAoAAADP/0P+AQADAAsAAADP/0X+AQADAAwAAADR/0H+AQAEAAoAAADR/0P+AQAEAAsAAADR/0X+AQAEAAwAAADT/0H+AQADAAoAAADT/0P+AQADAAsAAADT/0X+AQADAAwAAADV/0H+AQAEAAoAAADV/0P+AQAEAAsAAADV/0X+AQAEAAwAAADX/0H+AQADAAoAAADX/0P+AQADAAsAAADX/0X+AQADAAwAAADZ/0H+AQAEAAoAAADZ/0P+AQAEAAsAAADZ/0X+AQAEAAwAAADb/0H+AQADAAoAAADb/0P+AQADAAsAAADb/0X+AQADAAwAAADd/0H+AQAEAAoAAADd/0P+AQAEAAsAAADd/0X+AQAEAAwAAAA=")
 
 [node name="Sections" type="Node2D" parent="." unique_id=801200717]
 
@@ -144,19 +148,20 @@ shape = SubResource("SegmentShape2D_6omuk")
 rotation = -0.7853982
 
 [node name="Section05" type="Area2D" parent="Sections" unique_id=1865505636]
-position = Vector2(2288, -6360.2905)
+position = Vector2(2070, -6354)
 collision_mask = 2
 script = ExtResource("3_n6ltc")
 section_id = 5
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Sections/Section05" unique_id=811180758]
+position = Vector2(14, 0)
 shape = SubResource("SegmentShape2D_s4eaq")
 
 [node name="RespawnPoint" type="Marker2D" parent="Sections/Section05" unique_id=432889175]
 rotation = 1.5707964
 
 [node name="Section06" type="Area2D" parent="Sections" unique_id=1430578815]
-position = Vector2(14.523158, -7344)
+position = Vector2(10, -7557)
 collision_mask = 2
 script = ExtResource("3_n6ltc")
 section_id = 6
@@ -168,7 +173,7 @@ shape = SubResource("SegmentShape2D_mnkel")
 rotation = 3.1415927
 
 [node name="Section07" type="Area2D" parent="Sections" unique_id=1159588812]
-position = Vector2(1323.1309, -9296)
+position = Vector2(1323, -9497)
 collision_mask = 2
 script = ExtResource("3_n6ltc")
 section_id = 7
@@ -179,7 +184,7 @@ shape = SubResource("SegmentShape2D_121ml")
 [node name="RespawnPoint" type="Marker2D" parent="Sections/Section07" unique_id=1568161510]
 
 [node name="Section08" type="Area2D" parent="Sections" unique_id=2115674247]
-position = Vector2(2001.5491, -10800)
+position = Vector2(2061, -10995)
 collision_mask = 2
 script = ExtResource("3_n6ltc")
 section_id = 8
@@ -191,7 +196,7 @@ shape = SubResource("SegmentShape2D_vy7ly")
 rotation = 3.1415927
 
 [node name="Section09" type="Area2D" parent="Sections" unique_id=2040894213]
-position = Vector2(-2163.7893, -10316.211)
+position = Vector2(-2194, -10382)
 collision_mask = 2
 script = ExtResource("3_n6ltc")
 section_id = 9
@@ -203,7 +208,7 @@ shape = SubResource("SegmentShape2D_740cp")
 rotation = 2.3561945
 
 [node name="Section10" type="Area2D" parent="Sections" unique_id=415148524]
-position = Vector2(-5961.157, -8944)
+position = Vector2(-6734, -8157)
 collision_mask = 2
 script = ExtResource("3_n6ltc")
 section_id = 10
@@ -212,10 +217,10 @@ section_id = 10
 shape = SubResource("SegmentShape2D_lxtvc")
 
 [node name="RespawnPoint" type="Marker2D" parent="Sections/Section10" unique_id=1708193393]
-rotation = 2.7233684
+rotation = 1.5319302
 
 [node name="Section11" type="Area2D" parent="Sections" unique_id=2022376085]
-position = Vector2(-3913.8528, -7088)
+position = Vector2(-2562, -6378)
 collision_mask = 2
 script = ExtResource("3_n6ltc")
 section_id = 11
@@ -227,7 +232,7 @@ shape = SubResource("SegmentShape2D_gc33t")
 rotation = 0.11065722
 
 [node name="Section12" type="Area2D" parent="Sections" unique_id=705967589]
-position = Vector2(-2160, -3913.7534)
+position = Vector2(-1426, -3830)
 collision_mask = 2
 script = ExtResource("3_n6ltc")
 section_id = 12
@@ -239,7 +244,7 @@ shape = SubResource("SegmentShape2D_kwa76")
 rotation = 1.4601392
 
 [node name="Section13" type="Area2D" parent="Sections" unique_id=112926916]
-position = Vector2(-112, -1731.5999)
+position = Vector2(811, -831)
 collision_mask = 2
 script = ExtResource("3_n6ltc")
 section_id = 13
@@ -248,7 +253,7 @@ section_id = 13
 shape = SubResource("SegmentShape2D_hfphq")
 
 [node name="RespawnPoint" type="Marker2D" parent="Sections/Section13" unique_id=761150473]
-rotation = -1.5707964
+rotation = -4.711158
 
 [node name="SpawnPoints" type="Node2D" parent="." unique_id=1702861210]
 
@@ -289,15 +294,15 @@ position = Vector2(100, 385)
 script = ExtResource("4_ju2or")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PitStop" unique_id=2062517810]
-position = Vector2(-82.5, -791)
+position = Vector2(-82.5, -778.5)
 shape = SubResource("RectangleShape2D_pitstop")
 
 [node name="CollisionShape2D2" type="CollisionShape2D" parent="PitStop" unique_id=344409293]
-position = Vector2(-80.75, 23.5)
+position = Vector2(-80.75, 54)
 shape = SubResource("RectangleShape2D_o300m")
 
 [node name="CollisionShape2D3" type="CollisionShape2D" parent="PitStop" unique_id=1107596053]
-position = Vector2(-89, 850.5)
+position = Vector2(-89, 890)
 shape = SubResource("RectangleShape2D_p8cjj")
 
 [node name="PitLane" type="Area2D" parent="." unique_id=1749282712]
@@ -305,4 +310,5 @@ position = Vector2(-106, 420)
 script = ExtResource("pitlane_script")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PitLane" unique_id=1879951121]
+position = Vector2(0, -286)
 shape = SubResource("RectangleShape2D_pitlane")

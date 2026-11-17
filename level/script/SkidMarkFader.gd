@@ -18,11 +18,11 @@ class_name SkidMarkFader
 # repart à zéro tant que la trace s'allonge.
 # ============================================================
 
-const LIFETIME := 20.0
+const LIFETIME := 15.0
 const FADE_TIME := 5.0
 const MAX_MARKS := 250
 # Fréquence de mise à jour (s) : inutile de le faire à chaque image.
-const UPDATE_INTERVAL := 0.1
+const UPDATE_INTERVAL := 0.2
 
 const META_AGE := &"skid_age"
 const META_LAST := &"skid_last_point"
