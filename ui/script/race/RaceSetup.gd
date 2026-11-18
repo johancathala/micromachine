@@ -46,6 +46,7 @@ var track_catalog: Array
 
 # Pilotes fantômes : fantôme retrouvé pour chacun sur ce circuit.
 var ghost_pilots_label: Label
+var podium: TimePodium
 
 
 func _ready() -> void:
@@ -68,6 +69,26 @@ func _ready() -> void:
 	ghost_pilots_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var preview_box := preview_label.get_parent()
 	preview_box.add_child(ghost_pilots_label)
+
+	# Contre-la-montre : podium des meilleurs temps à côté de l'aperçu.
+	var preview_row := HBoxContainer.new()
+	preview_row.size_flags_vertical = preview_image.size_flags_vertical
+	preview_row.add_theme_constant_override("separation", 24)
+	preview_box.add_child(preview_row)
+	preview_box.move_child(preview_row, preview_image.get_index())
+	preview_image.reparent(preview_row)
+	preview_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	preview_image.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	# Aperçu à la largeur de son image (hauteur disponible), podium collé.
+	preview_row.resized.connect(func() -> void:
+		var texture := preview_image.texture
+
+		if texture != null and texture.get_height() > 0:
+			preview_image.custom_minimum_size.x = preview_row.size.y * texture.get_width() / texture.get_height()
+	)
+	podium = TimePodium.new()
+	podium.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	preview_row.add_child(podium)
 
 	_setup_tracks()
 	_setup_laps()
@@ -226,6 +247,25 @@ func _refresh_track_preview() -> void:
 		preview_image.texture = texture
 
 	preview_label.text = String(race_config.track.get("name", ""))
+	_refresh_podium()
+
+
+## Trois meilleurs temps du circuit (tous joueurs, toutes voitures).
+func _refresh_podium() -> void:
+	podium.visible = race_config.is_time_trial()
+
+	if not podium.visible:
+		return
+
+	var track_id := int(race_config.track.get("id", -1))
+	var times: Array = []
+
+	for record in BestTimesManager.get_records():
+		if int(record.get("track_id", -2)) == track_id and float(record.get("lap_time", 0.0)) > 0.0:
+			times.append(record)
+
+	times.sort_custom(func(a, b): return float(a["lap_time"]) < float(b["lap_time"]))
+	podium.set_entries(times.slice(0, 3))
 
 
 ## Pilotes fantômes : fantôme retrouvé pour leur voiture sur ce
