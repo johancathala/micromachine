@@ -40,12 +40,12 @@ const STYLES := [
 	},
 	{
 		"id": "prudent", "name": "Prudent", "driver": "Papy Airbag",
-		"description": "Gilet jaune sur le siège passager, triangle dans le coffre.",
+		"description": "Rétro, clignot, angle mort. Il roule à 50 et fait ses courses le samedi.",
 		"corner": 0.95, "braking": 0.85, "pace": 0.98, "line_bias": 0.35, "wander": 15.0,
 		"noise": 0.01, "mistakes": 0.5, "overtake": 0.6, "traffic_care": 1.0, "finish_push": 0.0
 	},
 	{
-		"id": "agressif", "name": "Agressif", "driver": "Brian Turbo",
+		"id": "agressif", "name": "Agressif", "driver": "Bryan Turbo",
 		"description": "Freine quand il voit Dieu. Et encore.",
 		"corner": 1.04, "braking": 1.2, "pace": 1.01, "line_bias": -0.5, "wander": 25.0,
 		"noise": 0.035, "mistakes": 1.6, "overtake": 1.6, "traffic_care": 0.0, "finish_push": 0.0
