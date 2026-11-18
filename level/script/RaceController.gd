@@ -336,6 +336,42 @@ func _scale_tire_wear() -> void:
 
 
 ## Un pilote générique par IA, sur la trajectoire du circuit.
+## Trajectoire de course des IA (calculée une fois).
+func _ensure_racing_line() -> bool:
+	if racing_line != null:
+		return racing_line.is_valid()
+
+	racing_line = RacingLine.from_track(race_world.current_track, track_progress)
+
+	if not racing_line.is_valid():
+		push_warning("RaceController : pas de trajectoire pour les IA.")
+		return false
+
+	print("IA : trajectoire = %s (%d points, %d px)" % [
+		racing_line.source, racing_line.points.size(), racing_line.length
+	])
+	return true
+
+
+var _pit_route: Dictionary = {}
+var _pit_route_built := false
+
+
+## Trajet vers le stand (course avec usure des pneus), partagé par les
+## IA et les fantômes ; {} s'il n'y en a pas.
+func _get_pit_route() -> Dictionary:
+	if _pit_route_built:
+		return _pit_route
+
+	_pit_route_built = true
+
+	if race_config.uses_tire_wear() and _ensure_racing_line():
+		_pit_route = track_progress.build_pit_route(race_world.current_track, racing_line.points)
+		print("IA : passage au stand %s" % ("calculé" if not _pit_route.is_empty() else "introuvable"))
+
+	return _pit_route
+
+
 func _setup_ai_drivers() -> void:
 	var has_ai := false
 
@@ -346,22 +382,11 @@ func _setup_ai_drivers() -> void:
 	if not has_ai:
 		return
 
-	racing_line = RacingLine.from_track(race_world.current_track, track_progress)
-
-	if not racing_line.is_valid():
-		push_warning("RaceController : pas de trajectoire pour les IA.")
+	if not _ensure_racing_line():
 		return
 
-	print("IA : trajectoire = %s (%d points, %d px)" % [
-		racing_line.source, racing_line.points.size(), racing_line.length
-	])
-
 	# Passage au stand (course avec usure des pneus).
-	var pit_route: Dictionary = {}
-
-	if race_config.uses_tire_wear():
-		pit_route = track_progress.build_pit_route(race_world.current_track, racing_line.points)
-		print("IA : passage au stand %s" % ("calculé" if not pit_route.is_empty() else "introuvable"))
+	var pit_route := _get_pit_route()
 
 	for state in participants:
 		if state.is_ai and is_instance_valid(state.car) and state.car.ghost_driver == null:
@@ -405,8 +430,14 @@ func _setup_ghost_drivers() -> void:
 			continue
 
 		var driver := GhostDriver.new(state.car, data)
+		driver.participant = state
+		driver.lap_count = 0 if race_config.has_infinite_laps() else race_config.lap_count
 		state.car.ghost_driver = driver
 		driver.prepare()
+
+		# Usure des pneus : le fantôme ralentit et passe au stand.
+		if race_config.uses_tire_wear():
+			driver.setup_pit(_get_pit_route())
 
 		# Fantôme du record : nommé d'après celui qui l'a enregistré.
 		if bool(participant.get("ghost_auto_name", false)) and String(participant.get("ai_ghost", "")).is_empty():

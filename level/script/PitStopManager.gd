@@ -92,6 +92,10 @@ func _physics_process(_delta: float) -> void:
 		if state.finished or not is_instance_valid(state.car):
 			continue
 
+		# Fantôme : il gère seul son arrêt (GhostDriver).
+		if state.car.is_ghost:
+			continue
+
 		if is_in_pit(state):
 			_update_qte(state)
 			continue
