@@ -439,9 +439,9 @@ func _setup_ghost_drivers() -> void:
 		if race_config.uses_tire_wear():
 			driver.setup_pit(_get_pit_route())
 
-		# Record : nommé d'après celui qui l'a enregistré et sa médaille.
+		# Le meilleur de tous : le Platine, au nom de son détenteur.
 		if bool(participant.get("ghost_auto_name", false)) and String(participant.get("ai_ghost", "")).is_empty():
-			state.nickname = GhostManager.ghost_label(data)
+			state.nickname = "%s Platine" % String(data.get("nickname", "?"))
 
 		print("Fantôme : %s rejoue %.2f s" % [state.nickname, float(data.get("lap_time", 0.0))])
 

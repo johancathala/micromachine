@@ -365,7 +365,7 @@ static func ghost_name(slot: Dictionary) -> String:
 	var label := String(slot.get("ghost_name", ""))
 
 	if String(slot.get("ghost", "")).is_empty() or label.is_empty():
-		return "Record"
+		return "Platine"
 
 	return label
 

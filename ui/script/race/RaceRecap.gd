@@ -105,14 +105,15 @@ func _build_results() -> void:
 # Chaque tour valide de la session est une ligne, comme un pilote dans
 # un classement, du plus rapide au plus lent. Le meilleur temps du
 # joueur avec cette voiture sur ce circuit est enregistré d'office
-# (fantôme Platine). Les boutons OR, ARGENT, BRONZE gardent un tour
-# comme fantôme de cette médaille (un par médaille : si elle existe
+# (son fantôme Or ; le Platine est le meilleur de tous les joueurs).
+# Les boutons ARGENT et BRONZE gardent un tour comme fantôme de cette
+# médaille (un par médaille : si elle existe
 # déjà, un second appui confirme le remplacement). Ces fantômes sont
 # proposés sur l'écran des IA (« Flavien Or »).
 
 const TT_FONT_SIZE := 28
 const TT_SMALL_FONT_SIZE := 20
-const TT_BUTTON_MEDALS := ["or", "argent", "bronze"]
+const TT_BUTTON_MEDALS := ["argent", "bronze"]
 
 var _tt_laps: Array[Dictionary] = []
 var _tt_medals: Dictionary = {}
@@ -218,6 +219,12 @@ func _refresh_medals() -> void:
 	_tt_medals = GhostManager.load_medals(int(lap.get("track_id", -1)), String(lap.get("car_id", "")), String(lap.get("nickname", "")))
 
 	var parts: PackedStringArray = []
+	var record := GhostManager.load_best_ghost(int(lap.get("track_id", -1)), String(lap.get("car_id", "")))
+
+	parts.append("Platine %s" % (
+		"%s (%s)" % [_format_time(float(record["lap_time"])), String(record.get("nickname", "?"))]
+		if not record.is_empty() else "—"
+	))
 
 	for medal in GhostManager.MEDALS:
 		var data: Dictionary = _tt_medals.get(medal, {})
@@ -226,7 +233,7 @@ func _refresh_medals() -> void:
 			_format_time(float(data["lap_time"])) if not data.is_empty() else "—"
 		])
 
-	_tt_medals_label.text = "Tes fantômes avec cette voiture : " + "   ·   ".join(parts) + "\n(Platine : ton meilleur temps, enregistré d'office.)"
+	_tt_medals_label.text = "Fantômes avec cette voiture : " + "   ·   ".join(parts) + "\n(Platine : le meilleur de tous les joueurs. Or : ton meilleur temps, enregistré d'office.)"
 
 
 func _build_title() -> void:

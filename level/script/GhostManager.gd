@@ -17,10 +17,11 @@ class_name GhostManager
 # - Chaque fantôme (voiture semi-transparente, sans collision, avec son
 #   nom et son temps) refait son tour à chaque début de tour du joueur.
 # - Un tour avec explosion ou réapparition n'est pas retenu.
-# - Médailles : le fantôme du joueur (son meilleur tour, enregistré
-#   automatiquement) est le « Platine ». En fin de contre-la-montre, il
-#   peut garder trois autres tours de la session, en Or, Argent et
-#   Bronze (un par médaille ; en garder un nouveau remplace l'ancien).
+# - Médailles : le fantôme d'un joueur (son meilleur tour, enregistré
+#   automatiquement) est son « Or ». En fin de contre-la-montre, il peut
+#   garder deux autres tours de la session, en Argent et en Bronze (un
+#   par médaille ; en garder un nouveau remplace l'ancien). Le
+#   « Platine » est le meilleur de tous les joueurs (le meilleur Or).
 #   Tous sont proposés comme pilotes fantômes sur l'écran des IA
 #   (« Flavien Or »...).
 # ============================================================
@@ -37,9 +38,12 @@ const SESSION_GHOST_COLOR := Color("#80deea")
 # Valeurs par échantillon : temps, x, y, orientation.
 const STRIDE := 4
 
-## Médailles, de la plus précieuse à la moins précieuse. Le Platine est
-## le meilleur tour (fichier sans suffixe), les autres sont choisis.
-const MEDALS := ["platine", "or", "argent", "bronze"]
+## Médailles d'un joueur, de la plus précieuse à la moins précieuse.
+## L'Or est son meilleur tour (fichier sans suffixe), l'Argent et le
+## Bronze sont choisis. Le Platine (meilleur de tous) n'est pas un
+## fichier : c'est le meilleur des Or.
+const MEDALS := ["or", "argent", "bronze"]
+const CHOSEN_MEDALS := ["argent", "bronze"]
 const MEDAL_NAMES := {"platine": "Platine", "or": "Or", "argent": "Argent", "bronze": "Bronze"}
 const MEDAL_COLORS := {
 	"platine": Color("#e5f3ff"),
@@ -169,9 +173,9 @@ static func load_ghost_for(p_track_id: int, p_car_id: String, recorder_key: Stri
 	return load_ghost_file(GHOST_DIR + "track%d_%s_%s.ghost" % [p_track_id, p_car_id, recorder_key])
 
 
-## Fichier d'une médaille (Platine : le fantôme du joueur).
+## Fichier d'une médaille (Or : le fantôme du joueur).
 static func medal_path(p_track_id: int, p_car_id: String, nickname: String, medal: String) -> String:
-	if medal == "platine":
+	if medal == "or":
 		return ghost_path(p_track_id, p_car_id, nickname)
 
 	return GHOST_DIR + "track%d_%s_%s-%s.ghost" % [p_track_id, p_car_id, player_key(nickname), medal]
@@ -191,10 +195,10 @@ static func load_medals(p_track_id: int, p_car_id: String, nickname: String) -> 
 	return medals
 
 
-## Garde un tour de la session comme médaille (Or, Argent, Bronze) ;
+## Garde un tour de la session comme médaille (Argent, Bronze) ;
 ## remplace la précédente.
 static func save_medal(data: Dictionary, medal: String) -> bool:
-	if medal == "platine" or not MEDAL_NAMES.has(medal):
+	if not CHOSEN_MEDALS.has(medal):
 		return false
 
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(GHOST_DIR))
@@ -214,8 +218,8 @@ static func save_medal(data: Dictionary, medal: String) -> bool:
 
 ## Nom d'un fantôme : joueur et médaille (« Flavien Or »).
 static func ghost_label(data: Dictionary) -> String:
-	var medal := String(data.get("medal", "platine"))
-	return "%s %s" % [String(data.get("nickname", "?")), MEDAL_NAMES.get(medal, "Platine")]
+	var medal := String(data.get("medal", "or"))
+	return "%s %s" % [String(data.get("nickname", "?")), MEDAL_NAMES.get(medal, "Or")]
 
 
 ## Fantômes enregistrés avec cette voiture (joueur et médaille), sur un
@@ -248,7 +252,7 @@ static func list_recorders(p_car_id: String) -> Array[Dictionary]:
 			continue
 
 		if not by_key.has(key):
-			var medal := String(data.get("medal", "platine"))
+			var medal := String(data.get("medal", "or"))
 			by_key[key] = {
 				"key": key,
 				"nickname": ghost_label(data),
