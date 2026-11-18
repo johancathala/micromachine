@@ -43,6 +43,7 @@ var room_minus := PackedFloat32Array()
 var surface_grip := PackedFloat32Array()
 var surface_brake := PackedFloat32Array()
 var surface_steer := PackedFloat32Array()
+var surfaces_version := 0
 
 
 static func from_track(track: Node, progress: TrackProgress) -> RacingLine:
@@ -73,21 +74,29 @@ func _measure_room(progress: TrackProgress) -> void:
 	room_plus.resize(count)
 	room_minus.resize(count)
 
-	surface_grip.resize(count)
-	surface_brake.resize(count)
-	surface_steer.resize(count)
-
 	for i in range(count):
 		var normal := direction(i).orthogonal()
 		room_plus[i] = progress.drivable_extent(points[i], normal)
 		room_minus[i] = progress.drivable_extent(points[i], -normal)
 
-		var surface := progress.offroad_surface(points[i])
-		surface_grip[i] = 1.0 if surface == null else surface.grip_mul
-		surface_brake[i] = 1.0 if surface == null else surface.brake_mul
+
+## Surface en chaque point, détectée par la physique (à appeler pendant
+## la course : les calques ne sont enregistrés qu'après leur ajout).
+func measure_surfaces(progress: TrackProgress) -> void:
+	var count := points.size()
+	surface_grip.resize(count)
+	surface_brake.resize(count)
+	surface_steer.resize(count)
+
+	for i in range(count):
+		var surface := progress.surface_at(points[i])
+		surface_grip[i] = surface.grip_mul
+		surface_brake[i] = surface.brake_mul
 		# Sous-virage de Car._apply_rotation sur une surface glissante.
 		var understeer := 1.0 - clampf(1.15 - surface_grip[i], 0.0, 0.55)
 		surface_steer[i] = understeer / 0.85
+
+	surfaces_version += 1
 
 
 func is_valid() -> bool:

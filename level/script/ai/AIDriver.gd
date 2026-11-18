@@ -96,9 +96,35 @@ const OVERTAKE_OFFSET := 120.0
 const OVERTAKE_EDGE_MARGIN := 50.0
 
 # Blocage.
+# Garde-fou anti-collision : la trajectoire réelle de la voiture
+# (position, vitesse, rotation en cours) est projetée jusqu'à sa distance
+# de freinage ; si elle mène dans un obstacle dur alors que la voiture
+# s'écarte de sa trajectoire (glisse, sous-virage, bousculade) ou que
+# l'obstacle est tout proche, l'IA freine pour l'éviter.
+const GUARD_STEP := 24.0
+const GUARD_MAX_DISTANCE := 1400.0
+const GUARD_HALF_WIDTH := 30.0
+# Distance gardée devant l'obstacle (px).
+const GUARD_MARGIN := 70.0
+# Écart à la trajectoire (px, rad) à partir duquel la voiture « dérive ».
+const GUARD_OFF_LINE := 60.0
+const GUARD_OFF_ANGLE := 0.3
+# Obstacle « tout proche » (px) : on freine même sur la trajectoire.
+const GUARD_NEAR := 160.0
+# Vitesse d'impact visée au pire (sous le seuil d'explosion de 700).
+const GUARD_IMPACT_SPEED := 250.0
 const STUCK_SPEED := 40.0
 const STUCK_DELAY := 1.0
-const REVERSE_TIME := 0.9
+# Manœuvre de dégagement : recul de REVERSE_MIN_TIME à REVERSE_MAX_TIME s,
+# jusqu'à pointer vers la trajectoire (RECOVERY_AIM px devant) à moins de
+# RECOVERY_ALIGNED rad avec RECOVERY_CLEARANCE px libres devant ; puis
+# RECOVERY_TIME s de reprise vers ce point.
+const REVERSE_MIN_TIME := 0.5
+const REVERSE_MAX_TIME := 3.0
+const RECOVERY_AIM := 250.0
+const RECOVERY_ALIGNED := 0.45
+const RECOVERY_CLEARANCE := 220.0
+const RECOVERY_TIME := 1.2
 const NO_PROGRESS_RESPAWN := 6.0
 
 # Pneus : écart d'adhérence qui fait recalculer le profil de vitesse.
@@ -133,6 +159,15 @@ static func set_tuning(slip: float, margin: float) -> void:
 
 var car: Car = null
 var line: RacingLine = null
+# Parcours du circuit (obstacles durs pour le garde-fou).
+var progress: TrackProgress = null
+# Garde-fou : actif (Expert toujours ; suspendu pendant une erreur de
+# pilotage), et statistiques.
+var guard_enabled := true
+var _surfaces_seen := 0
+var guard_count := 0
+var _last_heading := 0.0
+var _yaw_rate := 0.0
 var difficulty: int = Difficulty.MEDIUM
 
 # Course : participant piloté et nombre de tours (0 = illimité).
@@ -170,6 +205,8 @@ var _index := -1
 var _previous_index := -1
 var _lateral_offset := 0.0
 var _stuck_time := 0.0
+var _reverse_elapsed := 0.0
+var _recovery_time := 0.0
 var _reverse_time := 0.0
 var _no_progress_time := 0.0
 var _last_progress_index := -1
@@ -474,6 +511,21 @@ func update(delta: float) -> void:
 	if line == null or not line.is_valid():
 		return
 
+	# Surfaces de la trajectoire : mesurées une fois la physique prête,
+	# puis vitesses recalculées.
+	if progress != null and line.surfaces_version == 0:
+		line.measure_surfaces(progress)
+
+	if line.surfaces_version != _surfaces_seen:
+		_surfaces_seen = line.surfaces_version
+		_build_safe_profile()
+		_precompute_corner_limits()
+		_profile_grip = 1.0
+		speed_profile = build_profile(line, 1.0, 1.0)
+
+		if strategy != null:
+			strategy = AIPitStrategy.new(self)
+
 	var position := car.global_position
 	var speed := car.velocity.length()
 
@@ -602,16 +654,100 @@ func update(delta: float) -> void:
 	if not _on_pit_route:
 		_update_stuck(delta, speed)
 
+	# Manœuvre de dégagement : recul en braquant pour pointer vers la
+	# trajectoire, jusqu'à être orientée vers elle avec la voie libre
+	# devant (épingle trop serrée, voiture plantée contre un obstacle).
 	if _reverse_time > 0.0:
 		_reverse_time -= delta
+		_reverse_elapsed += delta
+		var aim := _line.point(_index + int(RECOVERY_AIM / RacingLine.SPACING)) - position
+		var aim_angle := wrapf(aim.angle() - car.global_rotation, -PI, PI)
+		var forward := Vector2.RIGHT.rotated(car.global_rotation)
+		var clear := progress == null or _hazard_distance(position, forward * 300.0, RECOVERY_CLEARANCE) == INF
+
+		if _reverse_elapsed > REVERSE_MIN_TIME and absf(aim_angle) < RECOVERY_ALIGNED and clear:
+			_reverse_time = 0.0
+			_recovery_time = RECOVERY_TIME
+		elif _reverse_elapsed > REVERSE_MIN_TIME and speed < STUCK_SPEED * 0.5 and _reverse_elapsed > 1.2:
+			# Butée en reculant : on repart en avant.
+			_reverse_time = 0.0
+			_recovery_time = RECOVERY_TIME
+
 		throttle = 0.0
 		brake = 1.0
-		steer = -signf(alpha)
+		# En marche arrière, braquer à l'opposé fait pivoter le nez vers
+		# la cible.
+		steer = -signf(aim_angle)
+
+	# Juste après un dégagement : viser plus loin sur la trajectoire, à
+	# vitesse modérée, le temps de s'y replacer.
+	if _recovery_time > 0.0 and _reverse_time <= 0.0:
+		_recovery_time -= delta
+		var aim := _line.point(_index + int(RECOVERY_AIM / RacingLine.SPACING)) - position
+		var aim_angle := wrapf(aim.angle() - car.global_rotation, -PI, PI)
+		steer = clampf(aim_angle * 2.0, -1.0, 1.0)
+
+		if speed > REJOIN_SPEED:
+			throttle = 0.0
+
+	# ---- Garde-fou anti-collision ----
+	var heading_now := car.global_rotation
+	_yaw_rate = wrapf(heading_now - _last_heading, -PI, PI) / maxf(delta, 0.001)
+	_last_heading = heading_now
+
+	if guard_enabled and progress != null and _reverse_time <= 0.0 and speed > 150.0:
+		var drifting := absf(lateral_error) > GUARD_OFF_LINE or absf(
+			wrapf(car.velocity.angle() - line_direction.angle(), -PI, PI)
+		) > GUARD_OFF_ANGLE
+		var decel := _effective_decel()
+		var stopping := speed * speed / (2.0 * decel)
+		var hazard := _hazard_distance(position, car.velocity, minf(stopping * 1.3 + 200.0, GUARD_MAX_DISTANCE))
+
+		if hazard < INF and (drifting or hazard < GUARD_NEAR):
+			var room := maxf(hazard - GUARD_MARGIN, 0.0)
+			var allowed := sqrt(GUARD_IMPACT_SPEED * GUARD_IMPACT_SPEED + 2.0 * decel * room)
+
+			if speed > allowed:
+				throttle = 0.0
+				brake = 1.0
+				guard_count += 1
 
 	car.throttle = throttle
 	car.brake = brake
 	car.steer_input = clampf(steer, -1.0, 1.0)
 	car.handbrake = false
+
+
+## Décélération réelle au freinage, selon la surface sous la voiture.
+func _effective_decel() -> float:
+	var surface_brake := car._surface.brake_mul if car._surface != null else 1.0
+	return maxf(car.brake_force * BRAKE_EFFICIENCY * surface_brake, 100.0)
+
+
+## Distance (px) jusqu'au premier obstacle dur sur la trajectoire réelle
+## projetée (arc de la rotation en cours), INF si aucun avant `limit`.
+func _hazard_distance(origin: Vector2, velocity: Vector2, limit: float) -> float:
+	var speed := velocity.length()
+
+	if speed < 1.0:
+		return INF
+
+	var direction := velocity / speed
+	var curvature := clampf(_yaw_rate / speed, -0.01, 0.01)
+	var point := origin
+	var travelled := 0.0
+
+	while travelled < limit:
+		direction = direction.rotated(curvature * GUARD_STEP)
+		point += direction * GUARD_STEP
+		travelled += GUARD_STEP
+		var side := direction.orthogonal() * GUARD_HALF_WIDTH
+
+		for probe in [point, point + side, point - side]:
+			if progress.hard_cells.has(progress.world_to_cell(probe)):
+				return travelled
+
+	return INF
 
 
 func _steering_response(speed: float) -> float:
@@ -863,7 +999,8 @@ func _update_stuck(delta: float, speed: float) -> void:
 		_stuck_time += delta
 
 		if _stuck_time > STUCK_DELAY:
-			_reverse_time = REVERSE_TIME
+			_reverse_time = REVERSE_MAX_TIME
+			_reverse_elapsed = 0.0
 			_stuck_time = 0.0
 	else:
 		_stuck_time = 0.0
