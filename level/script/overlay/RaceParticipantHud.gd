@@ -63,9 +63,8 @@ const HUMAN_COLOR := Color("#5ce1ff")
 static var _body_tints: Dictionary = {}
 
 
-## Couleur visible de la carrosserie : teinte du dessin du modèle,
-## multipliée par la couleur choisie (« Aucune » : teinte d'origine).
-## Éclaircie si besoin pour rester lisible sur la piste.
+## Couleur de la voiture : la couleur choisie, ou pour « Aucune » la
+## teinte du dessin du modèle. Éclaircie si besoin pour rester lisible.
 static func car_display_color(car: Car) -> Color:
 	if not is_instance_valid(car) or car.model == null:
 		return HUMAN_COLOR
@@ -79,6 +78,12 @@ static func car_display_color(car: Car) -> Color:
 		break
 
 	var base := Color.WHITE
+	var chosen := tint_node.modulate
+
+	# Couleur choisie (autre que « Aucune ») : c'est elle qu'on voit.
+	if chosen.s > 0.15:
+		chosen.a = 1.0
+		return _readable(chosen)
 
 	if sprite != null and sprite.sprite_frames != null:
 		var texture := sprite.sprite_frames.get_frame_texture(sprite.animation, 0)
@@ -86,9 +91,13 @@ static func car_display_color(car: Car) -> Color:
 		if texture != null:
 			base = _body_tint(texture)
 
-	var color := base * tint_node.modulate
+	var color := base * chosen
 	color.a = 1.0
+	return _readable(color)
 
+
+## Couleur éclaircie si besoin, pour rester lisible sur la piste.
+static func _readable(color: Color) -> Color:
 	if color.get_luminance() < 0.45:
 		color = color.lightened(0.45 - color.get_luminance() + 0.2)
 
