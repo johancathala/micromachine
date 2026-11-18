@@ -67,6 +67,8 @@ func initialize(
 	if split_screen != null:
 		$MarginContainer/HBoxContainer/LeftPanel/Top.hide()
 		participant_list.hide()
+	else:
+		_build_tire_gauges()
 
 	start_message()
 
@@ -90,6 +92,26 @@ func _process(_delta: float) -> void:
 			continue
 		
 		row.refresh()
+
+	_sort_participant_rows()
+
+
+## Classement dans l'ordre : le premier en haut (ligne 0 : en-tête).
+func _sort_participant_rows() -> void:
+	var ordered := race_controller.get_participant_states().duplicate()
+	ordered.sort_custom(func(a, b): return a.race_position < b.race_position)
+	var index := 1
+
+	for state in ordered:
+		var row: Node = participant_rows.get(state.participant_id)
+
+		if row == null:
+			continue
+
+		if row.get_index() != index:
+			participant_list.move_child(row, index)
+
+		index += 1
 
 
 func _connect_controller_signals() -> void:
@@ -519,6 +541,40 @@ func _build_participant_rows() -> void:
 		row.setup(state,race_controller)
 
 		participant_rows[state.participant_id] = row
+
+## Usure des pneus, en bas à gauche : une jauge par joueur humain (avec
+## son nom s'ils sont plusieurs). En écran splitté, chaque vue a la
+## sienne (SplitScreen).
+func _build_tire_gauges() -> void:
+	var humans: Array[RaceParticipantState] = []
+
+	for state in race_controller.get_participant_states():
+		if not state.is_ai:
+			humans.append(state)
+
+	if humans.is_empty():
+		return
+
+	var box := HBoxContainer.new()
+	box.name = "TireGauges"
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_theme_constant_override("separation", 12)
+	box.anchor_top = 1.0
+	box.anchor_bottom = 1.0
+	box.offset_left = 16.0
+	box.offset_bottom = -12.0
+	box.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	add_child(box)
+
+	for state in humans:
+		var gauge := TireGauge.new()
+		gauge.state = state
+
+		if humans.size() > 1:
+			gauge.caption = state.nickname
+
+		box.add_child(gauge)
+
 
 # Taille du bloc des feux (5 feux de 32 x 48 px), avant mise à l'échelle.
 const START_LIGHTS_SIZE := Vector2(288, 48)
