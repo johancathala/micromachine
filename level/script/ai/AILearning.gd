@@ -40,8 +40,14 @@ static var _loaded := false
 static var _versions: Dictionary = {}
 
 
+## Génération de l'apprentissage : un changement de comportement de l'IA
+## rend l'ancien inutilisable (ralentissements à contretemps). Les clés
+## d'une autre génération sont ignorées, sans rien effacer.
+const GENERATION := 2
+
+
 static func make_key(track_path: String, car_id: String) -> String:
-	return "%s|%s" % [track_path, car_id]
+	return "v%d|%s|%s" % [GENERATION, track_path, car_id]
 
 
 static func _ensure_loaded() -> void:

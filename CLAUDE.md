@@ -12,7 +12,7 @@ Skill de référence pour les patrons Godot : `.claude/skills/godot-gdscript-pat
 | `level/map/` | **Cartes** : décor et physique d'un lieu (tuiles, obstacles, eau). Aucune logique de course. Aujourd'hui : Brissac. |
 | `level/track/` | **Circuits** : intègrent une carte (nœud nommé d'après le lieu, ex. « Brissac ») et portent leur logique : `Sections`, `SpawnPoints`, `PitStop` (zones d'arrêt), `PitLane` (vitesse limitée), `RaceStartLightsMap`, `RacingLine` (facultatif). Catalogue : `TrackCatalog.gd`. |
 | `level/script/` | Course : `RaceController`, `TrackProgress` (parcours A*), stand (`PitStopManager`, `PitStop`, `PitLane`), élimination, fantômes. |
-| `level/script/ai/` | IA : `AIDriver` (pilote), `RacingLine` (trajectoire), `AIPitStrategy` (pneus), `AILearning` + `ai_learning.json` (virages appris, livré). |
+| `level/script/ai/` | IA : `AIDriver` (pilote, garde-fou anti-collision, erreurs selon le niveau), `AIStyle` (styles de pilotage), `RacingLine` (trajectoire), `AIPitStrategy` (pneus), `AILearning` + `ai_learning.json` (virages appris ; `GENERATION` à incrémenter quand le comportement de l'IA change). |
 | `perso/car/` | Voiture (`Car.gd`) et définitions (`definition/*.tres`). |
 | `ui/` | Menus. Parcours de course : Mode (`RaceModeSelect`) → Joueurs (`CarSelection`) → IA (`AISetup`, classique et élimination) → Circuit (`RaceSetup`) → Course. |
 | `tools/track/` | Générateurs lancés sans fenêtre (variantes de Brissac, élargissement des portes, séparation carte / circuit, aperçus). |
