@@ -44,7 +44,21 @@ func setup(
 
 	name_label.text = " | " + participant.nickname
 
+	# Joueurs humains en gras.
+	if not participant.is_ai:
+		for child in get_children():
+			if child is Label:
+				embolden(child)
+
 	refresh()
+
+
+## Met un libellé en gras (police d'origine épaissie).
+static func embolden(label: Label) -> void:
+	var bold := FontVariation.new()
+	bold.base_font = label.get_theme_font("font")
+	bold.variation_embolden = 0.9
+	label.add_theme_font_override("font", bold)
 
 
 func refresh() -> void:

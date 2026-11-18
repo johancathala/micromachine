@@ -295,6 +295,14 @@ func build_participants() -> void:
 	# fantôme).
 	var ai_count := mini(ai_slots.size(), get_max_ai_count())
 
+	# Les IA portent le nom de leur style, numéroté s'il y a des doublons.
+	var style_totals: Dictionary = {}
+	var style_seen: Dictionary = {}
+
+	for i in range(ai_count):
+		var id := String(ai_slots[i].get("style", AIStyle.DEFAULT_ID))
+		style_totals[id] = int(style_totals.get(id, 0)) + 1
+
 	for i in range(ai_count):
 		var slot := ai_slots[i]
 		var pilot := int(slot.get("pilot", ai_difficulty))
@@ -304,7 +312,7 @@ func build_participants() -> void:
 			"player_id": -1,
 			"device_type": "ai",
 			"device_id": -1,
-			"nickname": "IA %d" % (i + 1),
+			"nickname": _ai_name(String(slot.get("style", AIStyle.DEFAULT_ID)), style_totals, style_seen),
 			"is_ai": true,
 			"enabled": true,
 			"ai_pilot": pilot,
@@ -315,6 +323,18 @@ func build_participants() -> void:
 		})
 
 	_resolve_ai_liveries()
+
+
+## Nom d'une IA : son style (« Agressif »), numéroté si plusieurs IA
+## ont le même (« Agressif 1 », « Agressif 2 »).
+func _ai_name(style_id: String, totals: Dictionary, seen: Dictionary) -> String:
+	var name := String(AIStyle.get_style(style_id)["name"])
+
+	if int(totals.get(style_id, 0)) <= 1:
+		return name
+
+	seen[style_id] = int(seen.get(style_id, 0)) + 1
+	return "%s %d" % [name, seen[style_id]]
 
 
 ## Les IA cèdent leur livrée : une IA dont la voiture ou la couleur

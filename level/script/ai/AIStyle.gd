@@ -81,13 +81,15 @@ const STYLES := [
 
 # Description des niveaux (écran des IA).
 const LEVEL_DESCRIPTIONS := [
-	"Pilote hésitant : rythme modeste, freine tôt et commet régulièrement des erreurs (freinage manqué, sortie large, tête-à-queue) qui peuvent l'envoyer dans le décor.",
-	"Pilote solide : bon rythme, quelques erreurs de temps en temps, parfois une sortie de route.",
-	"Pilote d'élite : au plus près des limites de la voiture, ne commet pas d'erreur et ne part jamais dans le décor de lui-même."
+	"Pilote hésitant : rythme modeste et environ une erreur par tour (35 % de tours sans faute) : freinages manqués, sorties larges, tête-à-queue, qui l'envoient souvent dans le décor.",
+	"Pilote solide : bon rythme, une erreur tous les deux ou trois tours (60 % de tours sans faute), parfois une sortie de route.",
+	"Pilote d'élite : au plus près des limites (98 % de tours sans faute) ; ses rares erreurs sont légères et il ne part jamais dans le décor de lui-même."
 ]
 
-# Erreurs par tour selon le niveau (Novice, Moyen, Expert : aucune).
-const MISTAKES_PER_LAP := [1.4, 0.5, 0.0]
+# Part des tours sans aucune erreur, selon le niveau (Novice, Moyen,
+# Expert), pour un style au comportement « mistakes » = 1. Le nombre
+# d'erreurs d'un tour suit une loi de Poisson de moyenne -ln(part).
+const CLEAN_LAPS := [0.35, 0.60, 0.98]
 
 
 static func get_styles() -> Array:
