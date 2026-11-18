@@ -528,9 +528,16 @@ func _build_participant_rows() -> void:
 
 	# Nettoyage éventuel
 	for child in participant_list.get_children():
-		child.queue_free()
+		if child.name != "Title":
+			child.queue_free()
 
 	participant_rows.clear()
+
+	# En-tête du tableau (première ligne du panneau).
+	var header := participant_list.get_node_or_null("Title") as HBoxContainer
+
+	if header != null:
+		RaceParticipantHUD.build_header(header, race_controller.is_elimination_mode())
 
 	for state in race_controller.get_participant_states():
 

@@ -110,6 +110,10 @@ func _draw() -> void:
 	# Clignotement quand il faut changer les pneus.
 	var flash := wear >= BLINK_FROM and fmod(_time, 0.6) < 0.3
 
+	# ---- Voie des stands : vitesse bridée ----
+	if car.is_speed_limited():
+		_text(font, "LIMITEUR", Vector2(size.x / 2.0, -6.0), CAPTION_FONT_SIZE, Color("#5ce1ff"))
+
 	# ---- Pourcentage, au-dessus ----
 	_text(font, "%d %%" % int(round(wear * 100.0)), Vector2(size.x / 2.0, PERCENT_FONT_SIZE), PERCENT_FONT_SIZE, color)
 

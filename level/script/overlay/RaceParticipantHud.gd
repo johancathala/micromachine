@@ -34,6 +34,82 @@ const POSITION_COLORS := {
 }
 
 
+# ============================================================
+# TABLEAU : colonnes de largeur fixe, en-tête au-dessus (build_header)
+# ============================================================
+const FONT_SIZE := 20
+const HEADER_FONT_SIZE := 15
+const HEADER_COLOR := Color(1, 1, 1, 0.7)
+# [nœud, largeur, alignement, en-tête, en-tête en élimination]
+const COLUMNS := [
+	["Position", 58, HORIZONTAL_ALIGNMENT_LEFT, "POS", "POS"],
+	["Tire", 26, HORIZONTAL_ALIGNMENT_CENTER, "", ""],
+	["Name", 190, HORIZONTAL_ALIGNMENT_LEFT, "PILOTE", "PILOTE"],
+	["Lap", 64, HORIZONTAL_ALIGNMENT_CENTER, "TOURS", "POINTS"],
+	["LapTime", 96, HORIZONTAL_ALIGNMENT_RIGHT, "CHRONO", "ÉTAT"],
+	["Delta", 86, HORIZONTAL_ALIGNMENT_RIGHT, "ÉCART", ""],
+	["BestLap", 96, HORIZONTAL_ALIGNMENT_RIGHT, "MEILLEUR", ""],
+]
+const COLUMN_SEPARATION := 10
+
+var tire_icon: Control = null
+
+
+## En-tête du tableau (remplace le contenu de `header`).
+static func build_header(header: HBoxContainer, elimination: bool) -> void:
+	for child in header.get_children():
+		child.queue_free()
+
+	header.size_flags_horizontal = Control.SIZE_SHRINK_END
+	header.add_theme_constant_override("separation", COLUMN_SEPARATION)
+
+	for column in COLUMNS:
+		var label := Label.new()
+		label.text = column[4] if elimination else column[3]
+		label.custom_minimum_size = Vector2(column[1], 0)
+		label.horizontal_alignment = column[2]
+		label.add_theme_font_size_override("font_size", HEADER_FONT_SIZE)
+		label.modulate = HEADER_COLOR
+		header.add_child(label)
+
+
+func _layout_columns() -> void:
+	size_flags_horizontal = Control.SIZE_SHRINK_END
+	add_theme_constant_override("separation", COLUMN_SEPARATION)
+
+	# Mini pneu : couleur de l'usure (adversaires d'un coup d'œil).
+	tire_icon = Control.new()
+	tire_icon.name = "Tire"
+	tire_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tire_icon.draw.connect(_draw_tire_icon)
+	add_child(tire_icon)
+	move_child(tire_icon, position_label.get_index() + 1)
+	move_child(name_label, tire_icon.get_index() + 1)
+
+	for column in COLUMNS:
+		var node := get_node(String(column[0])) as Control
+		node.custom_minimum_size = Vector2(column[1], 0)
+		node.size_flags_horizontal = Control.SIZE_FILL
+
+		if node is Label:
+			(node as Label).horizontal_alignment = column[2]
+			(node as Label).clip_text = true
+			(node as Label).add_theme_font_size_override("font_size", FONT_SIZE)
+
+
+func _draw_tire_icon() -> void:
+	if not is_instance_valid(participant.car) or not participant.car.tire_wear_enabled:
+		return
+
+	var center := tire_icon.size / 2.0
+	var radius := minf(center.x, center.y) - 1.0
+	var color := TireGauge.wear_color(participant.car.tire_wear)
+	tire_icon.draw_circle(center, radius + 1.0, Color.BLACK)
+	tire_icon.draw_circle(center, radius - 1.0, Color("#262626"))
+	tire_icon.draw_arc(center, radius * 0.62, 0.0, TAU, 20, color, radius * 0.38, true)
+	tire_icon.draw_circle(center, radius * 0.3, Color("#a9a9a9"))
+
+
 func setup(
 	p_participant: RaceParticipantState,
 	p_race_controller: RaceController
@@ -42,7 +118,8 @@ func setup(
 	participant = p_participant
 	race_controller = p_race_controller
 
-	name_label.text = " | " + participant.nickname
+	_layout_columns()
+	name_label.text = participant.nickname
 
 	# Joueurs humains : nom et informations à la couleur de leur voiture
 	# (la position garde l'or, l'argent, le bronze ; l'écart, le vert
@@ -169,22 +246,15 @@ func refresh() -> void:
 	# ============================================================
 	# TOUR
 	# ============================================================
-	lap_label.text = (
-		" | TOUR %d"
-		% participant.current_lap
-	)
+	lap_label.text = race_controller.format_lap(participant.current_lap)
 
-	# (Usure des pneus : jauge en bas à gauche de l'écran, TireGauge.)
-
-	# Voie des stands : vitesse bridée.
-	if not participant.is_ai and is_instance_valid(participant.car) and participant.car.is_speed_limited():
-		lap_label.text += " | LIMITEUR"
+	tire_icon.queue_redraw()
 
 	# Mode élimination : points et état dans la manche.
 	if race_controller.is_elimination_mode():
-		lap_label.text = " | %d PTS" % participant.points
+		lap_label.text = "%d" % participant.points
 		lap_time_label.text = (
-			" | ÉLIMINÉ" if participant.eliminated else " | EN PISTE"
+			"ÉLIMINÉ" if participant.eliminated else "EN PISTE"
 		)
 		delta_label.text = ""
 		best_lap_label.text = ""
@@ -201,14 +271,11 @@ func refresh() -> void:
 			- participant.lap_start_time
 		)
 
-		lap_time_label.text = (
-			" | En cours: %s"
-			% _format_time(current_lap_time)
-		)
+		lap_time_label.text = _format_time(current_lap_time)
 
 	else:
 
-		lap_time_label.text = " | En cours: --:--.--"
+		lap_time_label.text = "--:--.--"
 
 
 	# ============================================================
@@ -223,10 +290,7 @@ func refresh() -> void:
 	# ============================================================
 	# MEILLEUR TOUR
 	# ============================================================
-	best_lap_label.text = (
-		"Meilleur: %s"
-		% _format_time(participant.best_lap_time)
-	)
+	best_lap_label.text = _format_time(participant.best_lap_time)
 
 
 func get_delta() -> String:
