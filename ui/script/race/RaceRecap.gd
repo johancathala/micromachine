@@ -120,6 +120,8 @@ var _tt_medals: Dictionary = {}
 var _tt_medals_label: Label = null
 # Bouton en attente de confirmation (remplacement d'une médaille).
 var _tt_pending: Button = null
+# Boutons de médaille de toutes les lignes.
+var _tt_buttons: Array[Button] = []
 
 
 func _build_time_trial() -> void:
@@ -143,9 +145,12 @@ func _build_time_trial() -> void:
 	_refresh_medals()
 
 	var best := float(first["lap_time"])
+	_tt_buttons.clear()
 
 	for i in range(_tt_laps.size()):
 		results_list.add_child(_time_trial_row(i, _tt_laps[i], best))
+
+	_refresh_medal_buttons()
 
 
 func _time_trial_row(rank: int, lap: Dictionary, best: float) -> HBoxContainer:
@@ -182,8 +187,10 @@ func _time_trial_row(rank: int, lap: Dictionary, best: float) -> HBoxContainer:
 		button.set_meta("medal", medal)
 		button.set_meta("label", "GARDER EN %s" % String(GhostManager.MEDAL_NAMES[medal]).to_upper())
 		button.text = button.get_meta("label")
+		button.set_meta("lap_time", float(lap["lap_time"]))
 		button.pressed.connect(_on_medal_pressed.bind(button, lap, medal))
 		row.add_child(button)
+		_tt_buttons.append(button)
 
 	return row
 
@@ -203,14 +210,25 @@ func _on_medal_pressed(button: Button, lap: Dictionary, medal: String) -> void:
 
 	if GhostManager.save_medal(lap, medal):
 		_refresh_medals()
-		button.text = "%s GARDÉ" % String(GhostManager.MEDAL_NAMES[medal]).to_upper()
+		_refresh_medal_buttons()
+
+
+## « ARGENT GARDÉ » sur le seul tour qui détient la médaille ; les
+## autres boutons reprennent leur libellé.
+func _refresh_medal_buttons() -> void:
+	for button in _tt_buttons:
+		var medal := String(button.get_meta("medal"))
+		var kept: Dictionary = _tt_medals.get(medal, {})
+
+		if not kept.is_empty() and is_equal_approx(float(kept.get("lap_time", 0.0)), float(button.get_meta("lap_time"))):
+			button.text = "%s GARDÉ" % String(GhostManager.MEDAL_NAMES[medal]).to_upper()
+		else:
+			button.text = button.get_meta("label")
 
 
 func _cancel_pending() -> void:
-	if _tt_pending != null and is_instance_valid(_tt_pending):
-		_tt_pending.text = _tt_pending.get_meta("label")
-
 	_tt_pending = null
+	_refresh_medal_buttons()
 
 
 ## Fantômes du joueur pour ce circuit et cette voiture.
