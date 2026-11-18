@@ -21,7 +21,7 @@ extends Control
 # élimination (il ne peut pas être éliminé).
 # ============================================================
 
-const GHOST_DESCRIPTION := "Fantôme : rejoue un tour enregistré en contre-la-montre avec sa voiture, tour après tour. Il traverse les autres voitures et ne peut pas exploser. Ses pneus ne s'usent pas."
+const GHOST_DESCRIPTION := "Fantôme : rejoue un tour enregistré en contre-la-montre avec sa voiture, tour après tour. Il traverse les autres voitures et ne peut pas exploser. Ses pneus s'usent et il passe au stand comme les autres."
 
 # Fantômes enregistrés, par voiture (lus une fois par écran).
 var _ghost_cache: Dictionary = {}
@@ -62,9 +62,24 @@ func _ready() -> void:
 	for level in [RaceConfig.AIPilot.NOVICE, RaceConfig.AIPilot.MEDIUM, RaceConfig.AIPilot.EXPERT]:
 		level_selector.add_item(RaceConfig.AI_PILOT_NAMES[level], level)
 
-	level_selector.select(level_selector.get_item_index(
-		RaceConfig.get_ai_difficulty(race_config.ai_difficulty)
-	))
+	# Fantômes : tirés au hasard parmi ceux enregistrés (pas en
+	# élimination).
+	if not race_config.is_elimination():
+		level_selector.add_item(RaceConfig.AI_PILOT_NAMES[RaceConfig.AIPilot.GHOST], RaceConfig.AIPilot.GHOST)
+
+		if _all_ghosts().is_empty():
+			level_selector.set_item_text(
+				level_selector.get_item_index(RaceConfig.AIPilot.GHOST), "Fantôme (aucun enregistré)"
+			)
+			level_selector.set_item_disabled(level_selector.get_item_index(RaceConfig.AIPilot.GHOST), true)
+
+	var level_index := level_selector.get_item_index(race_config.ai_difficulty)
+
+	if level_index < 0 or level_selector.is_item_disabled(level_index):
+		race_config.ai_difficulty = RaceConfig.get_ai_difficulty(race_config.ai_difficulty)
+		level_index = level_selector.get_item_index(race_config.ai_difficulty)
+
+	level_selector.select(level_index)
 	level_selector.item_selected.connect(
 		func(index: int):
 			race_config.ai_difficulty = level_selector.get_item_id(index)
@@ -109,6 +124,10 @@ func _add_ai() -> void:
 	if _free_places() <= 0:
 		return
 
+	if race_config.ai_difficulty == RaceConfig.AIPilot.GHOST:
+		_add_ghost()
+		return
+
 	if _style_pool.is_empty():
 		_style_pool = AIStyle.shuffled_ids()
 
@@ -116,6 +135,62 @@ func _add_ai() -> void:
 		"pilot": race_config.ai_difficulty,
 		"style": _style_pool.pop_back(),
 		"car_id": cars[randi() % cars.size()].id,
+		"color_id": String(colors[randi() % colors.size()]["id"])
+	})
+	_sync()
+
+
+## Tous les fantômes enregistrés, toutes voitures : [{car_id, key,
+## nickname}] (lus une fois par écran).
+func _all_ghosts() -> Array[Dictionary]:
+	var ghosts: Array[Dictionary] = []
+
+	for car in cars:
+		for recorder in _ghost_recorders_for(car.id):
+			ghosts.append({"car_id": car.id, "key": recorder["key"], "nickname": recorder["nickname"]})
+
+	return ghosts
+
+
+func _ghost_recorders_for(car_id: String) -> Array[Dictionary]:
+	if not _ghost_cache.has(car_id):
+		_ghost_cache[car_id] = GhostManager.list_recorders(car_id)
+
+	return _ghost_cache[car_id]
+
+
+## Nouvelle IA fantôme : un fantôme enregistré au hasard (sa voiture
+## avec), en évitant ceux déjà engagés tant qu'il en reste.
+func _add_ghost() -> void:
+	var ghosts := _all_ghosts()
+
+	if ghosts.is_empty():
+		return
+
+	var unused: Array[Dictionary] = []
+
+	for ghost in ghosts:
+		var taken := false
+
+		for slot in race_config.ai_slots:
+			if (
+				int(slot.get("pilot", -1)) == RaceConfig.AIPilot.GHOST
+				and String(slot.get("car_id", "")) == ghost["car_id"]
+				and String(slot.get("ghost", "")) == ghost["key"]
+			):
+				taken = true
+
+		if not taken:
+			unused.append(ghost)
+
+	var pick: Dictionary = (unused if not unused.is_empty() else ghosts).pick_random()
+
+	race_config.ai_slots.append({
+		"pilot": RaceConfig.AIPilot.GHOST,
+		"style": AIStyle.DEFAULT_ID,
+		"ghost": pick["key"],
+		"ghost_name": pick["nickname"],
+		"car_id": pick["car_id"],
 		"color_id": String(colors[randi() % colors.size()]["id"])
 	})
 	_sync()
@@ -162,6 +237,10 @@ func _show_car_description(car: CarDefinition) -> void:
 
 ## Description du niveau choisi pour les IA ajoutées.
 func _show_level_hint() -> void:
+	if race_config.ai_difficulty == RaceConfig.AIPilot.GHOST:
+		description_label.text = GHOST_DESCRIPTION + " « Ajouter » et « Remplir » prennent des fantômes au hasard parmi ceux enregistrés."
+		return
+
 	var level := RaceConfig.get_ai_difficulty(race_config.ai_difficulty)
 	description_label.text = "Niveau %s : %s" % [RaceConfig.AI_PILOT_NAMES[level], AIStyle.LEVEL_DESCRIPTIONS[level]]
 
@@ -214,12 +293,7 @@ func _fill_ghost_selector(selector: OptionButton, slot_index: int) -> void:
 
 
 func _ghost_recorders(slot_index: int) -> Array[Dictionary]:
-	var car_id := String(race_config.get_participant(_participant_index(slot_index)).get("car_id", ""))
-
-	if not _ghost_cache.has(car_id):
-		_ghost_cache[car_id] = GhostManager.list_recorders(car_id)
-
-	return _ghost_cache[car_id]
+	return _ghost_recorders_for(String(race_config.get_participant(_participant_index(slot_index)).get("car_id", "")))
 
 
 func _on_ghost_selected(index: int, slot_index: int, recorders: Array[Dictionary]) -> void:
