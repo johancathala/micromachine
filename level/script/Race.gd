@@ -56,6 +56,7 @@ func _initialize_race() -> void:
 	race_controller.race_finished.connect(_on_race_finished)
 	
 	race_controller.quit_race.connect(_on_quit_race)
+	race_controller.restart_race.connect(_on_restart_race)
 	
 	race_controller.return_to_main_menu.connect(_on_return_to_main_menu)
 	
@@ -225,6 +226,14 @@ func _on_race_finished() -> void:
 	# Pause l'exécution de la fonction pendant 2 secondes
 	await get_tree().create_timer(4.0).timeout
 	NavigationManager.go("RaceRecap")
+
+func _on_restart_race() -> void:
+	if not GameManager.restart_active_race():
+		return
+
+	AudioManager.play_start_event()
+	NavigationManager.go("Race", true, true)
+
 
 func _on_quit_race() -> void:
 	NavigationManager.go("RaceRecap")

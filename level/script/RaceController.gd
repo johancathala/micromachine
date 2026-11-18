@@ -43,6 +43,7 @@ signal shortcut_detected(state: RaceParticipantState, missed_section: int)
 # Chaque entrée : {state, reaction, effect} ; effect > 0 bonus, < 0 malus.
 signal start_reactions_judged(results: Array)
 
+signal restart_race
 signal quit_race()
 
 signal return_to_main_menu()
@@ -215,6 +216,7 @@ func initialize(
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	
 	pause_overlay.resume_pressed.connect(_on_pause_resume_pressed)
+	pause_overlay.restart_pressed.connect(_on_pause_restart_pressed)
 	pause_overlay.quit_pressed.connect(_on_pause_quit_pressed)
 	pause_overlay.controls_pressed.connect(_on_pause_controls_pressed)
 	pause_overlay.main_menu_pressed.connect(_on_pause_main_menu_pressed)
@@ -744,6 +746,15 @@ func resume_race() -> void:
 
 func _on_pause_resume_pressed() -> void:
 	resume_race()
+
+
+## Recommencer : même course, depuis la grille (comme « Rejouer »
+## au récapitulatif).
+func _on_pause_restart_pressed() -> void:
+	race_is_paused = false
+	get_tree().paused = false
+	timer_race_end.stop()
+	restart_race.emit()
 
 
 func _on_pause_quit_pressed() -> void:

@@ -51,6 +51,11 @@ layout_mode = 2
 size_flags_vertical = 3
 text = "REPRENDRE"
 
+[node name="RestartButton" type="Button" parent="MarginContainer/PanelContainer/VBoxContainer" unique_id=1739204518 groups=["audio_confirm"]]
+layout_mode = 2
+size_flags_vertical = 3
+text = "RECOMMENCER"
+
 [node name="QuitButton" type="Button" parent="MarginContainer/PanelContainer/VBoxContainer" unique_id=1293045839 groups=["audio_confirm"]]
 layout_mode = 2
 size_flags_vertical = 3
