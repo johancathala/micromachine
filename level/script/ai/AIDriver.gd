@@ -119,11 +119,15 @@ const STYLE_EDGE_MARGIN := 70.0
 # ne décale plus la trajectoire.
 const STYLE_NARROW_WIDTH := 300.0
 const STYLE_TIGHT_CURVATURE := 0.006
-# Erreurs : fenêtre (points) avant / après le virage visé, courbure d'un
-# virage, écart d'une sortie large (px), rotation d'un tête-à-queue.
+# Erreurs : fenêtre (points) avant / après le virage visé, écart d'une
+# sortie large (px), rotation d'un tête-à-queue.
 const MISTAKE_BEFORE := 30
 const MISTAKE_AFTER := 25
-const MISTAKE_MIN_CURVATURE := 0.0025
+# Difficulté d'un point : virage (au carré ; courbure de
+# MISTAKE_HARD_CURVATURE = virage serré), étroitesse, surface glissante ; MISTAKE_BASE_WEIGHT
+# partout (une ligne droite n'est pas tout à fait sans risque).
+const MISTAKE_HARD_CURVATURE := 0.006
+const MISTAKE_BASE_WEIGHT := 0.01
 const MISTAKE_WIDE_OFFSET := 160.0
 const MISTAKE_SPIN := 3.2
 # Freinage manqué : la voiture continue d'accélérer (gain à gravité 1).
@@ -195,9 +199,16 @@ var _style_lap := -1
 # Erreur de pilotage en cours : {type, corner, sign, done} (vide : aucune).
 var _mistake: Dictionary = {}
 var mistake_count := 0
+# Points où ont eu lieu les erreurs (essais).
+var mistake_log: Array[int] = []
 # Points du tour où une erreur est prévue (indices de la trajectoire).
 var _mistake_points: Array[int] = []
 var _mistake_travelled := 0
+# Point difficile visé par chaque erreur prévue.
+var _mistake_corners: Array[int] = []
+# Difficulté de chaque point de la trajectoire, sections du circuit.
+var _mistake_weights := PackedFloat32Array()
+var _mistake_sections: Array[Dictionary] = []
 var _surfaces_seen := 0
 var guard_count := 0
 var _last_heading := 0.0
@@ -662,33 +673,154 @@ func _overtake() -> float:
 	return float(style["overtake"])
 
 
-## Erreurs de pilotage : au début de chaque tour, leur nombre est tiré
-## (loi de Poisson calibrée sur AIStyle.CLEAN_LAPS, modulée par le style)
-## et placé au hasard sur le tour ; chacune vise le virage qui suit. En
-## Novice et Moyen, le garde-fou est suspendu pendant l'erreur (elle
-## peut finir dans le décor) ; en Expert, elle reste légère.
+## Erreurs de pilotage : leur nombre moyen par tour est calibré sur
+## AIStyle.CLEAN_LAPS (modulé par le style) et réparti entre les sections
+## du circuit selon leur difficulté ; chaque section tire son nombre
+## d'erreurs (loi de Poisson), placées sur ses points les plus
+## difficiles (virages serrés, passages étroits, surfaces glissantes).
+## En Novice et Moyen, le garde-fou est suspendu pendant l'erreur ; en
+## Expert, elle reste légère.
 func _plan_mistakes() -> void:
 	_mistake_points.clear()
+	_mistake_corners.clear()
+	_mistake_travelled = 0
+	var count := line.points.size()
 	var clean := clampf(float(AIStyle.CLEAN_LAPS[difficulty]), 0.01, 1.0)
-	var mean := -log(clean) * float(style["mistakes"])
+	var lap_mean := -log(clean) * float(style["mistakes"])
 
-	# Tirage de Poisson (méthode de Knuth).
+	if lap_mean <= 0.0:
+		return
+
+	if _mistake_weights.size() != count:
+		_build_mistake_weights()
+
+	var total := 0.0
+
+	for section in _mistake_sections:
+		total += float(section["weight"])
+
+	if total <= 0.0:
+		return
+
+	var start := maxi(_index, 0)
+	var planned: Array[Vector2i] = []
+
+	for section in _mistake_sections:
+		var weight := float(section["weight"])
+		var mistakes := _poisson(lap_mean * weight / total)
+
+		for _i in range(mistakes):
+			var corner := _pick_weighted(int(section["from"]), int(section["to"]), weight)
+			# Déclenchement : un peu avant le point difficile.
+			var trigger := posmod(corner - MISTAKE_BEFORE - start, count)
+			planned.append(Vector2i(trigger, corner))
+
+	planned.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return a.x < b.x)
+
+	for item in planned:
+		_mistake_points.append(item.x)
+		_mistake_corners.append(item.y)
+
+
+## Tirage de Poisson (méthode de Knuth).
+func _poisson(mean: float) -> int:
 	var limit := exp(-mean)
 	var product := _rng.randf()
-	var count := 0
+	var result := 0
 
-	while product > limit and count < 6:
-		count += 1
+	while product > limit and result < 6:
+		result += 1
 		product *= _rng.randf()
 
-	# Distances (en points de trajectoire) depuis le début du tour où
-	# chaque erreur se déclenche ; elles sont toutes jouées dans le tour.
-	_mistake_travelled = 0
+	return result
 
-	for _i in range(count):
-		_mistake_points.append(_rng.randi_range(5, int(line.points.size() * 0.85)))
 
-	_mistake_points.sort()
+## Point d'une section [from, to) tiré selon la difficulté.
+func _pick_weighted(from: int, to: int, total: float) -> int:
+	var count := line.points.size()
+	var length := posmod(to - from, count)
+	var target := _rng.randf() * total
+
+	for step in range(length):
+		var i := (from + step) % count
+		target -= _mistake_weights[i]
+
+		if target <= 0.0:
+			return i
+
+	return from
+
+
+## Difficulté de chaque point de la trajectoire et sections du circuit
+## (entre deux portes successives), avec leur difficulté totale.
+func _build_mistake_weights() -> void:
+	var count := line.points.size()
+	var raw := PackedFloat32Array()
+	raw.resize(count)
+
+	for i in range(count):
+		var corner := clampf(line.curvature[i] / MISTAKE_HARD_CURVATURE, 0.0, 1.5)
+		var narrow := 0.0
+
+		if not line.room_plus.is_empty():
+			narrow = clampf((STYLE_NARROW_WIDTH - line.room_plus[i] - line.room_minus[i]) / STYLE_NARROW_WIDTH, 0.0, 1.0)
+
+		var slippery := 0.0
+
+		if line.surface_grip.size() == count:
+			slippery = 1.0 - line.surface_grip[i]
+
+		raw[i] = MISTAKE_BASE_WEIGHT + 3.0 * corner * corner + 0.5 * narrow * minf(corner * 2.0, 1.0) + 1.5 * slippery
+
+	_mistake_weights.resize(count)
+
+	for i in range(count):
+		var sum := 0.0
+
+		for j in range(-5, 6):
+			sum += raw[line.wrap_index(i + j)]
+
+		_mistake_weights[i] = sum / 11.0
+
+	# Sections : entre les points où la trajectoire franchit les portes.
+	var bounds: Array[int] = []
+
+	if progress != null:
+		for section_id in range(progress.section_count):
+			var gate: Array = progress.gates.get(section_id, [])
+
+			if gate.size() < 2:
+				continue
+
+			for i in range(count):
+				if Geometry2D.segment_intersects_segment(line.points[i], line.point(i + 1), gate[0], gate[1]) != null:
+					bounds.append(i)
+					break
+
+	bounds.sort()
+
+	if bounds.size() < 2:
+		bounds = [0]
+
+	_mistake_sections.clear()
+
+	for k in range(bounds.size()):
+		var from := bounds[k]
+		var to := bounds[(k + 1) % bounds.size()]
+
+		if bounds.size() == 1:
+			to = from
+
+		var weight := 0.0
+		var length := posmod(to - from, count)
+
+		if length == 0:
+			length = count
+
+		for step in range(length):
+			weight += _mistake_weights[(from + step) % count]
+
+		_mistake_sections.append({"from": from, "to": (from + length) % count, "weight": weight})
 
 
 func _update_mistake() -> void:
@@ -711,37 +843,38 @@ func _update_mistake() -> void:
 		return
 
 	# Erreur prévue atteinte (les suivantes attendent la fin de celle-ci) :
-	# au prochain virage marqué.
+	# elle vise son point difficile, juste devant.
 	if _mistake_travelled < _mistake_points[0]:
 		return
 
 	_mistake_points.remove_at(0)
+	var corner: int = _mistake_corners.pop_front()
 
-	for ahead in range(MISTAKE_BEFORE, MISTAKE_BEFORE + 200):
-		var corner := line.wrap_index(_index + ahead)
+	# Point difficile déjà dépassé (réapparition...) : erreur annulée.
+	if _relative_index(corner) > 0:
+		return
 
-		if line.curvature[corner] > MISTAKE_MIN_CURVATURE:
-			var roll := _rng.randf()
-			var type := "hesitation"
+	var roll := _rng.randf()
+	var type := "hesitation"
 
-			if difficulty == Difficulty.EXPERT:
-				# Expert : erreurs légères (hésitation, trajectoire imprécise).
-				type = "hesitation" if roll < 0.5 else "wide"
-			elif roll < 0.45:
-				type = "late_brake"
-			elif roll < 0.75:
-				type = "wide"
-			elif roll < 0.9 and difficulty == Difficulty.NOVICE:
-				type = "spin"
+	if difficulty == Difficulty.EXPERT:
+		# Expert : erreurs légères (hésitation, trajectoire imprécise).
+		type = "hesitation" if roll < 0.5 else "wide"
+	elif roll < 0.45:
+		type = "late_brake"
+	elif roll < 0.75:
+		type = "wide"
+	elif roll < 0.9 and difficulty == Difficulty.NOVICE:
+		type = "spin"
 
-			_mistake = {
-				"type": type,
-				"corner": corner,
-				"sign": signf(line.signed_curvature_at(corner)),
-				"done": false
-			}
-			mistake_count += 1
-			return
+	_mistake = {
+		"type": type,
+		"corner": corner,
+		"sign": signf(line.signed_curvature_at(corner)),
+		"done": false
+	}
+	mistake_count += 1
+	mistake_log.append(corner)
 
 
 ## Indice relatif (signé) d'un point de la ligne par rapport à la voiture.
@@ -822,6 +955,7 @@ func update(delta: float) -> void:
 		_build_safe_profile()
 		_precompute_corner_limits()
 		_build_style_offsets()
+		_mistake_weights.clear()
 		_rebuild_speed_profile()
 
 		if strategy != null:
