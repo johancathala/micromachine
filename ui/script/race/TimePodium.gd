@@ -20,6 +20,7 @@ const CAR_FONT_SIZE := 19
 const TIME_FONT_SIZE := 24
 const RANK_FONT_SIZE := 42
 const TITLE_FONT_SIZE := 28
+const MAX_SIZE := Vector2(560, 440)
 
 ## [{nickname, car_name, lap_time}], du plus rapide au plus lent.
 var entries: Array = []
@@ -38,19 +39,23 @@ func set_entries(p_entries: Array) -> void:
 
 func _draw() -> void:
 	var font := get_theme_font("font", "Label")
-	var width := size.x
+	# Podium centré dans la place disponible, à taille bornée.
+	var box := Vector2(minf(size.x, MAX_SIZE.x), minf(size.y, MAX_SIZE.y))
+	var origin := (size - box) / 2.0
+	draw_set_transform(origin)
+	var width := box.x
 	var top := TITLE_FONT_SIZE + 10.0
 	# Place au-dessus de la plus haute marche pour le nom et la voiture.
 	var label_space := NAME_FONT_SIZE + CAR_FONT_SIZE + 12.0
-	var max_step := size.y - top - label_space
+	var max_step := box.y - top - label_space
 	var step_width := width / 3.0
 
-	_text(font, title, Vector2(width / 2.0, TITLE_FONT_SIZE), TITLE_FONT_SIZE, Color.WHITE)
+	_text(font, _fit(font, title, TITLE_FONT_SIZE, width), Vector2(width / 2.0, TITLE_FONT_SIZE), TITLE_FONT_SIZE, Color.WHITE)
 
 	for column in range(3):
 		var rank: int = LAYOUT[column]
 		var height: float = max_step * STEP_HEIGHTS[rank]
-		var rect := Rect2(column * step_width + 3.0, size.y - height, step_width - 6.0, height)
+		var rect := Rect2(column * step_width + 3.0, box.y - height, step_width - 6.0, height)
 		var center_x := rect.position.x + rect.size.x / 2.0
 		var color: Color = STEP_COLORS[rank]
 
