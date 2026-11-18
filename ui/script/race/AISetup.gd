@@ -160,7 +160,7 @@ func _show_level_hint() -> void:
 	description_label.text = "Niveau %s : %s" % [RaceConfig.AI_PILOT_NAMES[level], AIStyle.LEVEL_DESCRIPTIONS[level]]
 
 
-## Nom saisi : prioritaire sur celui du style (vide : nom du style).
+## Nom saisi : prioritaire sur le pilote du style (vide : pilote du style).
 func _on_name_changed(slot_index: int, edit: LineEdit) -> void:
 	if slot_index >= race_config.ai_slots.size():
 		return
@@ -208,7 +208,7 @@ func _show_description(slot_index: int, kind: String) -> void:
 		if car != null:
 			_show_car_description(car)
 	elif kind == "style":
-		description_label.text = "Style %s : %s" % [style["name"], style["description"]]
+		description_label.text = "%s (%s) : %s" % [style["driver"], style["name"], style["description"]]
 	else:
 		description_label.text = "Niveau %s : %s" % [
 			RaceConfig.AI_PILOT_NAMES[level], AIStyle.LEVEL_DESCRIPTIONS[level]
