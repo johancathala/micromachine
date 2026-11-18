@@ -333,10 +333,10 @@ func build_participants() -> void:
 	_resolve_ai_liveries()
 
 
-## Nom d'une IA : son style (« Agressif »), numéroté si plusieurs IA
-## ont le même (« Agressif 1 », « Agressif 2 »).
+## Nom d'une IA : le pilote de son style (« Régis »), numéroté si
+## plusieurs IA ont le même (« Régis 1 », « Régis 2 »).
 func _ai_name(style_id: String, totals: Dictionary, seen: Dictionary) -> String:
-	var name := String(AIStyle.get_style(style_id)["name"])
+	var name := String(AIStyle.get_style(style_id)["driver"])
 
 	if int(totals.get(style_id, 0)) <= 1:
 		return name
