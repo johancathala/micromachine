@@ -208,6 +208,22 @@ func _set_all_green() -> void:
 	hide()
 
 
+## Contre-la-montre : pas de départ arrêté. Feux du circuit au vert,
+## feux de l'écran masqués, sans son.
+func skip_to_green() -> void:
+	_collect_lights()
+	_collect_lights_map()
+	sequence_running = false
+
+	for light in lights:
+		light.set_green()
+
+	for light in lights_map:
+		light.set_green()
+
+	hide()
+
+
 # ============================================================
 # Gestion du Timer
 # ============================================================

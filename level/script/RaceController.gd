@@ -763,6 +763,16 @@ func start_countdown() -> void:
 		return
 
 	# --------------------------------------------------------
+	# Contre-la-montre : pas de feux, départ immédiat (le chrono
+	# du tour part au passage de la ligne).
+	# --------------------------------------------------------
+	if race_config.is_time_trial():
+		_judging_start = false
+		start_lights.skip_to_green()
+		_start_race()
+		return
+
+	# --------------------------------------------------------
 	# Lancement de la séquence réelle de départ.
 	# --------------------------------------------------------
 	if not start_lights.start_sequence_finished.is_connected(

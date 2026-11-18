@@ -650,6 +650,14 @@ func _place_start_lights() -> void:
 
 
 func start_message() -> void:
+	# Contre-la-montre : départ immédiat, sans feux.
+	if race_controller != null and race_controller.race_config.is_time_trial():
+		message_label.text = "C'EST PARTI : LE CHRONO DÉMARRE SUR LA LIGNE !"
+		message_label.show()
+		await get_tree().create_timer(3).timeout
+		message_label.hide()
+		return
+
 	message_label.text = "PREPAREZ VOUS AU DEPART !"
 	message_label.show()
 	await get_tree().create_timer(3).timeout
