@@ -41,16 +41,38 @@ const FONT_SIZE := 20
 const HEADER_FONT_SIZE := 15
 const HEADER_COLOR := Color(1, 1, 1, 0.7)
 # [nœud, largeur, alignement, en-tête, en-tête en élimination]
+# La largeur de la colonne des noms suit le nom le plus long
+# (name_column_width), entre NAME_MIN_WIDTH et NAME_MAX_WIDTH.
 const COLUMNS := [
-	["Position", 58, HORIZONTAL_ALIGNMENT_LEFT, "POS", "POS"],
-	["Tire", 26, HORIZONTAL_ALIGNMENT_CENTER, "", ""],
-	["Name", 190, HORIZONTAL_ALIGNMENT_LEFT, "PILOTE", "PILOTE"],
-	["Lap", 64, HORIZONTAL_ALIGNMENT_CENTER, "TOURS", "POINTS"],
-	["LapTime", 96, HORIZONTAL_ALIGNMENT_RIGHT, "CHRONO", "ÉTAT"],
-	["Delta", 86, HORIZONTAL_ALIGNMENT_RIGHT, "ÉCART", ""],
-	["BestLap", 96, HORIZONTAL_ALIGNMENT_RIGHT, "MEILLEUR", ""],
+	["Position", 46, HORIZONTAL_ALIGNMENT_LEFT, "POS", "POS"],
+	["Tire", 20, HORIZONTAL_ALIGNMENT_CENTER, "", ""],
+	["Name", 0, HORIZONTAL_ALIGNMENT_LEFT, "PILOTE", "PILOTE"],
+	["Lap", 44, HORIZONTAL_ALIGNMENT_CENTER, "TOURS", "POINTS"],
+	["LapTime", 78, HORIZONTAL_ALIGNMENT_RIGHT, "CHRONO", "ÉTAT"],
+	["Delta", 62, HORIZONTAL_ALIGNMENT_RIGHT, "ÉCART", ""],
+	["BestLap", 78, HORIZONTAL_ALIGNMENT_RIGHT, "MEILLEUR", ""],
 ]
-const COLUMN_SEPARATION := 10
+const COLUMN_SEPARATION := 6
+const NAME_MIN_WIDTH := 70.0
+const NAME_MAX_WIDTH := 200.0
+
+
+## Largeur de la colonne des noms : le plus long, borné.
+static func name_column_width(names: Array, font: Font) -> float:
+	var widest := NAME_MIN_WIDTH
+
+	for name in names:
+		widest = maxf(widest, font.get_string_size(String(name), HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE).x + 6.0)
+
+	return minf(widest, NAME_MAX_WIDTH)
+
+
+## Applique la largeur des noms à une ligne ou à l'en-tête.
+static func set_name_width(row: HBoxContainer, width: float) -> void:
+	var name_node := row.get_child(2) as Control
+
+	if name_node != null:
+		name_node.custom_minimum_size.x = width
 
 var tire_icon: Control = null
 
@@ -58,6 +80,7 @@ var tire_icon: Control = null
 ## En-tête du tableau (remplace le contenu de `header`).
 static func build_header(header: HBoxContainer, elimination: bool) -> void:
 	for child in header.get_children():
+		header.remove_child(child)
 		child.queue_free()
 
 	header.size_flags_horizontal = Control.SIZE_SHRINK_END
@@ -275,7 +298,7 @@ func refresh() -> void:
 
 	else:
 
-		lap_time_label.text = "--:--.--"
+		lap_time_label.text = "-:--.--"
 
 
 	# ============================================================
@@ -354,7 +377,7 @@ func _speed_to_kmh(speed: float) -> float:
 func _format_time(time_seconds: float) -> String:
 
 	if time_seconds <= 0.0:
-		return "--:--.--"
+		return "-:--.--"
 
 	var minutes := int(time_seconds / 60)
 	var seconds := int(time_seconds) % 60
@@ -363,7 +386,7 @@ func _format_time(time_seconds: float) -> String:
 		(time_seconds - floor(time_seconds)) * 100.0
 	)
 
-	return "%02d:%02d.%02d" % [
+	return "%d:%02d.%02d" % [
 		minutes,
 		seconds,
 		centiseconds
