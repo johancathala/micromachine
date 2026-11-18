@@ -57,7 +57,8 @@ var split_screen: bool = false
 var tire_wear: bool = false
 
 # IA engagées (écran des IA), dans l'ordre. Chacune : {"pilot": AIPilot,
-# "style": identifiant AIStyle, "car_id": String, "color_id": String}.
+# "style": identifiant AIStyle, "car_id": String, "color_id": String,
+# "name" (facultatif : nom saisi, prioritaire sur celui du style)}.
 var ai_slots: Array[Dictionary] = []
 
 # Contre-la-montre : fantômes affichés (GhostManager.GhostMode :
@@ -300,6 +301,10 @@ func build_participants() -> void:
 	var style_seen: Dictionary = {}
 
 	for i in range(ai_count):
+		# Un nom saisi ne compte pas dans la numérotation des styles.
+		if not String(ai_slots[i].get("name", "")).is_empty():
+			continue
+
 		var id := String(ai_slots[i].get("style", AIStyle.DEFAULT_ID))
 		style_totals[id] = int(style_totals.get(id, 0)) + 1
 
@@ -312,7 +317,10 @@ func build_participants() -> void:
 			"player_id": -1,
 			"device_type": "ai",
 			"device_id": -1,
-			"nickname": _ai_name(String(slot.get("style", AIStyle.DEFAULT_ID)), style_totals, style_seen),
+			"nickname": (
+				String(slot["name"]) if not String(slot.get("name", "")).is_empty()
+				else _ai_name(String(slot.get("style", AIStyle.DEFAULT_ID)), style_totals, style_seen)
+			),
 			"is_ai": true,
 			"enabled": true,
 			"ai_pilot": pilot,
