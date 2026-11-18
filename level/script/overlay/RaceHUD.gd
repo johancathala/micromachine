@@ -542,9 +542,11 @@ func _build_participant_rows() -> void:
 
 		participant_rows[state.participant_id] = row
 
-## Usure des pneus, en bas à gauche : une jauge par joueur humain (avec
-## son nom s'ils sont plusieurs). En écran splitté, chaque vue a la
-## sienne (SplitScreen).
+## Usure des pneus : une jauge par joueur humain, avec son nom s'ils
+## sont plusieurs. Les joueurs sont rangés comme devant le clavier
+## (Z Q S D, puis O K L M, flèches, pavé numérique ; manettes ensuite) :
+## la moitié de gauche en bas à gauche, celle de droite en bas à
+## droite. En écran splitté, chaque vue a la sienne (SplitScreen).
 func _build_tire_gauges() -> void:
 	var humans: Array[RaceParticipantState] = []
 
@@ -555,25 +557,54 @@ func _build_tire_gauges() -> void:
 	if humans.is_empty():
 		return
 
+	humans.sort_custom(func(a, b): return _seat_order(a) < _seat_order(b))
+	var left_count := humans.size() / 2 if humans.size() > 1 else 1
+
+	var left := _gauge_box("TireGaugesLeft", false)
+	var right := _gauge_box("TireGaugesRight", true)
+
+	for i in range(humans.size()):
+		var gauge := TireGauge.new()
+		gauge.state = humans[i]
+
+		if humans.size() > 1:
+			gauge.caption = humans[i].nickname
+
+		(left if i < left_count else right).add_child(gauge)
+
+
+## Place d'un joueur de gauche à droite : claviers dans l'ordre des
+## touches, puis manettes.
+static func _seat_order(state: RaceParticipantState) -> int:
+	if not is_instance_valid(state.car):
+		return 1000 + state.participant_id
+
+	if state.car.input_device_type == "keyboard":
+		return InputManager.get_keyboard_index(state.car.input_device_id)
+
+	return 100 + maxi(state.car.input_device_id, 0) * 10 + state.participant_id
+
+
+func _gauge_box(box_name: String, at_right: bool) -> HBoxContainer:
 	var box := HBoxContainer.new()
-	box.name = "TireGauges"
+	box.name = box_name
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_theme_constant_override("separation", 12)
 	box.anchor_top = 1.0
 	box.anchor_bottom = 1.0
-	box.offset_left = 16.0
 	box.offset_bottom = -12.0
 	box.grow_vertical = Control.GROW_DIRECTION_BEGIN
+
+	if at_right:
+		box.anchor_left = 1.0
+		box.anchor_right = 1.0
+		box.offset_right = -16.0
+		box.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	else:
+		box.offset_left = 16.0
+
 	add_child(box)
-
-	for state in humans:
-		var gauge := TireGauge.new()
-		gauge.state = state
-
-		if humans.size() > 1:
-			gauge.caption = state.nickname
-
-		box.add_child(gauge)
+	return box
 
 
 # Taille du bloc des feux (5 feux de 32 x 48 px), avant mise à l'échelle.

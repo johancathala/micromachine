@@ -78,6 +78,17 @@ static func wear_color(wear: float) -> Color:
 	return WEAR_COLORS[-1][1]
 
 
+## Nom du joueur : couleur de sa voiture (calculée une fois).
+var _caption_tint := Color(0, 0, 0, 0)
+
+
+func _caption_color(car: Car) -> Color:
+	if _caption_tint.a == 0.0:
+		_caption_tint = RaceParticipantHUD.car_display_color(car)
+
+	return _caption_tint
+
+
 func _car() -> Car:
 	if state == null or not is_instance_valid(state.car):
 		return null
@@ -154,7 +165,7 @@ func _draw() -> void:
 
 	# ---- Nom (écran partagé à plusieurs) ----
 	if not caption.is_empty():
-		_text(font, caption, center + Vector2(0, RADIUS + 6.0 + CAPTION_FONT_SIZE), CAPTION_FONT_SIZE, Color.WHITE)
+		_text(font, caption, center + Vector2(0, RADIUS + 6.0 + CAPTION_FONT_SIZE), CAPTION_FONT_SIZE, _caption_color(car))
 
 
 ## Texte centré horizontalement sur `pos` (ligne de base), avec contour.
