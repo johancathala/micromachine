@@ -117,6 +117,58 @@ var _progress_cache_frame: int = -1
 const POSITION_UPDATE_INTERVAL := 0.2
 
 # ============================================================
+# IA BLOQUÉE : RÉAPPARITION FORCÉE
+# ============================================================
+# Règle absolue, quel que soit le pilote : une IA qui n'avance plus
+# dans la course (progression le long du circuit, record jamais
+# amélioré de AI_STUCK_MIN_PROGRESS section) pendant AI_STUCK_TIME s
+# explose et réapparaît à son dernier point de passage. Les
+# allers-retours sur place ne comptent donc pas. Sauf arrêt au stand,
+# fantôme, course finie, et élimination (une explosion y vaut
+# élimination).
+const AI_STUCK_TIME := 8.0
+const AI_STUCK_MIN_PROGRESS := 0.05
+
+# participant_id -> {progress, time}
+var _ai_anchors: Dictionary = {}
+
+
+func _check_stuck_ai(delta: float) -> void:
+	if is_elimination_mode():
+		return
+
+	for state in participants:
+		if not state.is_ai or state.finished or not is_instance_valid(state.car):
+			continue
+
+		var car := state.car
+
+		if (
+			car.is_ghost
+			or car._destruction_started
+			or car._respawning
+			or not car.car_can_move
+			or (pit_stops != null and pit_stops.is_in_pit(state))
+		):
+			_ai_anchors.erase(state.participant_id)
+			continue
+
+		var progress := get_progress(state)
+		var anchor: Dictionary = _ai_anchors.get(state.participant_id, {})
+
+		if anchor.is_empty() or progress > float(anchor["progress"]) + AI_STUCK_MIN_PROGRESS:
+			_ai_anchors[state.participant_id] = {"progress": progress, "time": 0.0}
+			continue
+
+		anchor["time"] = float(anchor["time"]) + delta
+
+		if float(anchor["time"]) >= AI_STUCK_TIME:
+			print("IA bloquée : %s réapparaît" % state.nickname)
+			_ai_anchors.erase(state.participant_id)
+			car.explosion()
+
+
+# ============================================================
 # RÉACTION AU DÉPART
 # ============================================================
 # Réaction (s) en dessous de laquelle le bonus est maximal.
@@ -1523,6 +1575,8 @@ func _physics_process(delta: float) -> void:
 
 	if race_state != RaceState.RUNNING or race_is_paused:
 		return
+
+	_check_stuck_ai(delta)
 
 	_position_update_timer += delta
 
