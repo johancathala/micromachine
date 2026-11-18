@@ -439,9 +439,9 @@ func _setup_ghost_drivers() -> void:
 		if race_config.uses_tire_wear():
 			driver.setup_pit(_get_pit_route())
 
-		# Fantôme du record : nommé d'après celui qui l'a enregistré.
+		# Record : nommé d'après celui qui l'a enregistré et sa médaille.
 		if bool(participant.get("ghost_auto_name", false)) and String(participant.get("ai_ghost", "")).is_empty():
-			state.nickname = "Fantôme de " + String(data.get("nickname", "?"))
+			state.nickname = GhostManager.ghost_label(data)
 
 		print("Fantôme : %s rejoue %.2f s" % [state.nickname, float(data.get("lap_time", 0.0))])
 
@@ -888,6 +888,12 @@ func _on_quit_race() -> void:
 	# fin ; les résultats de la session sont figés pour le récapitulatif.
 	if race_config != null and race_config.is_time_trial():
 		GameManager.store_race_results(build_race_results())
+
+		# Tours de la session : à garder en médailles au récapitulatif.
+		GameManager.last_ghost_laps.clear()
+
+		if ghost_manager != null:
+			GameManager.last_ghost_laps.append_array(ghost_manager.session_laps)
 	
 	#pause_overlay.close()
 	

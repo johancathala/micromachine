@@ -17,6 +17,12 @@ class_name GhostManager
 # - Chaque fantôme (voiture semi-transparente, sans collision, avec son
 #   nom et son temps) refait son tour à chaque début de tour du joueur.
 # - Un tour avec explosion ou réapparition n'est pas retenu.
+# - Médailles : le fantôme du joueur (son meilleur tour, enregistré
+#   automatiquement) est le « Platine ». En fin de contre-la-montre, il
+#   peut garder trois autres tours de la session, en Or, Argent et
+#   Bronze (un par médaille ; en garder un nouveau remplace l'ancien).
+#   Tous sont proposés comme pilotes fantômes sur l'écran des IA
+#   (« Flavien Or »...).
 # ============================================================
 
 signal new_record(state: RaceParticipantState, lap_time: float, previous_time: float, absolute: bool)
@@ -31,6 +37,17 @@ const SESSION_GHOST_COLOR := Color("#80deea")
 # Valeurs par échantillon : temps, x, y, orientation.
 const STRIDE := 4
 
+## Médailles, de la plus précieuse à la moins précieuse. Le Platine est
+## le meilleur tour (fichier sans suffixe), les autres sont choisis.
+const MEDALS := ["platine", "or", "argent", "bronze"]
+const MEDAL_NAMES := {"platine": "Platine", "or": "Or", "argent": "Argent", "bronze": "Bronze"}
+const MEDAL_COLORS := {
+	"platine": Color("#e5f3ff"),
+	"or": Color("#ffd54f"),
+	"argent": Color("#c0c0c0"),
+	"bronze": Color("#cd7f32")
+}
+
 var controller: RaceController = null
 var state: RaceParticipantState = null
 var track_id := -1
@@ -44,6 +61,8 @@ var own_ghost: Dictionary = {}
 # Meilleur tour de la session en cours (non enregistré s'il ne bat pas
 # le record du joueur).
 var session_ghost: Dictionary = {}
+# Tous les tours valides de la session (médailles en fin de session).
+var session_laps: Array[Dictionary] = []
 
 # Fantômes affichés : [{data, node, label}].
 var _shown: Array[Dictionary] = []
@@ -140,19 +159,70 @@ static func load_best_ghost(p_track_id: int, p_car_id: String) -> Dictionary:
 	return best
 
 
-## Fantôme d'un joueur (clé de player_key) pour ce circuit et cette
-## voiture ; clé vide : le meilleur, tous joueurs confondus.
+## Fantôme d'un joueur pour ce circuit et cette voiture ; la clé est
+## celle de list_recorders (joueur, et médaille hors Platine). Clé
+## vide : le meilleur, tous joueurs confondus.
 static func load_ghost_for(p_track_id: int, p_car_id: String, recorder_key: String) -> Dictionary:
 	if recorder_key.is_empty():
 		return load_best_ghost(p_track_id, p_car_id)
 
-	return load_ghost_file(ghost_path(p_track_id, p_car_id, recorder_key))
+	return load_ghost_file(GHOST_DIR + "track%d_%s_%s.ghost" % [p_track_id, p_car_id, recorder_key])
 
 
-## Joueurs ayant enregistré un fantôme avec cette voiture, sur un
+## Fichier d'une médaille (Platine : le fantôme du joueur).
+static func medal_path(p_track_id: int, p_car_id: String, nickname: String, medal: String) -> String:
+	if medal == "platine":
+		return ghost_path(p_track_id, p_car_id, nickname)
+
+	return GHOST_DIR + "track%d_%s_%s-%s.ghost" % [p_track_id, p_car_id, player_key(nickname), medal]
+
+
+## Médailles d'un joueur pour ce circuit et cette voiture : médaille ->
+## fantôme.
+static func load_medals(p_track_id: int, p_car_id: String, nickname: String) -> Dictionary:
+	var medals: Dictionary = {}
+
+	for medal in MEDALS:
+		var data := load_ghost_file(medal_path(p_track_id, p_car_id, nickname, medal))
+
+		if not data.is_empty():
+			medals[medal] = data
+
+	return medals
+
+
+## Garde un tour de la session comme médaille (Or, Argent, Bronze) ;
+## remplace la précédente.
+static func save_medal(data: Dictionary, medal: String) -> bool:
+	if medal == "platine" or not MEDAL_NAMES.has(medal):
+		return false
+
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(GHOST_DIR))
+
+	var saved := data.duplicate()
+	saved["medal"] = medal
+	var path := medal_path(int(data.get("track_id", -1)), String(data.get("car_id", "")), String(data.get("nickname", "")), medal)
+	var file := FileAccess.open(path, FileAccess.WRITE)
+
+	if file == null:
+		push_warning("Fantôme : impossible d'enregistrer " + path)
+		return false
+
+	file.store_var(saved)
+	return true
+
+
+## Nom d'un fantôme : joueur et médaille (« Flavien Or »).
+static func ghost_label(data: Dictionary) -> String:
+	var medal := String(data.get("medal", "platine"))
+	return "%s %s" % [String(data.get("nickname", "?")), MEDAL_NAMES.get(medal, "Platine")]
+
+
+## Fantômes enregistrés avec cette voiture (joueur et médaille), sur un
 ## circuit quelconque (pilotes fantômes de l'écran des IA, choisis
 ## avant le circuit) :
-## [{key, nickname, laps: [{track_id, lap_time}]}], par nom.
+## [{key, nickname (« Flavien Or »), player, medal_rank,
+##   laps: [{track_id, lap_time}]}], par joueur puis médaille.
 static func list_recorders(p_car_id: String) -> Array[Dictionary]:
 	var by_key: Dictionary = {}
 	var directory := DirAccess.open(GHOST_DIR)
@@ -178,7 +248,14 @@ static func list_recorders(p_car_id: String) -> Array[Dictionary]:
 			continue
 
 		if not by_key.has(key):
-			by_key[key] = {"key": key, "nickname": String(data.get("nickname", key)), "laps": []}
+			var medal := String(data.get("medal", "platine"))
+			by_key[key] = {
+				"key": key,
+				"nickname": ghost_label(data),
+				"player": String(data.get("nickname", key)),
+				"medal_rank": MEDALS.find(medal),
+				"laps": []
+			}
 
 		(by_key[key]["laps"] as Array).append({
 			"track_id": int(data.get("track_id", file_name.substr(5, at - 5).to_int())),
@@ -190,7 +267,10 @@ static func list_recorders(p_car_id: String) -> Array[Dictionary]:
 	for key in by_key:
 		result.append(by_key[key])
 
-	result.sort_custom(func(a, b): return String(a["nickname"]).naturalnocasecmp_to(String(b["nickname"])) < 0)
+	# Par joueur, puis de la médaille la plus précieuse à la moins.
+	result.sort_custom(func(a, b):
+		var order := String(a["player"]).naturalnocasecmp_to(String(b["player"]))
+		return order < 0 if order != 0 else int(a["medal_rank"]) < int(b["medal_rank"]))
 	return result
 
 
@@ -260,8 +340,11 @@ func _consider_lap(lap_time: float) -> void:
 		"car_id": car_id,
 		"color": car_color.to_html(),
 		"track_id": track_id,
+		"lap": _laps_done,
 		"samples": _samples
 	}
+
+	session_laps.append(data)
 
 	var session_record := lap_time < float(session_ghost.get("lap_time", INF))
 
