@@ -469,7 +469,7 @@ func _get_ai_difficulty(state: RaceParticipantState) -> int:
 		if int(participant.get("participant_id", -1)) == state.participant_id:
 			return int(participant.get("ai_difficulty", race_config.ai_difficulty))
 
-	return race_config.ai_difficulty
+	return RaceConfig.get_ai_difficulty(race_config.ai_difficulty)
 
 
 func is_elimination_mode() -> bool:
