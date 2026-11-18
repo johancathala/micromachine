@@ -56,8 +56,8 @@ var split_screen: bool = false
 # Course classique : usure des pneus et arrêts au stand.
 var tire_wear: bool = false
 
-# Course classique : IA engagées (écran des IA), dans l'ordre.
-# Chacune : {"pilot": AIPilot, "car_id": String, "color_id": String}.
+# IA engagées (écran des IA), dans l'ordre. Chacune : {"pilot": AIPilot,
+# "style": identifiant AIStyle, "car_id": String, "color_id": String}.
 var ai_slots: Array[Dictionary] = []
 
 # Contre-la-montre : fantômes affichés (GhostManager.GhostMode :
@@ -309,6 +309,7 @@ func build_participants() -> void:
 			"enabled": true,
 			"ai_pilot": pilot,
 			"ai_difficulty": get_ai_difficulty(pilot),
+			"ai_style": String(slot.get("style", AIStyle.DEFAULT_ID)),
 			"car_id": String(slot.get("car_id", "")),
 			"color_id": String(slot.get("color_id", ""))
 		})

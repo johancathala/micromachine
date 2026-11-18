@@ -321,7 +321,17 @@ func _setup_ai_drivers() -> void:
 			)
 			driver.lap_count = 0 if race_config.has_infinite_laps() else race_config.lap_count
 			driver.setup_pit(pit_route)
+			driver.set_style(_get_ai_style(state), randi())
 			state.car.ai_driver = driver
+
+
+## Style de pilotage de l'IA choisi sur l'écran des IA.
+func _get_ai_style(state: RaceParticipantState) -> String:
+	for participant in race_config.participants:
+		if int(participant.get("participant_id", -1)) == state.participant_id:
+			return String(participant.get("ai_style", AIStyle.DEFAULT_ID))
+
+	return AIStyle.DEFAULT_ID
 
 
 ## Niveau de l'IA choisi sur l'écran des IA.

@@ -113,6 +113,21 @@ const GUARD_OFF_ANGLE := 0.3
 const GUARD_NEAR := 160.0
 # Vitesse d'impact visée au pire (sous le seuil d'explosion de 700).
 const GUARD_IMPACT_SPEED := 250.0
+# Style : distance gardée au bord de la chaussée par le décalage propre.
+const STYLE_EDGE_MARGIN := 70.0
+# Route étroite (px de large) et virage très serré (courbure) : le style
+# ne décale plus la trajectoire.
+const STYLE_NARROW_WIDTH := 300.0
+const STYLE_TIGHT_CURVATURE := 0.006
+# Erreurs : fenêtre (points) avant / après le virage visé, courbure d'un
+# virage, écart d'une sortie large (px), rotation d'un tête-à-queue.
+const MISTAKE_BEFORE := 30
+const MISTAKE_AFTER := 25
+const MISTAKE_MIN_CURVATURE := 0.0025
+const MISTAKE_WIDE_OFFSET := 160.0
+const MISTAKE_SPIN := 3.2
+# Freinage manqué : la voiture continue d'accélérer un peu.
+const MISTAKE_LATE_BRAKE_GAIN := 1.08
 const STUCK_SPEED := 40.0
 const STUCK_DELAY := 1.0
 # Manœuvre de dégagement : recul de REVERSE_MIN_TIME à REVERSE_MAX_TIME s,
@@ -164,6 +179,20 @@ var progress: TrackProgress = null
 # Garde-fou : actif (Expert toujours ; suspendu pendant une erreur de
 # pilotage), et statistiques.
 var guard_enabled := true
+
+# Style de pilotage (AIStyle) et variations propres au pilote.
+var style: Dictionary = AIStyle.get_style(AIStyle.DEFAULT_ID)
+var _rng := RandomNumberGenerator.new()
+# Décalage latéral propre au pilote en chaque point (px, côté « plus »).
+var _style_offset := PackedFloat32Array()
+# Variation du tour en cours en chaque point (vitesse de passage).
+var _style_corner := PackedFloat32Array()
+var _pace_mul := 1.0
+var _brake_mul := 1.0
+var _style_lap := -1
+# Erreur de pilotage en cours : {type, corner, sign, done} (vide : aucune).
+var _mistake: Dictionary = {}
+var mistake_count := 0
 var _surfaces_seen := 0
 var guard_count := 0
 var _last_heading := 0.0
@@ -248,6 +277,130 @@ func _init(p_car: Car, p_line: RacingLine, p_difficulty: int, p_track_path: Stri
 	speed_profile = build_profile(line, 1.0, 1.0)
 
 
+## Style de pilotage et graine aléatoire du pilote (variations propres).
+func set_style(style_id: String, seed: int) -> void:
+	style = AIStyle.get_style(style_id)
+	_rng.seed = seed
+	_build_style_offsets()
+	_roll_lap_variation()
+
+
+## Décalage latéral propre au pilote : préférence intérieur / extérieur
+## dans les virages, plus une dérive lente ; borné par la chaussée.
+func _build_style_offsets() -> void:
+	var count := line.points.size()
+	var raw := PackedFloat32Array()
+	raw.resize(count)
+	var wander := float(style["wander"])
+	var bias := float(style["line_bias"])
+	var periods := [_rng.randf_range(50.0, 140.0), _rng.randf_range(18.0, 45.0)]
+	var phases := [_rng.randf() * TAU, _rng.randf() * TAU]
+
+	for i in range(count):
+		# Courbure lissée : sens et force du virage autour du point.
+		var k := 0.0
+
+		for j in range(-6, 7):
+			k += line.signed_curvature_at(i + j)
+
+		k /= 13.0
+		var turn := signf(k) * clampf(absf(k) * 300.0, 0.0, 1.0)
+		var room_side := 0.0
+
+		if not line.room_plus.is_empty():
+			# Côté extérieur du virage = côté « plus » si turn > 0.
+			room_side = line.room_plus[i] if turn * bias > 0.0 else line.room_minus[i]
+
+		var offset := turn * bias * maxf(room_side - STYLE_EDGE_MARGIN, 0.0) * 0.7
+		offset += wander * (0.6 * sin(TAU * i / periods[0] + phases[0]) + 0.4 * sin(TAU * i / periods[1] + phases[1]))
+		raw[i] = offset * _style_freedom(i)
+
+	_style_offset.resize(count)
+
+	for i in range(count):
+		var sum := 0.0
+
+		for j in range(-5, 6):
+			sum += raw[line.wrap_index(i + j)]
+
+		var offset := sum / 11.0
+
+		if not line.room_plus.is_empty():
+			offset = clampf(
+				offset,
+				-maxf(line.room_minus[i] - STYLE_EDGE_MARGIN, 0.0),
+				maxf(line.room_plus[i] - STYLE_EDGE_MARGIN, 0.0)
+			)
+
+		_style_offset[i] = offset
+
+
+## Liberté de trajectoire en un point (0 à 1) : réduite sur une route
+## étroite, dans un virage très serré et hors asphalte (on n'improvise
+## pas sa trajectoire dans une chicane ou sur l'herbe).
+func _style_freedom(index: int) -> float:
+	var freedom := 1.0
+
+	if not line.room_plus.is_empty():
+		var width := line.room_plus[index] + line.room_minus[index]
+		freedom = clampf((width - STYLE_NARROW_WIDTH) / STYLE_NARROW_WIDTH, 0.0, 1.0)
+
+	var tightest := 0.0
+
+	for j in range(-8, 9):
+		tightest = maxf(tightest, line.curvature_at(index + j))
+
+	freedom *= clampf((STYLE_TIGHT_CURVATURE - tightest) / STYLE_TIGHT_CURVATURE * 2.0, 0.0, 1.0)
+
+	if line.surface_grip.size() == line.points.size() and line.surface_grip[index] < 0.999:
+		freedom *= 0.3
+
+	return freedom
+
+
+## Variation du tour : vitesses de passage et points de freinage changent
+## un peu d'un tour à l'autre (selon la régularité du style), rythme
+## d'ensemble selon le style et le moment de la course.
+func _roll_lap_variation() -> void:
+	var count := line.points.size()
+	var noise := float(style["noise"])
+	_style_corner.resize(count)
+	var step := 20
+	var knots := PackedFloat32Array()
+
+	for k in range(count / step + 2):
+		knots.append(float(style["corner"]) * (1.0 + noise * _rng.randf_range(-1.0, 1.0)))
+
+	for i in range(count):
+		var k := i / step
+		_style_corner[i] = lerpf(knots[k], knots[k + 1], float(i % step) / step)
+
+	_pace_mul = float(style["pace"]) * (1.0 + noise * 0.3 * _rng.randf_range(-1.0, 1.0))
+	_brake_mul = float(style["braking"]) * (1.0 + noise * _rng.randf_range(-1.0, 1.0))
+	var push := float(style["finish_push"])
+
+	if push > 0.0 and lap_count > 0:
+		_pace_mul *= (1.0 + push) if _laps_remaining() <= 2 else (1.0 - push * 0.5)
+
+	_rebuild_speed_profile()
+
+
+func _rebuild_speed_profile() -> void:
+	if car.tire_wear_enabled:
+		_profile_grip = tire_effect(car.tire_wear, car.worn_tire_grip)
+		speed_profile = build_profile(line, _profile_grip, tire_effect(car.tire_wear, car.worn_tire_brake))
+	else:
+		_profile_grip = 1.0
+		speed_profile = build_profile(line, 1.0, 1.0)
+
+
+func _style_offset_at(index: int) -> float:
+	if _style_offset.size() != line.points.size() or _line != line:
+		return 0.0
+
+	return _style_offset[line.wrap_index(index)]
+
+
 ## Profil prudent (trafic) : glisse TRAFFIC_SLIP, sans apprentissage.
 func _build_safe_profile() -> void:
 	if corner_slip() <= TRAFFIC_SLIP:
@@ -307,7 +460,7 @@ func build_profile(
 	var profile := PackedFloat32Array()
 	profile.resize(count)
 
-	var pace: float = PACE[difficulty]
+	var pace: float = PACE[difficulty] * _pace_mul
 	var top_speed := car.max_speed * pace
 	var precomputed := target == line
 
@@ -319,6 +472,9 @@ func build_profile(
 
 			if not _learned.is_empty():
 				corner *= _learned[i]
+
+			if _style_corner.size() == count:
+				corner *= _style_corner[i]
 		else:
 			var k := target.curvature[i]
 			corner = minf(_kinematic_speed(k), _grip_speed(k) * grip_scale)
@@ -349,7 +505,7 @@ func build_profile(
 			profile[count - 1] = minf(profile[count - 1], speed_profile[pit_exit_index])
 
 	# Anticipation des freinages (à rebours ; deux passes sur une boucle).
-	var decel := car.brake_force * BRAKE_EFFICIENCY * brake_scale
+	var decel := car.brake_force * BRAKE_EFFICIENCY * brake_scale * _brake_mul
 
 	for _pass in range(2 if target.closed else 1):
 		for step in range(count):
@@ -479,6 +635,11 @@ func _refresh_learning() -> bool:
 func on_crash() -> void:
 	crash_count += 1
 
+	# Sortie due à une erreur de pilotage voulue : rien à apprendre.
+	if not _mistake.is_empty():
+		_mistake.clear()
+		return
+
 	if learning_key.is_empty() or _on_pit_route:
 		return
 
@@ -489,6 +650,105 @@ func on_crash() -> void:
 
 	AILearning.record_crash(learning_key, line, index)
 	_line_loss_age = INF
+
+
+func _overtake() -> float:
+	return float(style["overtake"])
+
+
+## Erreurs de pilotage (Novice et Moyen) : déclenchées au hasard avant un
+## virage, selon le niveau et le style. Pendant l'erreur, le garde-fou
+## anti-collision est suspendu : elle peut finir dans le décor.
+func _update_mistake() -> void:
+	var count := line.points.size()
+
+	if not _mistake.is_empty():
+		var relative := _relative_index(int(_mistake["corner"]))
+
+		if relative > MISTAKE_AFTER or relative < -MISTAKE_BEFORE * 3:
+			_mistake.clear()
+
+		return
+
+	var rate := float(AIStyle.MISTAKES_PER_LAP[difficulty]) * float(style["mistakes"])
+
+	if rate <= 0.0 or _previous_index < 0 or not car.car_can_move:
+		return
+
+	var advanced := posmod(_index - _previous_index, count)
+
+	if advanced <= 0 or advanced > 10 or _rng.randf() > rate * advanced / count:
+		return
+
+	# Prochain virage marqué.
+	for ahead in range(MISTAKE_BEFORE, MISTAKE_BEFORE + 70):
+		var corner := line.wrap_index(_index + ahead)
+
+		if line.curvature[corner] > MISTAKE_MIN_CURVATURE:
+			var roll := _rng.randf()
+			var type := "hesitation"
+
+			if roll < 0.45:
+				type = "late_brake"
+			elif roll < 0.75:
+				type = "wide"
+			elif roll < 0.85 and difficulty == Difficulty.NOVICE:
+				type = "spin"
+
+			_mistake = {
+				"type": type,
+				"corner": corner,
+				"sign": signf(line.signed_curvature_at(corner)),
+				"done": false
+			}
+			mistake_count += 1
+			return
+
+
+## Indice relatif (signé) d'un point de la ligne par rapport à la voiture.
+func _relative_index(index: int) -> int:
+	var count := line.points.size()
+	var relative := posmod(_index - index, count)
+	return relative - count if relative > count / 2 else relative
+
+
+## Effet de l'erreur en cours sur la conduite.
+func _mistake_effect(speed: float) -> Dictionary:
+	var effect := {"min_speed": 0.0, "speed_scale": 1.0, "offset": 0.0, "no_guard": false}
+
+	if _mistake.is_empty() or _on_pit_route:
+		return effect
+
+	var relative := _relative_index(int(_mistake["corner"]))
+	var outward := float(_mistake["sign"]) * MISTAKE_WIDE_OFFSET
+
+	match String(_mistake["type"]):
+		"late_brake":
+			# Freine trop tard : garde sa vitesse jusqu'au virage.
+			if relative >= -MISTAKE_BEFORE and relative < -4:
+				effect["min_speed"] = speed * MISTAKE_LATE_BRAKE_GAIN
+			effect["no_guard"] = relative >= -MISTAKE_BEFORE
+
+		"wide":
+			# Sort large du virage.
+			if relative >= -6:
+				effect["offset"] = outward
+				effect["speed_scale"] = 1.1
+				effect["no_guard"] = true
+
+		"spin":
+			# Perd l'arrière à la corde : tête-à-queue.
+			if relative >= -2 and not bool(_mistake["done"]):
+				_mistake["done"] = true
+				car._add_impact_spin(float(_mistake["sign"]) * MISTAKE_SPIN)
+			effect["no_guard"] = relative >= -2
+
+		"hesitation":
+			# Hésite : lève le pied.
+			if relative >= -12:
+				effect["speed_scale"] = 0.6
+
+	return effect
 
 
 ## Durée (s) pour parcourir un profil entre deux indices.
@@ -520,8 +780,8 @@ func update(delta: float) -> void:
 		_surfaces_seen = line.surfaces_version
 		_build_safe_profile()
 		_precompute_corner_limits()
-		_profile_grip = 1.0
-		speed_profile = build_profile(line, 1.0, 1.0)
+		_build_style_offsets()
+		_rebuild_speed_profile()
 
 		if strategy != null:
 			strategy = AIPitStrategy.new(self)
@@ -541,10 +801,15 @@ func update(delta: float) -> void:
 		_index = _line.closest_index(position, -1, 60, heading)
 		_previous_index = -1
 
+	if participant != null and participant.current_lap != _style_lap:
+		_style_lap = participant.current_lap
+		_roll_lap_variation()
+
 	if _on_pit_route:
 		_update_pit_route(delta)
 	else:
 		_update_pit_plan()
+		_update_mistake()
 
 		_line_loss_age += delta
 
@@ -586,10 +851,20 @@ func update(delta: float) -> void:
 	var avoid := _avoid_cars(speed)
 	target_speed = minf(target_speed, avoid["speed_cap"])
 
-	# Dans le trafic (contacts possibles), vitesse de virage prudente.
-	if bool(avoid["traffic"]) and not _on_pit_route and not _safe_profile.is_empty():
+	# Dans le trafic (contacts possibles), vitesse de virage prudente
+	# (sauf pilotes audacieux).
+	if (
+		bool(avoid["traffic"]) and not _on_pit_route and not _safe_profile.is_empty()
+		and float(style["traffic_care"]) >= 0.5
+	):
 		target_speed = minf(target_speed, _safe_profile[_line.wrap_index(_index + 2)])
-	var wanted_offset: float = 0.0 if _on_pit_route else float(avoid["offset"])
+
+	var wanted_offset: float = 0.0 if _on_pit_route else float(avoid["offset"]) + _style_offset_at(target_index)
+
+	# Erreur de pilotage en cours.
+	var mistake := _mistake_effect(speed)
+	target_speed = maxf(target_speed, mistake["min_speed"]) if mistake["min_speed"] > 0.0 else target_speed
+	target_speed *= mistake["speed_scale"]
 
 	# Pas de décalage au-delà de la chaussée (arbres, murs...).
 	if not _on_pit_route and not line.room_plus.is_empty():
@@ -599,6 +874,8 @@ func update(delta: float) -> void:
 			-maxf(line.room_minus[room_index] - OVERTAKE_EDGE_MARGIN, 0.0),
 			maxf(line.room_plus[room_index] - OVERTAKE_EDGE_MARGIN, 0.0)
 		)
+	# Sortie large (erreur) : au-delà du bord de la chaussée.
+	wanted_offset += mistake["offset"]
 	_lateral_offset = move_toward(_lateral_offset, wanted_offset, 300.0 * delta)
 
 	var target := _line.point(target_index)
@@ -695,7 +972,7 @@ func update(delta: float) -> void:
 	_yaw_rate = wrapf(heading_now - _last_heading, -PI, PI) / maxf(delta, 0.001)
 	_last_heading = heading_now
 
-	if guard_enabled and progress != null and _reverse_time <= 0.0 and speed > 150.0:
+	if guard_enabled and not mistake["no_guard"] and progress != null and _reverse_time <= 0.0 and speed > 150.0:
 		var drifting := absf(lateral_error) > GUARD_OFF_LINE or absf(
 			wrapf(car.velocity.angle() - line_direction.angle(), -PI, PI)
 		) > GUARD_OFF_ANGLE
@@ -961,7 +1238,7 @@ func _avoid_cars(speed: float) -> Dictionary:
 		if gap < TRAFFIC_RANGE and forward.dot(to_other) > -TRAFFIC_RANGE * 0.3:
 			result["traffic"] = true
 
-		if gap > AVOID_RANGE or gap < 1.0:
+		if gap > AVOID_RANGE * _overtake() or gap < 1.0:
 			continue
 
 		if forward.dot(to_other / gap) < AVOID_CONE:
@@ -975,10 +1252,10 @@ func _avoid_cars(speed: float) -> Dictionary:
 		closest = gap
 		# Côté de l'adversaire par rapport à nous : on passe de l'autre.
 		var side := signf(forward.orthogonal().dot(to_other))
-		result["offset"] = -side * OVERTAKE_OFFSET if side != 0.0 else OVERTAKE_OFFSET
+		result["offset"] = (-side if side != 0.0 else 1.0) * OVERTAKE_OFFSET * clampf(_overtake(), 0.7, 1.4)
 
 		# Trop près : on calque sa vitesse pour ne pas le percuter.
-		if gap < AVOID_RANGE * 0.45:
+		if gap < AVOID_RANGE * 0.45 / clampf(_overtake(), 0.8, 1.5):
 			result["speed_cap"] = maxf(other_speed * 0.95, 0.0)
 
 	return result

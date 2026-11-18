@@ -21,6 +21,10 @@ extends Control
 const GHOST_PILOT_AVAILABLE := false
 
 var race_config: RaceConfig
+# Styles restant à distribuer (Ajouter / Remplir).
+var _style_pool: Array[String] = []
+var _description_slot := -1
+var _description_kind := "level"
 var cars: Array[CarDefinition] = []
 var colors: Array = []
 
@@ -31,6 +35,7 @@ var colors: Array = []
 @onready var clear_button: Button = $MarginContainer/VBoxContainer/Toolbar/ClearButton
 @onready var rows_box: VBoxContainer = $MarginContainer/VBoxContainer/Scroll/Rows
 @onready var empty_label: Label = $MarginContainer/VBoxContainer/EmptyLabel
+@onready var description_label: Label = $MarginContainer/VBoxContainer/Description
 @onready var back_button: Button = $MarginContainer/VBoxContainer/Footer/BackButton
 @onready var help_label: Label = $MarginContainer/VBoxContainer/Footer/HelpLabel
 @onready var next_button: Button = $MarginContainer/VBoxContainer/Footer/NextButton
@@ -54,8 +59,11 @@ func _ready() -> void:
 		RaceConfig.get_ai_difficulty(race_config.ai_difficulty)
 	))
 	level_selector.item_selected.connect(
-		func(index: int): race_config.ai_difficulty = level_selector.get_item_id(index)
+		func(index: int):
+			race_config.ai_difficulty = level_selector.get_item_id(index)
+			_show_level_hint()
 	)
+	level_selector.focus_entered.connect(_show_level_hint)
 
 	add_button.pressed.connect(_on_add_pressed)
 	fill_button.pressed.connect(_on_fill_pressed)
@@ -94,8 +102,12 @@ func _add_ai() -> void:
 	if _free_places() <= 0:
 		return
 
+	if _style_pool.is_empty():
+		_style_pool = AIStyle.shuffled_ids()
+
 	race_config.ai_slots.append({
 		"pilot": race_config.ai_difficulty,
+		"style": _style_pool.pop_back(),
 		"car_id": cars[randi() % cars.size()].id,
 		"color_id": String(colors[randi() % colors.size()]["id"])
 	})
@@ -108,6 +120,9 @@ func _on_add_pressed() -> void:
 
 
 func _on_fill_pressed() -> void:
+	# Tous les styles avant de reprendre le même.
+	_style_pool = AIStyle.shuffled_ids()
+
 	while _free_places() > 0:
 		_add_ai()
 
@@ -131,6 +146,40 @@ func _on_pilot_selected(index: int, slot_index: int, selector: OptionButton) -> 
 	race_config.ai_slots[slot_index]["pilot"] = selector.get_item_id(index)
 	_sync()
 	_rebuild_rows()
+	_show_description(slot_index, "level")
+
+
+## Description du niveau choisi pour les IA ajoutées.
+func _show_level_hint() -> void:
+	var level := RaceConfig.get_ai_difficulty(race_config.ai_difficulty)
+	description_label.text = "Niveau %s : %s" % [RaceConfig.AI_PILOT_NAMES[level], AIStyle.LEVEL_DESCRIPTIONS[level]]
+
+
+func _on_style_selected(index: int, slot_index: int) -> void:
+	race_config.ai_slots[slot_index]["style"] = String(AIStyle.get_styles()[index]["id"])
+	_sync()
+	_rebuild_rows()
+	_show_description(slot_index, "style")
+
+
+## Description sous le tableau : niveau ou style de l'IA survolée /
+## sélectionnée.
+func _show_description(slot_index: int, kind: String) -> void:
+	if slot_index < 0 or slot_index >= race_config.ai_slots.size():
+		return
+
+	_description_slot = slot_index
+	_description_kind = kind
+	var slot := race_config.ai_slots[slot_index]
+	var level := RaceConfig.get_ai_difficulty(int(slot.get("pilot", RaceConfig.AIPilot.MEDIUM)))
+	var style := AIStyle.get_style(String(slot.get("style", AIStyle.DEFAULT_ID)))
+
+	if kind == "style":
+		description_label.text = "Style %s : %s" % [style["name"], style["description"]]
+	else:
+		description_label.text = "Niveau %s : %s" % [
+			RaceConfig.AI_PILOT_NAMES[level], AIStyle.LEVEL_DESCRIPTIONS[level]
+		]
 
 
 func _on_car_selected(index: int, slot_index: int, selector: OptionButton) -> void:
@@ -165,6 +214,9 @@ func _rebuild_rows() -> void:
 
 	var focus_rows: Array[Array] = []
 
+	if not race_config.ai_slots.is_empty():
+		_build_header()
+
 	for slot_index in range(race_config.ai_slots.size()):
 		focus_rows.append(_build_row(slot_index))
 
@@ -181,6 +233,13 @@ func _rebuild_rows() -> void:
 		race_config.is_elimination()
 		and race_config.players.size() + count < RaceConfig.ELIMINATION_MIN_PLAYERS
 	)
+
+	if count == 0:
+		_show_level_hint()
+	elif _description_slot >= 0 and _description_slot < count:
+		_show_description(_description_slot, _description_kind)
+	else:
+		_show_description(0, "level")
 
 	if race_config.get_max_ai_count() == 0:
 		empty_label.text = "Aucune place libre : la grille est complète."
@@ -212,6 +271,31 @@ func _rebuild_rows() -> void:
 		or (focused is BaseButton and (focused as BaseButton).disabled)
 	):
 		focus_manager.set_focus.call_deferred(next_button if count > 0 else add_button)
+
+
+## En-têtes des colonnes, alignés sur les lignes.
+func _build_header() -> void:
+	var header := HBoxContainer.new()
+	header.name = "Header"
+	header.add_theme_constant_override("separation", 12)
+	rows_box.add_child(header)
+
+	var spacer := Control.new()
+	spacer.custom_minimum_size = Vector2(28 + 12 + 110, 0)
+	header.add_child(spacer)
+
+	for title in ["Niveau", "Style", "Voiture", "Couleur"]:
+		var label := Label.new()
+		label.text = title
+		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.add_theme_font_size_override("font_size", 24)
+		label.modulate = Color(1, 1, 1, 0.75)
+		header.add_child(label)
+
+	var end := Control.new()
+	end.custom_minimum_size = Vector2(133, 0)
+	header.add_child(end)
 
 
 ## Ligne d'une IA ; renvoie ses commandes (ordre de navigation).
@@ -255,7 +339,27 @@ func _build_row(slot_index: int) -> Array[Control]:
 
 	pilot.select(pilot.get_item_index(int(slot.get("pilot", RaceConfig.AIPilot.MEDIUM))))
 	pilot.item_selected.connect(_on_pilot_selected.bind(slot_index, pilot))
+	pilot.focus_entered.connect(_show_description.bind(slot_index, "level"))
+	pilot.mouse_entered.connect(_show_description.bind(slot_index, "level"))
+
+	# Style de pilotage.
+	var style_selector := OptionButton.new()
+	style_selector.name = "Style"
+	style_selector.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var styles := AIStyle.get_styles()
+	var style_id := String(slot.get("style", AIStyle.DEFAULT_ID))
+
+	for i in range(styles.size()):
+		style_selector.add_item(String(styles[i]["name"]), i)
+
+		if styles[i]["id"] == style_id:
+			style_selector.select(i)
+
+	style_selector.item_selected.connect(_on_style_selected.bind(slot_index))
+	style_selector.focus_entered.connect(_show_description.bind(slot_index, "style"))
+	style_selector.mouse_entered.connect(_show_description.bind(slot_index, "style"))
 	row.add_child(pilot)
+	row.add_child(style_selector)
 
 	# Voiture.
 	var car_selector := OptionButton.new()
@@ -297,7 +401,7 @@ func _build_row(slot_index: int) -> Array[Control]:
 	remove.pressed.connect(_on_remove_pressed.bind(slot_index))
 	row.add_child(remove)
 
-	var controls: Array[Control] = [pilot, car_selector, color_selector, remove]
+	var controls: Array[Control] = [pilot, style_selector, car_selector, color_selector, remove]
 
 	for control in controls:
 		control.focus_mode = Control.FOCUS_ALL
@@ -317,20 +421,20 @@ func _set_navigation(rows: Array[Array]) -> void:
 		typed.assign(row)
 		focus_manager.set_horizontal_navigation(typed, false)
 
-	for column in range(4):
-		var chain: Array[Control] = [toolbar[column]]
+	for column in range(5):
+		var chain: Array[Control] = [toolbar[mini(column, toolbar.size() - 1)]]
 
 		for row: Array in rows:
 			chain.append(row[column])
 
-		chain.append(next_button if column >= 2 else back_button)
+		chain.append(next_button if column >= 3 else back_button)
 		focus_manager.set_vertical_navigation(chain, false)
 
 	var footer: Array[Control] = [back_button, next_button]
 	focus_manager.set_horizontal_navigation(footer, false)
 	var first_row: Control = rows[0][0] if not rows.is_empty() else level_selector
 	focus_manager.set_neighbors(back_button, (rows[rows.size() - 1][0] if not rows.is_empty() else level_selector))
-	focus_manager.set_neighbors(next_button, (rows[rows.size() - 1][2] if not rows.is_empty() else fill_button))
+	focus_manager.set_neighbors(next_button, (rows[rows.size() - 1][3] if not rows.is_empty() else fill_button))
 	focus_manager.set_neighbors(level_selector, null, first_row)
 
 
