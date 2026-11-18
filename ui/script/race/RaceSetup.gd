@@ -47,6 +47,9 @@ var track_catalog: Array
 # Pilotes fantômes : fantôme retrouvé pour chacun sur ce circuit.
 var ghost_pilots_label: Label
 var podium: TimePodium
+var record_row: HBoxContainer
+var record_icon: TextureRect
+var record_label: Label
 
 
 func _ready() -> void:
@@ -70,25 +73,35 @@ func _ready() -> void:
 	var preview_box := preview_label.get_parent()
 	preview_box.add_child(ghost_pilots_label)
 
-	# Contre-la-montre : podium des meilleurs temps à côté de l'aperçu.
+	# Contre-la-montre : record du circuit en haut (toutes voitures, avec
+	# la miniature de la voiture), puis podium à gauche et aperçu du
+	# circuit à droite.
+	record_row = HBoxContainer.new()
+	record_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	record_row.add_theme_constant_override("separation", 16)
+	record_icon = TextureRect.new()
+	record_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	record_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	record_icon.custom_minimum_size = Vector2(72, 48)
+	record_row.add_child(record_icon)
+	record_label = Label.new()
+	record_label.add_theme_font_size_override("font_size", 34)
+	record_label.add_theme_color_override("font_color", Color("#ffd54f"))
+	record_row.add_child(record_label)
+	preview_box.add_child(record_row)
+	preview_box.move_child(record_row, 0)
+
 	var preview_row := HBoxContainer.new()
 	preview_row.size_flags_vertical = preview_image.size_flags_vertical
 	preview_row.add_theme_constant_override("separation", 24)
 	preview_box.add_child(preview_row)
 	preview_box.move_child(preview_row, preview_image.get_index())
-	preview_image.reparent(preview_row)
-	preview_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	preview_image.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	# Aperçu à la largeur de son image (hauteur disponible), podium collé.
-	preview_row.resized.connect(func() -> void:
-		var texture := preview_image.texture
-
-		if texture != null and texture.get_height() > 0:
-			preview_image.custom_minimum_size.x = preview_row.size.y * texture.get_width() / texture.get_height()
-	)
 	podium = TimePodium.new()
-	podium.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	podium.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	podium.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	preview_row.add_child(podium)
+	preview_image.reparent(preview_row)
+	preview_image.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	_setup_tracks()
 	_setup_laps()
@@ -250,22 +263,51 @@ func _refresh_track_preview() -> void:
 	_refresh_podium()
 
 
-## Trois meilleurs temps du circuit (tous joueurs, toutes voitures).
+## Contre-la-montre : record du circuit (toutes voitures) et podium
+## des trois meilleurs temps avec la voiture du joueur.
 func _refresh_podium() -> void:
-	podium.visible = race_config.is_time_trial()
+	var time_trial := race_config.is_time_trial()
+	podium.visible = time_trial
+	record_row.visible = time_trial
 
-	if not podium.visible:
+	if not time_trial:
 		return
 
 	var track_id := int(race_config.track.get("id", -1))
-	var times: Array = []
+	var car_id := String(race_config.players[0].get("car_id", "")) if not race_config.players.is_empty() else ""
+	var car := CarCatalog.get_car(car_id)
+	var all_times: Array = []
+	var car_times: Array = []
 
 	for record in BestTimesManager.get_records():
-		if int(record.get("track_id", -2)) == track_id and float(record.get("lap_time", 0.0)) > 0.0:
-			times.append(record)
+		if int(record.get("track_id", -2)) != track_id or float(record.get("lap_time", 0.0)) <= 0.0:
+			continue
 
-	times.sort_custom(func(a, b): return float(a["lap_time"]) < float(b["lap_time"]))
-	podium.set_entries(times.slice(0, 3))
+		all_times.append(record)
+
+		if String(record.get("car_id", "")) == car_id:
+			car_times.append(record)
+
+	var by_time := func(a, b): return float(a["lap_time"]) < float(b["lap_time"])
+	all_times.sort_custom(by_time)
+	car_times.sort_custom(by_time)
+
+	podium.title = "MEILLEURS TEMPS EN %s" % (car.display_name.to_upper() if car != null else "?")
+	podium.set_entries(car_times.slice(0, 3))
+
+	if all_times.is_empty():
+		record_icon.texture = null
+		record_label.text = "Record du circuit : aucun temps"
+		return
+
+	var best: Dictionary = all_times[0]
+	var best_car := CarCatalog.get_car(String(best.get("car_id", "")))
+	record_icon.texture = best_car.preview_texture if best_car != null else null
+	record_label.text = "Record du circuit : %s — %s (%s)" % [
+		TimePodium._format_time(float(best["lap_time"])),
+		String(best.get("nickname", "?")),
+		best_car.display_name if best_car != null else String(best.get("car_name", ""))
+	]
 
 
 ## Pilotes fantômes : fantôme retrouvé pour leur voiture sur ce
