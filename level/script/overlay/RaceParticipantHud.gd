@@ -44,21 +44,98 @@ func setup(
 
 	name_label.text = " | " + participant.nickname
 
-	# Joueurs humains en gras.
+	# Joueurs humains : nom et informations à la couleur de leur voiture
+	# (la position garde l'or, l'argent, le bronze ; l'écart, le vert
+	# ou le rouge).
 	if not participant.is_ai:
-		for child in get_children():
-			if child is Label:
-				embolden(child)
+		var color := car_display_color(participant.car)
+
+		for label in [name_label, lap_label, lap_time_label, best_lap_label]:
+			label.modulate = color
 
 	refresh()
 
 
-## Met un libellé en gras (police d'origine épaissie).
-static func embolden(label: Label) -> void:
-	var bold := FontVariation.new()
-	bold.base_font = label.get_theme_font("font")
-	bold.variation_embolden = 0.9
-	label.add_theme_font_override("font", bold)
+## Couleur des joueurs humains si celle de la voiture est introuvable.
+const HUMAN_COLOR := Color("#5ce1ff")
+
+# Teinte moyenne de la carrosserie, par modèle (texture -> couleur).
+static var _body_tints: Dictionary = {}
+
+
+## Couleur visible de la carrosserie : teinte du dessin du modèle,
+## multipliée par la couleur choisie (« Aucune » : teinte d'origine).
+## Éclaircie si besoin pour rester lisible sur la piste.
+static func car_display_color(car: Car) -> Color:
+	if not is_instance_valid(car) or car.model == null:
+		return HUMAN_COLOR
+
+	var body := car.model.find_child("Body", true, false) as CanvasItem
+	var tint_node: CanvasItem = body if body != null else car.model
+	var sprite: AnimatedSprite2D = null
+
+	for child in tint_node.find_children("*", "AnimatedSprite2D", true, false):
+		sprite = child
+		break
+
+	var base := Color.WHITE
+
+	if sprite != null and sprite.sprite_frames != null:
+		var texture := sprite.sprite_frames.get_frame_texture(sprite.animation, 0)
+
+		if texture != null:
+			base = _body_tint(texture)
+
+	var color := base * tint_node.modulate
+	color.a = 1.0
+
+	if color.get_luminance() < 0.45:
+		color = color.lightened(0.45 - color.get_luminance() + 0.2)
+
+	return color
+
+
+## Teinte dominante d'un dessin : moyenne des pixels colorés (sinon de
+## tous les pixels opaques).
+static func _body_tint(texture: Texture2D) -> Color:
+	if _body_tints.has(texture):
+		return _body_tints[texture]
+
+	var image := texture.get_image()
+	var tint := Color.WHITE
+
+	if image != null:
+		if image.is_compressed():
+			image.decompress()
+
+		var colored := Vector3.ZERO
+		var colored_count := 0
+		var opaque := Vector3.ZERO
+		var opaque_count := 0
+		var step := maxi(1, int(image.get_width() * image.get_height() / 4096))
+
+		for i in range(0, image.get_width() * image.get_height(), step):
+			var pixel := image.get_pixel(i % image.get_width(), i / image.get_width())
+
+			if pixel.a < 0.5:
+				continue
+
+			opaque += Vector3(pixel.r, pixel.g, pixel.b)
+			opaque_count += 1
+
+			if pixel.s > 0.35 and pixel.v > 0.25:
+				colored += Vector3(pixel.r, pixel.g, pixel.b)
+				colored_count += 1
+
+		if colored_count > 0:
+			var mean := colored / colored_count
+			tint = Color(mean.x, mean.y, mean.z)
+		elif opaque_count > 0:
+			var mean := opaque / opaque_count
+			tint = Color(mean.x, mean.y, mean.z)
+
+	_body_tints[texture] = tint
+	return tint
 
 
 func refresh() -> void:
@@ -88,13 +165,7 @@ func refresh() -> void:
 		% participant.current_lap
 	)
 
-	# Usure des pneus (option de course classique).
-	if (
-		race_controller.pit_stops != null
-		and not participant.is_ai
-		and is_instance_valid(participant.car)
-	):
-		lap_label.text += " | PNEUS %d%%" % int(participant.car.tire_wear * 100.0)
+	# (Usure des pneus : jauge en bas à gauche de l'écran, TireGauge.)
 
 	# Voie des stands : vitesse bridée.
 	if not participant.is_ai and is_instance_valid(participant.car) and participant.car.is_speed_limited():

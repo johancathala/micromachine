@@ -40,14 +40,14 @@ func setup(
 		result.get("nickname", "?")
 	)
 
-	# Joueurs humains en gras.
-	if not bool(result.get("is_ai", false)):
-		for label in [position_label, name_label, car_label, total_time_label]:
-			RaceParticipantHUD.embolden(label)
-	
 	name_label.modulate = _color_position(
 		int(result.get("position", 0))
 	)
+
+	# Joueurs humains : à la couleur de leur voiture.
+	if not bool(result.get("is_ai", false)):
+		for label in [name_label, car_label, total_time_label]:
+			label.modulate = result.get("car_color", RaceParticipantHUD.HUMAN_COLOR)
 	
 	car_label.text = String(
 		result.get("car_name", "?")

@@ -1798,6 +1798,7 @@ func build_race_results() -> Array[Dictionary]:
 			"nickname": state.nickname,
 			"car_name": state.car.car_name,
 			"is_ai": state.is_ai,
+			"car_color": RaceParticipantHUD.car_display_color(state.car),
 
 			"position": state.race_position,
 			"finish_position": state.finish_position,
