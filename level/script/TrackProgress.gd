@@ -839,28 +839,20 @@ func build_pit_route(track: Node, line: PackedVector2Array, spacing: float = 32.
 	var entry_index := -1
 	var exit_index := -1
 
-	# Entrée : dernier point de la ligne (en remontant) d'où la voie des
-	# stands s'atteint directement, sans faire demi-tour.
-	for back in range(4, count / 2, 2):
-		var index := posmod(center_index - back, count)
-		var path := _grid_path(line[index], lane_in)
-
-		if _is_direct(path, line[index], lane_in):
-			entry_index = index
-			route.append_array(path)
-			break
+	# Entrée : point de la ligne (en remontant) d'où la voie des stands
+	# s'atteint directement et en tournant le moins (on prend la route
+	# qui bifurque, plutôt que de tourner à angle droit au dernier
+	# moment).
+	var entry := _best_junction(line, center_index, lane_in, true)
+	entry_index = entry.get("index", -1)
+	route.append_array(entry.get("path", PackedVector2Array()))
 
 	var lane := _grid_path(lane_in, lane_out)
 	route.append_array(lane)
 
-	for forward in range(4, count / 2, 2):
-		var index := (center_index + forward) % count
-		var path := _grid_path(lane_out, line[index])
-
-		if _is_direct(path, lane_out, line[index]):
-			exit_index = index
-			route.append_array(path)
-			break
+	var exit := _best_junction(line, center_index, lane_out, false)
+	exit_index = exit.get("index", -1)
+	route.append_array(exit.get("path", PackedVector2Array()))
 
 	for cell in restore:
 		grid.set_point_weight_scale(cell, restore[cell])
@@ -951,6 +943,82 @@ func _grid_path(from: Vector2, to: Vector2) -> PackedVector2Array:
 		result.append(_cell_to_world(cell))
 
 	return result
+
+
+## Longueur de ligne (px) examinée pour l'entrée et la sortie du stand,
+## et pas entre deux raccords essayés.
+const PIT_JUNCTION_SEARCH := 3000.0
+const PIT_JUNCTION_STEP := 48.0
+## Angle (rad) en deçà duquel un raccord est jugé aussi bon qu'un autre :
+## on garde alors le plus proche du stand.
+const PIT_JUNCTION_TOLERANCE := 0.12
+
+
+## Raccord entre la ligne et la voie des stands (`lane_point`) : parmi
+## les points de la ligne d'où le trajet est direct, celui dont le
+## raccord tourne le moins (angle le plus fort sur la ligne puis le
+## trajet). Entrée : en remontant depuis `center_index` ; sortie : en
+## avançant. {index, path} ou {}.
+func _best_junction(line: PackedVector2Array, center_index: int, lane_point: Vector2, entering: bool) -> Dictionary:
+	var count := line.size()
+	var best: Dictionary = {}
+	var best_turn := INF
+	var spacing := maxf(line[0].distance_to(line[1]), 1.0)
+	var step := maxi(1, int(PIT_JUNCTION_STEP / spacing))
+	var first_direct := -1
+
+	for offset in range(4, count / 2, step):
+		# Au-delà de la recherche après le premier raccord direct : fini.
+		if first_direct >= 0 and (offset - first_direct) * spacing > PIT_JUNCTION_SEARCH:
+			break
+
+		var index := posmod(center_index - offset, count) if entering else (center_index + offset) % count
+		var path := _grid_path(line[index], lane_point) if entering else _grid_path(lane_point, line[index])
+
+		if not _is_direct(path, line[index] if entering else lane_point, lane_point if entering else line[index]):
+			continue
+
+		if first_direct < 0:
+			first_direct = offset
+
+		# Ligne avant (ou après) le raccord, puis le trajet.
+		var chain := PackedVector2Array()
+
+		if entering:
+			for k in range(4, 0, -1):
+				chain.append(line[posmod(index - k, count)])
+			chain.append_array(path)
+		else:
+			chain.append_array(path)
+			for k in range(1, 5):
+				chain.append(line[(index + k) % count])
+
+		var turn := _max_turn(chain, 96.0)
+
+		if turn < best_turn - PIT_JUNCTION_TOLERANCE:
+			best_turn = turn
+			best = {"index": index, "path": path}
+
+	return best
+
+
+## Plus fort changement de direction le long d'un tracé, mesuré entre
+## segments d'environ `step` px (rad).
+static func _max_turn(points: PackedVector2Array, step: float) -> float:
+	var sparse := PackedVector2Array()
+
+	for point in points:
+		if sparse.is_empty() or sparse[sparse.size() - 1].distance_to(point) >= step:
+			sparse.append(point)
+
+	var worst := 0.0
+
+	for i in range(2, sparse.size()):
+		var a := sparse[i - 1] - sparse[i - 2]
+		var b := sparse[i] - sparse[i - 1]
+		worst = maxf(worst, absf(a.angle_to(b)))
+
+	return worst
 
 
 func _is_direct(path: PackedVector2Array, from: Vector2, to: Vector2) -> bool:
