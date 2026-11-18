@@ -404,6 +404,10 @@ func _physics_process(delta: float) -> void:
 	
 	if not car_can_move:
 		return
+
+	if ghost_driver != null:
+		ghost_driver.update(delta)
+		return
 	
 	# Gestion des inputs
 	if is_ai:
@@ -791,6 +795,10 @@ func _process_human_input(_delta: float) -> void:
 
 ## Pilote IA (AIDriver), fourni par la course.
 var ai_driver: AIDriver = null
+## Pilote fantôme (GhostDriver) : la voiture rejoue un tour enregistré,
+## sans physique ni collision.
+var ghost_driver: GhostDriver = null
+var is_ghost: bool = false
 
 
 func _process_ai_input(_delta: float) -> void:
@@ -1115,7 +1123,7 @@ func _update_slipstream(delta: float, fwd: Vector2) -> void:
 		for node in parent.get_children():
 			var other := node as Car
 
-			if other == null or other == self:
+			if other == null or other == self or other.is_ghost:
 				continue
 
 			if other._destruction_started or not other.visible:
@@ -1347,7 +1355,7 @@ func place_for_restart(target: Transform2D) -> void:
 
 
 func explosion() -> void:
-	if _destruction_started or _respawning:
+	if _destruction_started or _respawning or is_ghost:
 		return
 	
 	_destruction_started = true
@@ -1370,7 +1378,7 @@ func explosion() -> void:
 
 
 func sink_in_water() -> void:
-	if _destruction_started or _respawning:
+	if _destruction_started or _respawning or is_ghost:
 		return
 
 	_destruction_started = true
