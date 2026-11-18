@@ -315,6 +315,7 @@ func _setup_ai_drivers() -> void:
 				race_world.current_track.scene_file_path
 			)
 			driver.participant = state
+			driver.progress = track_progress
 			driver.learning_key = AILearning.make_key(
 				race_world.current_track.scene_file_path, state.car.definition.id
 			)

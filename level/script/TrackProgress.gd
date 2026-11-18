@@ -77,6 +77,10 @@ var road_cells: Dictionary = {}
 var offroad_cells: Dictionary = {}
 # Outils de génération : grille limitée à la route.
 var allow_offroad := true
+# Physique du circuit (détection de surface, comme la voiture).
+var _space: PhysicsDirectSpaceState2D = null
+# Masque de détection du sol (GroundRay de Car.tscn).
+const GROUND_PROBE_MASK := 1
 # Cases de route fermées par l'épaississement des obstacles (rouvertes
 # pour le trajet vers le stand, étroit par nature).
 var _dilated_cells: Dictionary = {}
@@ -98,6 +102,9 @@ func build(track: Node, gate_segments: Dictionary) -> bool:
 		return false
 
 	var astar := build_grid(track)
+
+	if track is Node2D and (track as Node2D).is_inside_tree():
+		_space = (track as Node2D).get_world_2d().direct_space_state
 
 	if astar == null:
 		return false
@@ -1148,9 +1155,34 @@ func is_road_cell(cell: Vector2i) -> bool:
 	return road_cells.has(cell) and grid != null and not grid.is_point_solid(cell)
 
 
-## Surface d'un point pour l'IA : null sur la route, sinon le profil
-## de surface hors piste (adhérence, freinage).
-func offroad_surface(world_position: Vector2) -> SurfaceProfile:
+## Surface réellement roulée en un point, d'après les calques physiques
+## présents (comme Car.get_surface_profile) ; aucun calque reconnu :
+## profil DEFAULT, comme la voiture. Sans physique : d'après les cases.
+func surface_at(world_position: Vector2) -> SurfaceProfile:
+	if _space != null:
+		# Tous les calques présents au point ; la route l'emporte (une
+		# route est peinte par-dessus l'herbe).
+		var query := PhysicsPointQueryParameters2D.new()
+		query.position = world_position
+		query.collision_mask = GROUND_PROBE_MASK
+		var groups: Dictionary = {}
+
+		for hit in _space.intersect_point(query, 16):
+			var collider: Object = hit.get("collider")
+
+			if collider is Node:
+				for group in (collider as Node).get_groups():
+					groups[String(group)] = true
+
+		for profile in [
+			["asphalt", SurfaceCatalog.ASPHALT], ["gravel", SurfaceCatalog.GRAVEL],
+			["mud", SurfaceCatalog.MUD], ["ice", SurfaceCatalog.ICE], ["grass", SurfaceCatalog.GRASS]
+		]:
+			if groups.has(profile[0]):
+				return profile[1]
+
+		return SurfaceCatalog.DEFAULT
+
 	var name: String = offroad_cells.get(world_to_cell(world_position), "")
 
 	if name == "grass":
@@ -1159,7 +1191,7 @@ func offroad_surface(world_position: Vector2) -> SurfaceProfile:
 	if name == "gravel":
 		return SurfaceCatalog.GRAVEL
 
-	return null
+	return SurfaceCatalog.ASPHALT
 
 
 ## Normale de chaque porte, orientée dans le sens de la course (point de
