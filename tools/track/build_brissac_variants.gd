@@ -68,6 +68,8 @@ func _initialize() -> void:
 	root.add_child(base)
 
 	progress = TrackProgress.new()
+	# Tracés générés sur la route seulement.
+	progress.allow_offroad = false
 
 	var gates: Dictionary = {}
 

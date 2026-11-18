@@ -80,6 +80,10 @@ const TRACKING_MAX_ERROR := 160.0
 # Rejoindre la trajectoire de loin (au-delà de REJOIN_DISTANCE px : sortie,
 # réapparition) : point visé proche, vitesse modérée.
 const REJOIN_DISTANCE := 300.0
+# Réapparition replacée sur la trajectoire si elle est à moins de ça (px).
+const RESPAWN_SNAP_DISTANCE := 350.0
+# Points de trajectoire parcourus au plus pour trouver de la route.
+const RESPAWN_ROAD_SEARCH := 30
 const REJOIN_LOOKAHEAD := 200.0
 const REJOIN_SPEED := 600.0
 const TRACKING_MAX_ANGLE := 0.7
@@ -241,10 +245,15 @@ func _precompute_corner_limits() -> void:
 	_kinematic_limit.resize(count)
 	_grip_limit.resize(count)
 
+	var surfaces := line.surface_grip.size() == count
+
 	for i in range(count):
 		var k := line.curvature[i]
-		_kinematic_limit[i] = _kinematic_speed(k)
-		_grip_limit[i] = _grip_speed(k)
+		# Hors piste (herbe...) : braquage moins efficace (le virage
+		# nécessaire paraît plus serré) et adhérence bien plus faible.
+		var steer := line.surface_steer[i] if surfaces else 1.0
+		_kinematic_limit[i] = _kinematic_speed(k / maxf(steer, 0.1))
+		_grip_limit[i] = _grip_speed(k) * (line.surface_grip[i] if surfaces else 1.0)
 
 
 ## Profil de vitesse d'une ligne avec une adhérence et un freinage
@@ -313,7 +322,13 @@ func build_profile(
 				continue
 
 			var next := profile[(i + 1) % count]
-			var reachable := sqrt(next * next + 2.0 * decel * RacingLine.SPACING)
+			# Freinage plus faible hors piste (point suivant sur l'herbe...).
+			var surface_decel := decel
+
+			if target.surface_brake.size() == count:
+				surface_decel *= target.surface_brake[(i + 1) % count]
+
+			var reachable := sqrt(next * next + 2.0 * surface_decel * RacingLine.SPACING)
 
 			if profile[i] > reachable:
 				profile[i] = reachable
@@ -465,12 +480,13 @@ func update(delta: float) -> void:
 	_refresh_tire_profile()
 
 	_previous_index = _index
-	_index = _line.closest_index(position, _index)
+	var heading := Vector2.RIGHT.rotated(car.global_rotation)
+	_index = _line.closest_index(position, _index, 60, heading)
 
 	# Loin de la ligne (réapparition, grosse sortie) : recherche sur
 	# toute la ligne.
 	if position.distance_to(_line.point(_index)) > 500.0:
-		_index = _line.closest_index(position)
+		_index = _line.closest_index(position, -1, 60, heading)
 		_previous_index = -1
 
 	if _on_pit_route:
@@ -866,14 +882,35 @@ func _update_stuck(delta: float, speed: float) -> void:
 		_no_progress_time = 0.0
 		_last_progress_index = -1
 		respawn_count += 1
+		# Bloquée hors de sa trajectoire : comme une sortie de route, elle
+		# apprend à ralentir là où elle l'a perdue.
+		on_crash()
 		car.explosion()
 
 
 ## Après une réapparition : reprendre la trajectoire au plus près.
-func reset_tracking() -> void:
+## `on_line` (réapparition) : la voiture est replacée sur sa trajectoire,
+## au point le plus proche du point de reprise et dans le sens de la
+## course (un point de reprise mal orienté l'enverrait dans le décor).
+func reset_tracking(on_line: bool = false) -> void:
 	if _on_pit_route:
 		_on_pit_route = false
 		_line = line
+
+	if on_line and line != null and line.is_valid():
+		var nearest := line.closest_index(car.global_position)
+
+		if car.global_position.distance_to(line.points[nearest]) <= RESPAWN_SNAP_DISTANCE:
+			# Hors piste (herbe...), on braque mal à l'arrêt : départ sur
+			# le premier point de route qui suit.
+			if line.surface_grip.size() == line.points.size():
+				for step in range(RESPAWN_ROAD_SEARCH):
+					if line.surface_grip[line.wrap_index(nearest + step)] >= 0.999:
+						nearest = line.wrap_index(nearest + step)
+						break
+
+			car.global_position = line.points[nearest]
+			car.global_rotation = line.direction(nearest).angle()
 
 	_index = -1
 	_previous_index = -1

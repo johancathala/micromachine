@@ -1047,7 +1047,7 @@ func request_respawn(car: Car) -> void:
 		state.car.respawn_at(state.respawn_transform)
 
 		if state.car.ai_driver != null:
-			state.car.ai_driver.reset_tracking()
+			state.car.ai_driver.reset_tracking(true)
 
 		# Après un raccourci : les sections sautées, jusqu'à celle où la
 		# voiture est replacée, sont validées dans l'ordre.

@@ -19,6 +19,9 @@ class_name RacingLine
 const SPACING := 32.0
 # Demi-fenêtre (en points) pour estimer la courbure.
 const CURVATURE_SPAN := 3
+# Recherche orientée : écart (px) accepté par rapport au point le plus
+# proche pour retenir un point orienté comme la voiture.
+const ALIGNED_TOLERANCE := 250.0
 
 var points := PackedVector2Array()
 var curvature := PackedFloat32Array()
@@ -34,6 +37,12 @@ var closed := true
 # Vide si inconnue.
 var room_plus := PackedFloat32Array()
 var room_minus := PackedFloat32Array()
+# Surface en chaque point (passages hors piste) : adhérence, freinage
+# et braquage effectif relatifs à l'asphalte (1 sur la route). Vide si
+# inconnue.
+var surface_grip := PackedFloat32Array()
+var surface_brake := PackedFloat32Array()
+var surface_steer := PackedFloat32Array()
 
 
 static func from_track(track: Node, progress: TrackProgress) -> RacingLine:
@@ -64,10 +73,21 @@ func _measure_room(progress: TrackProgress) -> void:
 	room_plus.resize(count)
 	room_minus.resize(count)
 
+	surface_grip.resize(count)
+	surface_brake.resize(count)
+	surface_steer.resize(count)
+
 	for i in range(count):
 		var normal := direction(i).orthogonal()
 		room_plus[i] = progress.drivable_extent(points[i], normal)
 		room_minus[i] = progress.drivable_extent(points[i], -normal)
+
+		var surface := progress.offroad_surface(points[i])
+		surface_grip[i] = 1.0 if surface == null else surface.grip_mul
+		surface_brake[i] = 1.0 if surface == null else surface.brake_mul
+		# Sous-virage de Car._apply_rotation sur une surface glissante.
+		var understeer := 1.0 - clampf(1.15 - surface_grip[i], 0.0, 0.55)
+		surface_steer[i] = understeer / 0.85
 
 
 func is_valid() -> bool:
@@ -115,18 +135,32 @@ static func _menger_curvature(a: Vector2, b: Vector2, c: Vector2) -> float:
 
 ## Indice du point le plus proche, recherché autour de `hint`
 ## (suivi continu le long de la boucle), ou sur toute la ligne.
-func closest_index(position: Vector2, hint: int = -1, window: int = 60) -> int:
+## `heading` (recherche sur toute la ligne) : ne retient que les points
+## orientés dans ce sens (une ligne qui repasse au même endroit en sens
+## inverse ne doit pas tromper la voiture).
+func closest_index(position: Vector2, hint: int = -1, window: int = 60, heading: Vector2 = Vector2.ZERO) -> int:
 	var count := points.size()
 	var best := 0
 	var best_distance := INF
 
 	if hint < 0:
+		var aligned := -1
+		var aligned_distance := INF
+
 		for i in range(count):
 			var d := position.distance_squared_to(points[i])
 
 			if d < best_distance:
 				best_distance = d
 				best = i
+
+			if heading != Vector2.ZERO and d < aligned_distance and direction(i).dot(heading) >= 0.3:
+				aligned_distance = d
+				aligned = i
+
+		# Point orienté comme la voiture, s'il n'est guère plus loin.
+		if aligned >= 0 and sqrt(aligned_distance) < sqrt(best_distance) + ALIGNED_TOLERANCE:
+			return aligned
 
 		return best
 
