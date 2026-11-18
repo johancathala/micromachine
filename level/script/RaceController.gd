@@ -126,7 +126,7 @@ const POSITION_UPDATE_INTERVAL := 0.2
 # allers-retours sur place ne comptent donc pas. Sauf arrêt au stand,
 # fantôme, course finie, et élimination (une explosion y vaut
 # élimination).
-const AI_STUCK_TIME := 8.0
+const AI_STUCK_TIME := 3.0
 const AI_STUCK_MIN_PROGRESS := 0.05
 
 # participant_id -> {progress, time}
