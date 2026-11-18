@@ -126,8 +126,10 @@ const MISTAKE_AFTER := 25
 const MISTAKE_MIN_CURVATURE := 0.0025
 const MISTAKE_WIDE_OFFSET := 160.0
 const MISTAKE_SPIN := 3.2
-# Freinage manqué : la voiture continue d'accélérer un peu.
-const MISTAKE_LATE_BRAKE_GAIN := 1.08
+# Freinage manqué : la voiture continue d'accélérer (gain à gravité 1).
+const MISTAKE_LATE_BRAKE_GAIN := 1.12
+# Gravité des erreurs selon le niveau (Novice, Moyen, Expert).
+const MISTAKE_SEVERITY := [1.5, 1.0, 0.35]
 const STUCK_SPEED := 40.0
 const STUCK_DELAY := 1.0
 # Manœuvre de dégagement : recul de REVERSE_MIN_TIME à REVERSE_MAX_TIME s,
@@ -193,6 +195,9 @@ var _style_lap := -1
 # Erreur de pilotage en cours : {type, corner, sign, done} (vide : aucune).
 var _mistake: Dictionary = {}
 var mistake_count := 0
+# Points du tour où une erreur est prévue (indices de la trajectoire).
+var _mistake_points: Array[int] = []
+var _mistake_travelled := 0
 var _surfaces_seen := 0
 var guard_count := 0
 var _last_heading := 0.0
@@ -382,6 +387,7 @@ func _roll_lap_variation() -> void:
 	if push > 0.0 and lap_count > 0:
 		_pace_mul *= (1.0 + push) if _laps_remaining() <= 2 else (1.0 - push * 0.5)
 
+	_plan_mistakes()
 	_rebuild_speed_profile()
 
 
@@ -656,11 +662,42 @@ func _overtake() -> float:
 	return float(style["overtake"])
 
 
-## Erreurs de pilotage (Novice et Moyen) : déclenchées au hasard avant un
-## virage, selon le niveau et le style. Pendant l'erreur, le garde-fou
-## anti-collision est suspendu : elle peut finir dans le décor.
+## Erreurs de pilotage : au début de chaque tour, leur nombre est tiré
+## (loi de Poisson calibrée sur AIStyle.CLEAN_LAPS, modulée par le style)
+## et placé au hasard sur le tour ; chacune vise le virage qui suit. En
+## Novice et Moyen, le garde-fou est suspendu pendant l'erreur (elle
+## peut finir dans le décor) ; en Expert, elle reste légère.
+func _plan_mistakes() -> void:
+	_mistake_points.clear()
+	var clean := clampf(float(AIStyle.CLEAN_LAPS[difficulty]), 0.01, 1.0)
+	var mean := -log(clean) * float(style["mistakes"])
+
+	# Tirage de Poisson (méthode de Knuth).
+	var limit := exp(-mean)
+	var product := _rng.randf()
+	var count := 0
+
+	while product > limit and count < 6:
+		count += 1
+		product *= _rng.randf()
+
+	# Distances (en points de trajectoire) depuis le début du tour où
+	# chaque erreur se déclenche ; elles sont toutes jouées dans le tour.
+	_mistake_travelled = 0
+
+	for _i in range(count):
+		_mistake_points.append(_rng.randi_range(5, int(line.points.size() * 0.85)))
+
+	_mistake_points.sort()
+
+
 func _update_mistake() -> void:
-	var count := line.points.size()
+	# Distance parcourue sur la trajectoire depuis le début du tour.
+	if _previous_index >= 0:
+		var advanced := posmod(_index - _previous_index, line.points.size())
+
+		if advanced < 20:
+			_mistake_travelled += advanced
 
 	if not _mistake.is_empty():
 		var relative := _relative_index(int(_mistake["corner"]))
@@ -670,29 +707,31 @@ func _update_mistake() -> void:
 
 		return
 
-	var rate := float(AIStyle.MISTAKES_PER_LAP[difficulty]) * float(style["mistakes"])
-
-	if rate <= 0.0 or _previous_index < 0 or not car.car_can_move:
+	if _mistake_points.is_empty() or not car.car_can_move:
 		return
 
-	var advanced := posmod(_index - _previous_index, count)
-
-	if advanced <= 0 or advanced > 10 or _rng.randf() > rate * advanced / count:
+	# Erreur prévue atteinte (les suivantes attendent la fin de celle-ci) :
+	# au prochain virage marqué.
+	if _mistake_travelled < _mistake_points[0]:
 		return
 
-	# Prochain virage marqué.
-	for ahead in range(MISTAKE_BEFORE, MISTAKE_BEFORE + 70):
+	_mistake_points.remove_at(0)
+
+	for ahead in range(MISTAKE_BEFORE, MISTAKE_BEFORE + 200):
 		var corner := line.wrap_index(_index + ahead)
 
 		if line.curvature[corner] > MISTAKE_MIN_CURVATURE:
 			var roll := _rng.randf()
 			var type := "hesitation"
 
-			if roll < 0.45:
+			if difficulty == Difficulty.EXPERT:
+				# Expert : erreurs légères (hésitation, trajectoire imprécise).
+				type = "hesitation" if roll < 0.5 else "wide"
+			elif roll < 0.45:
 				type = "late_brake"
 			elif roll < 0.75:
 				type = "wide"
-			elif roll < 0.85 and difficulty == Difficulty.NOVICE:
+			elif roll < 0.9 and difficulty == Difficulty.NOVICE:
 				type = "spin"
 
 			_mistake = {
@@ -720,33 +759,35 @@ func _mistake_effect(speed: float) -> Dictionary:
 		return effect
 
 	var relative := _relative_index(int(_mistake["corner"]))
-	var outward := float(_mistake["sign"]) * MISTAKE_WIDE_OFFSET
+	var severity: float = MISTAKE_SEVERITY[difficulty]
+	var outward := float(_mistake["sign"]) * MISTAKE_WIDE_OFFSET * severity
+	var guard_off := difficulty != Difficulty.EXPERT
 
 	match String(_mistake["type"]):
 		"late_brake":
 			# Freine trop tard : garde sa vitesse jusqu'au virage.
 			if relative >= -MISTAKE_BEFORE and relative < -4:
-				effect["min_speed"] = speed * MISTAKE_LATE_BRAKE_GAIN
-			effect["no_guard"] = relative >= -MISTAKE_BEFORE
+				effect["min_speed"] = speed * (1.0 + (MISTAKE_LATE_BRAKE_GAIN - 1.0) * severity)
+			effect["no_guard"] = guard_off and relative >= -MISTAKE_BEFORE
 
 		"wide":
 			# Sort large du virage.
 			if relative >= -6:
 				effect["offset"] = outward
-				effect["speed_scale"] = 1.1
-				effect["no_guard"] = true
+				effect["speed_scale"] = 1.0 + 0.1 * severity
+				effect["no_guard"] = guard_off
 
 		"spin":
 			# Perd l'arrière à la corde : tête-à-queue.
 			if relative >= -2 and not bool(_mistake["done"]):
 				_mistake["done"] = true
 				car._add_impact_spin(float(_mistake["sign"]) * MISTAKE_SPIN)
-			effect["no_guard"] = relative >= -2
+			effect["no_guard"] = guard_off and relative >= -2
 
 		"hesitation":
 			# Hésite : lève le pied.
 			if relative >= -12:
-				effect["speed_scale"] = 0.6
+				effect["speed_scale"] = 1.0 - 0.4 * minf(severity, 1.0)
 
 	return effect
 
