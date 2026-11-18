@@ -339,7 +339,7 @@ func build_participants() -> void:
 
 
 ## Nom d'une IA : le pilote de son style (« Régis »), ou pour un
-## fantôme celui qui l'a enregistré (« Fantôme de Flavien »), numéroté
+## fantôme le joueur et la médaille (« Flavien Or »), numéroté
 ## si plusieurs IA ont le même (« Régis 1 », « Régis 2 »).
 func _ai_name(slot: Dictionary, totals: Dictionary, seen: Dictionary) -> String:
 	var key := _name_key(slot)
@@ -359,15 +359,15 @@ static func _name_key(slot: Dictionary) -> String:
 	return String(slot.get("style", AIStyle.DEFAULT_ID))
 
 
-## Nom d'un pilote fantôme : d'après le joueur qui l'a enregistré
-## (le meilleur : connu une fois le circuit choisi).
+## Nom d'un pilote fantôme : joueur et médaille (« Flavien Or ») ; le
+## meilleur n'est connu qu'une fois le circuit choisi.
 static func ghost_name(slot: Dictionary) -> String:
-	var recorder := String(slot.get("ghost_name", ""))
+	var label := String(slot.get("ghost_name", ""))
 
-	if String(slot.get("ghost", "")).is_empty() or recorder.is_empty():
-		return "Fantôme du record"
+	if String(slot.get("ghost", "")).is_empty() or label.is_empty():
+		return "Record"
 
-	return "Fantôme de " + recorder
+	return label
 
 
 ## Les IA cèdent leur livrée : une IA dont la voiture ou la couleur

@@ -14,8 +14,9 @@ extends Control
 # reprise d'une course à l'autre (RaceConfig.remember_ai_slots).
 #
 # Pilote fantôme : à la place du style, on choisit le fantôme rejoué
-# (le meilleur, ou celui d'un joueur) parmi ceux enregistrés avec sa
-# voiture ; il prend le nom de ce joueur. Sans enregistrement sur le
+# (le meilleur, ou celui d'un joueur et d'une médaille : Platine, Or,
+# Argent, Bronze) parmi ceux enregistrés avec sa voiture ; il en prend
+# le nom (« Flavien Or »). Sans enregistrement sur le
 # circuit choisi ensuite, il roule en Expert. Pas de fantôme en
 # élimination (il ne peut pas être éliminé).
 # ============================================================
@@ -272,7 +273,7 @@ func _ghost_description(slot_index: int) -> String:
 				"" if not key.is_empty() else " (%s)" % entry["nickname"]
 			])
 
-	var who := "le meilleur fantôme" if key.is_empty() else "le fantôme de " + String(slot.get("ghost_name", key))
+	var who := "le meilleur fantôme" if key.is_empty() else "le fantôme " + String(slot.get("ghost_name", key))
 	return "Rejoue %s en %s : %s. Ailleurs, roule en Expert." % [who, car_name, ", ".join(parts)]
 
 

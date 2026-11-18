@@ -10,6 +10,9 @@ enum GameMode {
 var pending_race_config: RaceConfig = null
 var active_race_config: RaceConfig = null
 var last_race_results: Array[Dictionary] = []
+# Contre-la-montre : tours valides de la session, avec leur
+# enregistrement (GhostManager), à garder en médailles.
+var last_ghost_laps: Array[Dictionary] = []
 
 # ================================================================
 # CONFIGURATION DE COURSE
@@ -126,6 +129,7 @@ func clear_active_race() -> void:
 	
 func clear_result_race() -> void:
 	last_race_results.clear()
+	last_ghost_laps.clear()
 
 func get_last_race_results() -> Array[Dictionary]:
 	return last_race_results
