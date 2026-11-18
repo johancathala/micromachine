@@ -241,7 +241,7 @@ func _refresh_ghost_pilots() -> void:
 		var car_id := String(participant.get("car_id", ""))
 		var car := CarCatalog.get_car(car_id)
 		var car_name := car.display_name if car != null else car_id
-		var ghost := GhostManager.load_best_ghost(track_id, car_id)
+		var ghost := GhostManager.load_ghost_for(track_id, car_id, String(participant.get("ai_ghost", "")))
 		var pilot_name := String(participant.get("nickname", ""))
 
 		if ghost.is_empty():

@@ -233,6 +233,7 @@ func initialize(
 	if race_config.uses_tire_wear():
 		_scale_tire_wear()
 
+	_setup_ghost_drivers()
 	_setup_ai_drivers()
 
 	if race_config.is_time_trial():
@@ -285,7 +286,7 @@ func _setup_ai_drivers() -> void:
 	var has_ai := false
 
 	for state in participants:
-		if state.is_ai and is_instance_valid(state.car):
+		if state.is_ai and is_instance_valid(state.car) and state.car.ghost_driver == null:
 			has_ai = true
 
 	if not has_ai:
@@ -309,7 +310,7 @@ func _setup_ai_drivers() -> void:
 		print("IA : passage au stand %s" % ("calculé" if not pit_route.is_empty() else "introuvable"))
 
 	for state in participants:
-		if state.is_ai and is_instance_valid(state.car):
+		if state.is_ai and is_instance_valid(state.car) and state.car.ghost_driver == null:
 			var driver := AIDriver.new(
 				state.car, racing_line, _get_ai_difficulty(state),
 				race_world.current_track.scene_file_path
@@ -323,6 +324,49 @@ func _setup_ai_drivers() -> void:
 			driver.setup_pit(pit_route)
 			driver.set_style(_get_ai_style(state), randi())
 			state.car.ai_driver = driver
+
+
+## Pilotes fantômes : le tour enregistré par le joueur choisi (ou le
+## meilleur) avec cette voiture sur ce circuit. Sans enregistrement, le
+## pilote reste une IA (Expert).
+func _setup_ghost_drivers() -> void:
+	if race_config.is_elimination():
+		return
+
+	var track_id := int(race_config.track.get("id", -1))
+
+	for state in participants:
+		if not state.is_ai or not is_instance_valid(state.car) or state.car.definition == null:
+			continue
+
+		var participant := _get_participant_config(state)
+
+		if int(participant.get("ai_pilot", -1)) != RaceConfig.AIPilot.GHOST:
+			continue
+
+		var data := GhostManager.load_ghost_for(track_id, state.car.definition.id, String(participant.get("ai_ghost", "")))
+
+		if not GhostDriver.is_usable(data):
+			print("Fantôme : aucun enregistrement pour %s, pilote Expert" % state.nickname)
+			continue
+
+		var driver := GhostDriver.new(state.car, data)
+		state.car.ghost_driver = driver
+		driver.prepare()
+
+		# Fantôme du record : nommé d'après celui qui l'a enregistré.
+		if bool(participant.get("ghost_auto_name", false)) and String(participant.get("ai_ghost", "")).is_empty():
+			state.nickname = "Fantôme de " + String(data.get("nickname", "?"))
+
+		print("Fantôme : %s rejoue %.2f s" % [state.nickname, float(data.get("lap_time", 0.0))])
+
+
+func _get_participant_config(state: RaceParticipantState) -> Dictionary:
+	for participant in race_config.participants:
+		if int(participant.get("participant_id", -1)) == state.participant_id:
+			return participant
+
+	return {}
 
 
 ## Style de pilotage de l'IA choisi sur l'écran des IA.

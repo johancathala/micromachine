@@ -1403,7 +1403,7 @@ func _avoid_cars(speed: float) -> Dictionary:
 	for node in parent.get_children():
 		var other := node as Car
 
-		if other == null or other == car or not other.visible or other._destruction_started:
+		if other == null or other == car or other.is_ghost or not other.visible or other._destruction_started:
 			continue
 
 		var to_other := other.global_position - car.global_position

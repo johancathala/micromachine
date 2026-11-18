@@ -13,12 +13,17 @@ extends Control
 # haut de l'écran, avec une voiture au hasard. La composition est
 # reprise d'une course à l'autre (RaceConfig.remember_ai_slots).
 #
-# Pilote fantôme : il roulera avec le meilleur fantôme valide de sa
-# voiture sur le circuit choisi à l'écran suivant. Grisé tant que la
-# conduite des fantômes n'existe pas.
+# Pilote fantôme : à la place du style, on choisit le fantôme rejoué
+# (le meilleur, ou celui d'un joueur) parmi ceux enregistrés avec sa
+# voiture ; il prend le nom de ce joueur. Sans enregistrement sur le
+# circuit choisi ensuite, il roule en Expert. Pas de fantôme en
+# élimination (il ne peut pas être éliminé).
 # ============================================================
 
-const GHOST_PILOT_AVAILABLE := false
+const GHOST_DESCRIPTION := "Fantôme : rejoue un tour enregistré en contre-la-montre avec sa voiture, tour après tour. Il traverse les autres voitures et ne peut pas exploser. Ses pneus ne s'usent pas."
+
+# Fantômes enregistrés, par voiture (lus une fois par écran).
+var _ghost_cache: Dictionary = {}
 
 var race_config: RaceConfig
 # Styles restant à distribuer (Ajouter / Remplir).
@@ -183,6 +188,94 @@ func _on_name_reset(slot_index: int) -> void:
 	_rebuild_rows()
 
 
+## Fantômes enregistrés avec la voiture de l'IA : le meilleur (connu
+## une fois le circuit choisi), puis ceux de chaque joueur.
+func _fill_ghost_selector(selector: OptionButton, slot_index: int) -> void:
+	var slot := race_config.ai_slots[slot_index]
+	var recorders := _ghost_recorders(slot_index)
+	var current := String(slot.get("ghost", ""))
+
+	selector.add_item("Le meilleur", 0)
+	selector.select(0)
+
+	for i in range(recorders.size()):
+		selector.add_item(String(recorders[i]["nickname"]), i + 1)
+
+		if recorders[i]["key"] == current:
+			selector.select(i + 1)
+
+	# Joueur sans fantôme avec cette voiture : retour au meilleur.
+	if selector.selected == 0 and not current.is_empty():
+		slot.erase("ghost")
+		slot.erase("ghost_name")
+
+	selector.item_selected.connect(_on_ghost_selected.bind(slot_index, recorders))
+
+
+func _ghost_recorders(slot_index: int) -> Array[Dictionary]:
+	var car_id := String(race_config.get_participant(_participant_index(slot_index)).get("car_id", ""))
+
+	if not _ghost_cache.has(car_id):
+		_ghost_cache[car_id] = GhostManager.list_recorders(car_id)
+
+	return _ghost_cache[car_id]
+
+
+func _on_ghost_selected(index: int, slot_index: int, recorders: Array[Dictionary]) -> void:
+	var slot := race_config.ai_slots[slot_index]
+
+	if index == 0:
+		slot.erase("ghost")
+		slot.erase("ghost_name")
+	else:
+		slot["ghost"] = String(recorders[index - 1]["key"])
+		slot["ghost_name"] = String(recorders[index - 1]["nickname"])
+
+	_sync()
+	_rebuild_rows()
+	_show_description(slot_index, "style")
+
+
+## Description d'un pilote fantôme : ses tours enregistrés par circuit.
+func _ghost_description(slot_index: int) -> String:
+	var slot := race_config.ai_slots[slot_index]
+	var key := String(slot.get("ghost", ""))
+	var recorders := _ghost_recorders(slot_index)
+	var car := CarCatalog.get_car(String(race_config.get_participant(_participant_index(slot_index)).get("car_id", "")))
+	var car_name := car.display_name if car != null else "cette voiture"
+
+	if recorders.is_empty():
+		return "Aucun fantôme enregistré avec la %s : ce pilote roulera en Expert. Enregistre des tours en contre-la-montre." % car_name
+
+	var best_by_track: Dictionary = {}
+
+	for recorder in recorders:
+		if not key.is_empty() and recorder["key"] != key:
+			continue
+
+		for lap in recorder["laps"]:
+			var track_id := int(lap["track_id"])
+
+			if not best_by_track.has(track_id) or float(lap["lap_time"]) < float(best_by_track[track_id]["lap_time"]):
+				best_by_track[track_id] = {"lap_time": float(lap["lap_time"]), "nickname": recorder["nickname"]}
+
+	var parts: PackedStringArray = []
+
+	for track in TrackCatalog.get_tracks():
+		var track_id := int(track.get("id", -1))
+
+		if best_by_track.has(track_id):
+			var entry: Dictionary = best_by_track[track_id]
+			parts.append("%s %s%s" % [
+				String(track.get("name", "")),
+				GhostManager._format_time(float(entry["lap_time"])),
+				"" if not key.is_empty() else " (%s)" % entry["nickname"]
+			])
+
+	var who := "le meilleur fantôme" if key.is_empty() else "le fantôme de " + String(slot.get("ghost_name", key))
+	return "Rejoue %s en %s : %s. Ailleurs, roule en Expert." % [who, car_name, ", ".join(parts)]
+
+
 func _on_style_selected(index: int, slot_index: int) -> void:
 	race_config.ai_slots[slot_index]["style"] = String(AIStyle.get_styles()[index]["id"])
 	_sync()
@@ -207,8 +300,12 @@ func _show_description(slot_index: int, kind: String) -> void:
 
 		if car != null:
 			_show_car_description(car)
+	elif kind == "style" and int(slot.get("pilot", RaceConfig.AIPilot.MEDIUM)) == RaceConfig.AIPilot.GHOST:
+		description_label.text = _ghost_description(slot_index)
 	elif kind == "style":
 		description_label.text = "%s (%s) : %s" % [style["driver"], style["name"], style["description"]]
+	elif int(slot.get("pilot", RaceConfig.AIPilot.MEDIUM)) == RaceConfig.AIPilot.GHOST:
+		description_label.text = GHOST_DESCRIPTION
 	else:
 		description_label.text = "Niveau %s : %s" % [
 			RaceConfig.AI_PILOT_NAMES[level], AIStyle.LEVEL_DESCRIPTIONS[level]
@@ -418,34 +515,40 @@ func _build_row(slot_index: int) -> Array[Control]:
 	# Pilote.
 	var pilot := _column_selector("Pilot", "level")
 
-	for value in [RaceConfig.AIPilot.NOVICE, RaceConfig.AIPilot.MEDIUM, RaceConfig.AIPilot.EXPERT, RaceConfig.AIPilot.GHOST]:
-		var label: String = RaceConfig.AI_PILOT_NAMES[value]
+	var pilots := [RaceConfig.AIPilot.NOVICE, RaceConfig.AIPilot.MEDIUM, RaceConfig.AIPilot.EXPERT]
 
-		if value == RaceConfig.AIPilot.GHOST:
-			label = "Fantôme" if GHOST_PILOT_AVAILABLE else "Fantôme (bientôt)"
+	# Pas de fantôme en élimination : il ne pourrait pas être éliminé.
+	if not race_config.is_elimination():
+		pilots.append(RaceConfig.AIPilot.GHOST)
+	elif int(slot.get("pilot", -1)) == RaceConfig.AIPilot.GHOST:
+		slot["pilot"] = RaceConfig.AIPilot.EXPERT
 
-		pilot.add_item(label, value)
-
-		if value == RaceConfig.AIPilot.GHOST and not GHOST_PILOT_AVAILABLE:
-			pilot.set_item_disabled(pilot.get_item_index(value), true)
+	for value in pilots:
+		pilot.add_item(RaceConfig.AI_PILOT_NAMES[value], value)
 
 	pilot.select(pilot.get_item_index(int(slot.get("pilot", RaceConfig.AIPilot.MEDIUM))))
 	pilot.item_selected.connect(_on_pilot_selected.bind(slot_index, pilot))
 	pilot.focus_entered.connect(_show_description.bind(slot_index, "level"))
 	pilot.mouse_entered.connect(_show_description.bind(slot_index, "level"))
 
-	# Style de pilotage.
+	# Style de pilotage ; pour un pilote fantôme, le joueur dont le
+	# fantôme (enregistré avec cette voiture) est rejoué.
 	var style_selector := _column_selector("Style", "style")
-	var styles := AIStyle.get_styles()
-	var style_id := String(slot.get("style", AIStyle.DEFAULT_ID))
 
-	for i in range(styles.size()):
-		style_selector.add_item(String(styles[i]["name"]), i)
+	if int(slot.get("pilot", RaceConfig.AIPilot.MEDIUM)) == RaceConfig.AIPilot.GHOST:
+		_fill_ghost_selector(style_selector, slot_index)
+	else:
+		var styles := AIStyle.get_styles()
+		var style_id := String(slot.get("style", AIStyle.DEFAULT_ID))
 
-		if styles[i]["id"] == style_id:
-			style_selector.select(i)
+		for i in range(styles.size()):
+			style_selector.add_item(String(styles[i]["name"]), i)
 
-	style_selector.item_selected.connect(_on_style_selected.bind(slot_index))
+			if styles[i]["id"] == style_id:
+				style_selector.select(i)
+
+		style_selector.item_selected.connect(_on_style_selected.bind(slot_index))
+
 	style_selector.focus_entered.connect(_show_description.bind(slot_index, "style"))
 	style_selector.mouse_entered.connect(_show_description.bind(slot_index, "style"))
 	row.add_child(pilot)

@@ -140,6 +140,60 @@ static func load_best_ghost(p_track_id: int, p_car_id: String) -> Dictionary:
 	return best
 
 
+## Fantôme d'un joueur (clé de player_key) pour ce circuit et cette
+## voiture ; clé vide : le meilleur, tous joueurs confondus.
+static func load_ghost_for(p_track_id: int, p_car_id: String, recorder_key: String) -> Dictionary:
+	if recorder_key.is_empty():
+		return load_best_ghost(p_track_id, p_car_id)
+
+	return load_ghost_file(ghost_path(p_track_id, p_car_id, recorder_key))
+
+
+## Joueurs ayant enregistré un fantôme avec cette voiture, sur un
+## circuit quelconque (pilotes fantômes de l'écran des IA, choisis
+## avant le circuit) :
+## [{key, nickname, laps: [{track_id, lap_time}]}], par nom.
+static func list_recorders(p_car_id: String) -> Array[Dictionary]:
+	var by_key: Dictionary = {}
+	var directory := DirAccess.open(GHOST_DIR)
+
+	if directory == null:
+		return []
+
+	var marker := "_%s_" % p_car_id
+
+	for file_name in directory.get_files():
+		if not file_name.begins_with("track") or not file_name.ends_with(".ghost"):
+			continue
+
+		var at := file_name.find(marker)
+
+		if at < 0:
+			continue
+
+		var key := file_name.substr(at + marker.length()).trim_suffix(".ghost")
+		var data := load_ghost_file(GHOST_DIR + file_name)
+
+		if data.is_empty() or String(data.get("car_id", p_car_id)) != p_car_id:
+			continue
+
+		if not by_key.has(key):
+			by_key[key] = {"key": key, "nickname": String(data.get("nickname", key)), "laps": []}
+
+		(by_key[key]["laps"] as Array).append({
+			"track_id": int(data.get("track_id", file_name.substr(5, at - 5).to_int())),
+			"lap_time": float(data.get("lap_time", 0.0))
+		})
+
+	var result: Array[Dictionary] = []
+
+	for key in by_key:
+		result.append(by_key[key])
+
+	result.sort_custom(func(a, b): return String(a["nickname"]).naturalnocasecmp_to(String(b["nickname"])) < 0)
+	return result
+
+
 func _save_ghost(data: Dictionary) -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(GHOST_DIR))
 
