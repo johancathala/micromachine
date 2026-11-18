@@ -25,6 +25,7 @@ var race_config: RaceConfig
 var _style_pool: Array[String] = []
 var _description_slot := -1
 var _description_kind := "level"
+var _color_icons: Dictionary = {}
 var cars: Array[CarDefinition] = []
 var colors: Array = []
 
@@ -149,10 +150,37 @@ func _on_pilot_selected(index: int, slot_index: int, selector: OptionButton) -> 
 	_show_description(slot_index, "level")
 
 
+func _show_car_description(car: CarDefinition) -> void:
+	description_label.text = "%s : %s" % [car.display_name, car.description]
+
+
 ## Description du niveau choisi pour les IA ajoutées.
 func _show_level_hint() -> void:
 	var level := RaceConfig.get_ai_difficulty(race_config.ai_difficulty)
 	description_label.text = "Niveau %s : %s" % [RaceConfig.AI_PILOT_NAMES[level], AIStyle.LEVEL_DESCRIPTIONS[level]]
+
+
+## Nom saisi : prioritaire sur celui du style (vide : nom du style).
+func _on_name_changed(slot_index: int, edit: LineEdit) -> void:
+	if slot_index >= race_config.ai_slots.size():
+		return
+
+	var slot := race_config.ai_slots[slot_index]
+	var typed := edit.text.strip_edges()
+	var current := String(race_config.get_participant(_participant_index(slot_index)).get("nickname", ""))
+
+	if typed == current:
+		return
+
+	slot["name"] = typed
+	_sync()
+	_rebuild_rows.call_deferred()
+
+
+func _on_name_reset(slot_index: int) -> void:
+	race_config.ai_slots[slot_index].erase("name")
+	_sync()
+	_rebuild_rows()
 
 
 func _on_style_selected(index: int, slot_index: int) -> void:
@@ -162,8 +190,8 @@ func _on_style_selected(index: int, slot_index: int) -> void:
 	_show_description(slot_index, "style")
 
 
-## Description sous le tableau : niveau ou style de l'IA survolée /
-## sélectionnée.
+## Description sous le tableau : niveau, style ou voiture de l'IA
+## survolée / sélectionnée (souris, clavier ou manette).
 func _show_description(slot_index: int, kind: String) -> void:
 	if slot_index < 0 or slot_index >= race_config.ai_slots.size():
 		return
@@ -174,7 +202,12 @@ func _show_description(slot_index: int, kind: String) -> void:
 	var level := RaceConfig.get_ai_difficulty(int(slot.get("pilot", RaceConfig.AIPilot.MEDIUM)))
 	var style := AIStyle.get_style(String(slot.get("style", AIStyle.DEFAULT_ID)))
 
-	if kind == "style":
+	if kind == "car":
+		var car := CarCatalog.get_car(String(race_config.get_participant(_participant_index(slot_index)).get("car_id", "")))
+
+		if car != null:
+			_show_car_description(car)
+	elif kind == "style":
 		description_label.text = "Style %s : %s" % [style["name"], style["description"]]
 	else:
 		description_label.text = "Niveau %s : %s" % [
@@ -273,6 +306,27 @@ func _rebuild_rows() -> void:
 		focus_manager.set_focus.call_deferred(next_button if count > 0 else add_button)
 
 
+## Largeurs des colonnes (px) : identiques pour toutes les lignes, pour
+## que les choix restent alignés.
+const COLUMN_WIDTHS := {
+	"swatch": 28, "name": 240, "reset": 48, "level": 190, "style": 230,
+	"car": 320, "color": 230, "remove": 140
+}
+const ICON_SIZE := 44
+# Colonnes étirées sur toute la largeur, dans les mêmes proportions pour
+# toutes les lignes (la pastille et le bouton ⟲ gardent leur taille).
+const FIXED_COLUMNS := ["swatch", "reset"]
+
+
+## Largeur d'une colonne : minimale, puis étirée dans sa proportion.
+func _size_column(control: Control, column: String) -> void:
+	control.custom_minimum_size.x = COLUMN_WIDTHS[column]
+
+	if not FIXED_COLUMNS.has(column):
+		control.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		control.size_flags_stretch_ratio = COLUMN_WIDTHS[column] / 100.0
+
+
 ## En-têtes des colonnes, alignés sur les lignes.
 func _build_header() -> void:
 	var header := HBoxContainer.new()
@@ -280,22 +334,46 @@ func _build_header() -> void:
 	header.add_theme_constant_override("separation", 12)
 	rows_box.add_child(header)
 
-	var spacer := Control.new()
-	spacer.custom_minimum_size = Vector2(28 + 12 + 110, 0)
-	header.add_child(spacer)
-
-	for title in ["Niveau", "Style", "Voiture", "Couleur"]:
+	for column in [
+		["swatch", ""], ["name", "Nom"], ["reset", ""], ["level", "Niveau"],
+		["style", "Style"], ["car", "Voiture"], ["color", "Couleur"], ["remove", ""]
+	]:
 		var label := Label.new()
-		label.text = title
-		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.text = column[1]
+		label.clip_text = true
+		_size_column(label, column[0])
 		label.add_theme_font_size_override("font_size", 24)
 		label.modulate = Color(1, 1, 1, 0.75)
 		header.add_child(label)
 
-	var end := Control.new()
-	end.custom_minimum_size = Vector2(133, 0)
-	header.add_child(end)
+
+## Choix d'une colonne : largeur fixe, texte aligné à gauche.
+func _column_selector(selector_name: String, column: String) -> OptionButton:
+	var selector := OptionButton.new()
+	selector.name = selector_name
+	_size_column(selector, column)
+	selector.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	selector.clip_text = true
+	selector.add_theme_constant_override("icon_max_width", ICON_SIZE)
+	selector.get_popup().add_theme_constant_override("icon_max_width", ICON_SIZE)
+	return selector
+
+
+## Pastille de couleur (icône des choix de couleur), mise en cache.
+func _color_icon(color: Color) -> Texture2D:
+	var key := color.to_html()
+
+	if not _color_icons.has(key):
+		var image := Image.create(28, 28, false, Image.FORMAT_RGBA8)
+		image.fill(color)
+		# Liseré sombre : une couleur claire reste visible.
+		for k in range(28):
+			for edge in [0, 27]:
+				image.set_pixel(k, edge, Color(0, 0, 0, 0.6))
+				image.set_pixel(edge, k, Color(0, 0, 0, 0.6))
+		_color_icons[key] = ImageTexture.create_from_image(image)
+
+	return _color_icons[key]
 
 
 ## Ligne d'une IA ; renvoie ses commandes (ordre de navigation).
@@ -310,21 +388,35 @@ func _build_row(slot_index: int) -> Array[Control]:
 
 	# Pastille de couleur + nom.
 	var swatch := ColorRect.new()
-	swatch.custom_minimum_size = Vector2(28, 28)
+	swatch.custom_minimum_size = Vector2(COLUMN_WIDTHS["swatch"], 28)
 	swatch.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var color_data := ColorCatalog.get_color(String(participant.get("color_id", "")))
 	swatch.color = color_data.get("color", Color.WHITE)
 	row.add_child(swatch)
 
-	var name_label := Label.new()
-	name_label.text = String(participant.get("nickname", "IA %d" % (slot_index + 1)))
-	name_label.custom_minimum_size = Vector2(110, 0)
-	row.add_child(name_label)
+	# Nom : celui du style par défaut, modifiable ; un nom saisi reste
+	# prioritaire même si le style change. Le bouton ⟲ rend le nom du style.
+	var name_edit := LineEdit.new()
+	name_edit.name = "Name"
+	_size_column(name_edit, "name")
+	name_edit.text = String(participant.get("nickname", ""))
+	name_edit.max_length = 20
+	name_edit.select_all_on_focus = true
+	name_edit.text_submitted.connect(func(_text: String) -> void: name_edit.release_focus())
+	name_edit.focus_exited.connect(_on_name_changed.bind(slot_index, name_edit))
+	row.add_child(name_edit)
+
+	var reset := Button.new()
+	reset.name = "ResetName"
+	reset.text = "⟲"
+	reset.tooltip_text = "Nom par défaut (celui du style)"
+	_size_column(reset, "reset")
+	reset.disabled = String(slot.get("name", "")).is_empty()
+	reset.pressed.connect(_on_name_reset.bind(slot_index))
+	row.add_child(reset)
 
 	# Pilote.
-	var pilot := OptionButton.new()
-	pilot.name = "Pilot"
-	pilot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var pilot := _column_selector("Pilot", "level")
 
 	for value in [RaceConfig.AIPilot.NOVICE, RaceConfig.AIPilot.MEDIUM, RaceConfig.AIPilot.EXPERT, RaceConfig.AIPilot.GHOST]:
 		var label: String = RaceConfig.AI_PILOT_NAMES[value]
@@ -343,9 +435,7 @@ func _build_row(slot_index: int) -> Array[Control]:
 	pilot.mouse_entered.connect(_show_description.bind(slot_index, "level"))
 
 	# Style de pilotage.
-	var style_selector := OptionButton.new()
-	style_selector.name = "Style"
-	style_selector.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var style_selector := _column_selector("Style", "style")
 	var styles := AIStyle.get_styles()
 	var style_id := String(slot.get("style", AIStyle.DEFAULT_ID))
 
@@ -362,30 +452,40 @@ func _build_row(slot_index: int) -> Array[Control]:
 	row.add_child(style_selector)
 
 	# Voiture.
-	var car_selector := OptionButton.new()
-	car_selector.name = "Car"
-	car_selector.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# Voiture : miniature devant le nom.
+	var car_selector := _column_selector("Car", "car")
 	var car_id := String(participant.get("car_id", ""))
 
 	for i in range(cars.size()):
-		car_selector.add_item(cars[i].display_name, i)
+		if cars[i].preview_texture != null:
+			car_selector.add_icon_item(cars[i].preview_texture, cars[i].display_name, i)
+		else:
+			car_selector.add_item(cars[i].display_name, i)
 
 		if cars[i].id == car_id:
 			car_selector.select(i)
 
 	car_selector.item_selected.connect(_on_car_selected.bind(slot_index, car_selector))
+	car_selector.focus_entered.connect(_show_description.bind(slot_index, "car"))
+	car_selector.mouse_entered.connect(_show_description.bind(slot_index, "car"))
+	# Liste ouverte : description de la voiture survolée.
+	car_selector.get_popup().id_focused.connect(func(id: int) -> void: _show_car_description(cars[id]))
 	row.add_child(car_selector)
 
 	# Couleur : celles déjà prises pour ce modèle sont grisées.
-	var color_selector := OptionButton.new()
-	color_selector.name = "Color"
-	color_selector.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# Couleur : pastille devant le nom ; celles déjà prises pour ce modèle
+	# sont grisées.
+	var color_selector := _column_selector("Color", "color")
 	var participant_index := _participant_index(slot_index)
 
 	for i in range(colors.size()):
 		var color_id := String(colors[i]["id"])
 		var taken := race_config.is_livery_taken(car_id, color_id, participant_index)
-		color_selector.add_item(String(colors[i]["name"]) + (" (prise)" if taken else ""), i)
+		color_selector.add_icon_item(
+			_color_icon(colors[i]["color"]),
+			String(colors[i]["name"]) + (" (prise)" if taken else ""),
+			i
+		)
 		color_selector.set_item_disabled(i, taken)
 
 		if color_id == String(participant.get("color_id", "")):
@@ -397,11 +497,12 @@ func _build_row(slot_index: int) -> Array[Control]:
 	var remove := Button.new()
 	remove.name = "Remove"
 	remove.text = "RETIRER"
+	_size_column(remove, "remove")
 	remove.add_to_group("audio_back")
 	remove.pressed.connect(_on_remove_pressed.bind(slot_index))
 	row.add_child(remove)
 
-	var controls: Array[Control] = [pilot, style_selector, car_selector, color_selector, remove]
+	var controls: Array[Control] = [name_edit, reset, pilot, style_selector, car_selector, color_selector, remove]
 
 	for control in controls:
 		control.focus_mode = Control.FOCUS_ALL
@@ -421,20 +522,20 @@ func _set_navigation(rows: Array[Array]) -> void:
 		typed.assign(row)
 		focus_manager.set_horizontal_navigation(typed, false)
 
-	for column in range(5):
-		var chain: Array[Control] = [toolbar[mini(column, toolbar.size() - 1)]]
+	for column in range(7):
+		var chain: Array[Control] = [toolbar[clampi(column - 2, 0, toolbar.size() - 1)]]
 
 		for row: Array in rows:
 			chain.append(row[column])
 
-		chain.append(next_button if column >= 3 else back_button)
+		chain.append(next_button if column >= 5 else back_button)
 		focus_manager.set_vertical_navigation(chain, false)
 
 	var footer: Array[Control] = [back_button, next_button]
 	focus_manager.set_horizontal_navigation(footer, false)
-	var first_row: Control = rows[0][0] if not rows.is_empty() else level_selector
+	var first_row: Control = rows[0][2] if not rows.is_empty() else level_selector
 	focus_manager.set_neighbors(back_button, (rows[rows.size() - 1][0] if not rows.is_empty() else level_selector))
-	focus_manager.set_neighbors(next_button, (rows[rows.size() - 1][3] if not rows.is_empty() else fill_button))
+	focus_manager.set_neighbors(next_button, (rows[rows.size() - 1][5] if not rows.is_empty() else fill_button))
 	focus_manager.set_neighbors(level_selector, null, first_row)
 
 
