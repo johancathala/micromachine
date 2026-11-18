@@ -53,8 +53,9 @@ var target_score: int = DEFAULT_TARGET_SCORE
 # au lieu d'une caméra commune (écran partagé).
 var split_screen: bool = false
 
-# Course classique : usure des pneus et arrêts au stand.
-var tire_wear: bool = false
+# Course classique : usure des pneus et arrêts au stand (activée par
+# défaut).
+var tire_wear: bool = true
 
 # IA engagées (écran des IA), dans l'ordre. Chacune : {"pilot": AIPilot,
 # "style": identifiant AIStyle, "car_id": String, "color_id": String,

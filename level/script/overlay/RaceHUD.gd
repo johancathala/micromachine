@@ -549,6 +549,21 @@ func _build_participant_rows() -> void:
 
 		participant_rows[state.participant_id] = row
 
+	# Colonne des noms à la largeur du plus long (en-tête compris).
+	var names: Array = []
+
+	for state in race_controller.get_participant_states():
+		names.append(state.nickname)
+
+	var font := get_theme_font("font", "Label")
+	var width := RaceParticipantHUD.name_column_width(names, font)
+
+	for row in participant_rows.values():
+		RaceParticipantHUD.set_name_width(row, width)
+
+	if header != null:
+		RaceParticipantHUD.set_name_width(header, width)
+
 ## Usure des pneus : une jauge par joueur humain, avec son nom s'ils
 ## sont plusieurs. Les joueurs sont rangés comme devant le clavier
 ## (Z Q S D, puis O K L M, flèches, pavé numérique ; manettes ensuite) :
