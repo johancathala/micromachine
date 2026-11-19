@@ -24,6 +24,14 @@ class_name TrackProgress
 
 const DRIVABLE_KEYWORDS := ["asphalte", "vibreur"]
 
+# Passages hors piste (herbe, gravier) : certains tracés en empruntent,
+# balisés par des sacs de pneus (variantes Paddock). Le parcours n'y
+# passe que s'il évite ainsi un grand détour (coût OFFROAD_WEIGHT par
+# case) ; l'eau n'est jamais praticable.
+const OFFROAD_KEYWORDS := {"herbe": "grass", "gravel": "gravel"}
+const WATER_KEYWORD := "eau"
+const OFFROAD_WEIGHT := 100.0
+
 # Les tuiles de sol ont une collision (détection de surface) : seules
 # bloquent celles dont la couche de collision touche le masque des
 # voitures (Car.collision_mask = 14 : Player, Interact, Obstacle).
@@ -36,6 +44,15 @@ const PIT_LANE_WEIGHT := 4.0
 # La zone d'arrêt ne couvre que la voie centrale : on pondère aussi les
 # bandes voisines des stands (sans atteindre la piste, plus loin).
 const PIT_WEIGHT_MARGIN := Vector2(350, 600)
+# Voie à vitesse limitée (nœud PitLane) : le tracé de course l'évite
+# dès qu'une autre route existe.
+const PIT_LIMITER_WEIGHT := 200.0
+# Obstacles posés dans le circuit (balisage en sacs de pneus, souvent en
+# pointillé) : épaissis de MARKER_DILATION cases pour le calcul du
+# parcours, afin qu'une ligne de balisage forme une barrière continue.
+const MARKER_DILATION := 2
+# Autres obstacles durs : épaissis d'une case.
+const HARD_DILATION := 1
 
 var _cell_size := Vector2(32, 32)
 var _reference_layer: TileMapLayer = null
@@ -54,6 +71,19 @@ var grid: AStarGrid2D = null
 # Cases d'obstacles durs (murs, poteaux, objets), à distinguer de
 # l'herbe (non praticable pour le parcours mais sans collision).
 var hard_cells: Dictionary = {}
+# Cases de route (asphalte, vibreur) ; les autres cases praticables de
+# la grille sont hors piste (offroad_cells : case -> nom de surface).
+var road_cells: Dictionary = {}
+var offroad_cells: Dictionary = {}
+# Outils de génération : grille limitée à la route.
+var allow_offroad := true
+# Physique du circuit (détection de surface, comme la voiture).
+var _space: PhysicsDirectSpaceState2D = null
+# Masque de détection du sol (GroundRay de Car.tscn).
+const GROUND_PROBE_MASK := 1
+# Cases de route fermées par l'épaississement des obstacles (rouvertes
+# pour le trajet vers le stand, étroit par nature).
+var _dilated_cells: Dictionary = {}
 
 # Raison de l'échec de build(), pour le diagnostic.
 var last_error := ""
@@ -73,10 +103,17 @@ func build(track: Node, gate_segments: Dictionary) -> bool:
 
 	var astar := build_grid(track)
 
+	if track is Node2D and (track as Node2D).is_inside_tree():
+		_space = (track as Node2D).get_world_2d().direct_space_state
+
 	if astar == null:
 		return false
 
 	grid = astar
+
+	# Obstacles posés (barils, citerne...) : infranchissables, y compris
+	# pour le parcours (un circuit peut en placer sur son tracé).
+	_block_obstacles(track)
 
 	# Points de passage possibles de chaque porte : une porte peut
 	# couper plusieurs routes ; on garde chaque portion de route coupée.
@@ -90,6 +127,13 @@ func build(track: Node, gate_segments: Dictionary) -> bool:
 			last_error = "la porte de la section %d ne coupe aucune route" % section_id
 			return false
 
+	# Sens de franchissement de chaque porte (sens de la course) : une
+	# porte se traverse, elle ne se longe pas. Le chemin part juste après
+	# une porte et arrive juste avant la suivante, sans repasser par
+	# l'une ou l'autre (une porte posée dans une trouée de mur impose
+	# ainsi de sortir par cette trouée).
+	var normals := _gate_normals(track, gate_segments)
+
 	# Chemins entre points de passage de portes consécutives.
 	# paths_between[k][[i, j]] = cellules du candidat i (porte k)
 	# au candidat j (porte k+1).
@@ -97,17 +141,9 @@ func build(track: Node, gate_segments: Dictionary) -> bool:
 
 	for section_id in range(section_count):
 		var next_id := (section_id + 1) % section_count
-		var table: Dictionary = {}
-
-		for i in range(candidates[section_id].size()):
-			for j in range(candidates[next_id].size()):
-				var cells := astar.get_id_path(
-					candidates[section_id][i],
-					candidates[next_id][j]
-				)
-
-				if not cells.is_empty():
-					table[Vector2i(i, j)] = cells
+		# Herbe et gravier permis, mais coûteux (OFFROAD_WEIGHT) : le
+		# parcours n'y passe que pour éviter un grand détour.
+		var table := _section_paths(astar, section_id, next_id, candidates, normals, not offroad_cells.is_empty())
 
 		paths_between[section_id] = table
 
@@ -186,11 +222,6 @@ func build(track: Node, gate_segments: Dictionary) -> bool:
 		_paths[section_id] = points
 		_cumulative[section_id] = cumulative
 
-	# Pour l'IA (trajectoire, passage au stand) : les obstacles posés
-	# sur la carte (barils, citerne...) deviennent infranchissables.
-	# Après le calcul du parcours, qui n'en dépend pas.
-	_block_obstacles(track)
-
 	return true
 
 
@@ -228,6 +259,7 @@ func _block_obstacles(track: Node) -> void:
 					if grid.is_in_boundsv(Vector2i(x, y)):
 						grid.set_point_solid(Vector2i(x, y), true)
 						hard_cells[Vector2i(x, y)] = true
+						offroad_cells.erase(Vector2i(x, y))
 
 
 ## Portions de route coupées par la porte [a, b] : une case
@@ -235,7 +267,8 @@ func _block_obstacles(track: Node) -> void:
 func _gate_crossings(
 	astar: AStarGrid2D,
 	a: Vector2,
-	b: Vector2
+	b: Vector2,
+	road_only: bool = true
 ) -> Array[Vector2i]:
 
 	var result: Array[Vector2i] = []
@@ -254,7 +287,7 @@ func _gate_crossings(
 
 		last_cell = cell
 
-		var walkable := astar.is_in_boundsv(cell) and not astar.is_point_solid(cell)
+		var walkable := road_cells.has(cell) if road_only else (road_cells.has(cell) or offroad_cells.has(cell))
 
 		if walkable:
 			run.append(cell)
@@ -265,12 +298,17 @@ func _gate_crossings(
 	if not run.is_empty():
 		result.append(run[run.size() / 2])
 
+	# Porte sans route (passage hors piste) : on passe sur l'herbe.
+	if result.is_empty() and road_only:
+		return _gate_crossings(astar, a, b, false)
+
 	return result
 
 
 ## Grille A* des cases praticables du circuit (null si impossible).
 ## Le nœud « Map » peut être à la racine du circuit ou dans une carte
-## intégrée (variantes de circuit réutilisant une autre carte).
+## intégrée (variantes de circuit réutilisant une autre carte) ; les
+## couches de tuiles posées à la racine du circuit comptent aussi.
 func build_grid(track: Node) -> AStarGrid2D:
 	var map := track.get_node_or_null("Map")
 
@@ -283,8 +321,14 @@ func build_grid(track: Node) -> AStarGrid2D:
 
 	var drivable: Dictionary = {}
 	var layers: Array[TileMapLayer] = []
+	# Couches de la carte, plus celles posées directement dans le circuit
+	# (sacs de pneus, décor propres à un tracé).
+	var candidates: Array[Node] = map.get_children()
 
-	for child in map.get_children():
+	if map.get_parent() != track:
+		candidates.append_array(track.get_children())
+
+	for child in candidates:
 		var layer := child as TileMapLayer
 
 		if layer == null or layer.tile_set == null:
@@ -320,8 +364,33 @@ func build_grid(track: Node) -> AStarGrid2D:
 		for cell in layer.get_used_cells():
 			drivable[_to_grid(layer, cell)] = true
 
+	# Cases hors piste (herbe, gravier), hors eau.
+	var offroad: Dictionary = {}
+
+	if allow_offroad:
+		var water: Dictionary = {}
+
+		for layer in layers:
+			var lower_name := String(layer.name).to_lower()
+
+			if lower_name.contains(WATER_KEYWORD):
+				for cell in layer.get_used_cells():
+					water[_to_grid(layer, cell)] = true
+
+		for layer in layers:
+			var lower_name := String(layer.name).to_lower()
+
+			for keyword in OFFROAD_KEYWORDS:
+				if lower_name.contains(keyword):
+					for cell in layer.get_used_cells():
+						var grid_cell := _to_grid(layer, cell)
+
+						if not drivable.has(grid_cell) and not water.has(grid_cell):
+							offroad[grid_cell] = OFFROAD_KEYWORDS[keyword]
+
 	# Cases bloquées : tuiles avec collision, quelle que soit la couche.
 	var blocked: Dictionary = {}
+	var markers: Dictionary = {}
 
 	for layer in layers:
 		if layer.tile_set.get_physics_layers_count() == 0:
@@ -356,7 +425,19 @@ func build_grid(track: Node) -> AStarGrid2D:
 
 			blocked[_to_grid(layer, cell)] = true
 
-	hard_cells = blocked
+			if layer.get_parent() == track:
+				markers[_to_grid(layer, cell)] = true
+
+	hard_cells = blocked.duplicate()
+
+	# Obstacles épaissis pour le calcul du parcours : pas de couloir plus
+	# étroit qu'une voiture entre deux obstacles.
+	for cell in hard_cells:
+		var dilation := MARKER_DILATION if markers.has(cell) else HARD_DILATION
+
+		for dx in range(-dilation, dilation + 1):
+			for dy in range(-dilation, dilation + 1):
+				blocked[cell + Vector2i(dx, dy)] = true
 
 	if drivable.is_empty():
 		return null
@@ -380,13 +461,53 @@ func build_grid(track: Node) -> AStarGrid2D:
 	astar.update()
 	astar.fill_solid_region(astar.region, true)
 
+	road_cells.clear()
+	offroad_cells.clear()
+
+	_dilated_cells.clear()
+
 	for cell in drivable:
 		if not blocked.has(cell):
 			astar.set_point_solid(cell, false)
+			road_cells[cell] = true
+		elif not hard_cells.has(cell):
+			# Route fermée seulement par l'épaississement des obstacles.
+			_dilated_cells[cell] = true
+
+	# Cases hors piste fermées par défaut (voir _set_offroad_open).
+	for cell in offroad:
+		if not blocked.has(cell) and astar.is_in_boundsv(cell):
+			offroad_cells[cell] = offroad[cell]
 
 	_weight_pit_lane(track, astar)
+	_weight_speed_limited(track, astar)
 
 	return astar
+
+
+## Cases de la voie à vitesse limitée (PitLane) : très coûteuses.
+func _weight_speed_limited(track: Node, astar: AStarGrid2D, weight: float = PIT_LIMITER_WEIGHT) -> void:
+	var lane := track.get_node_or_null("PitLane")
+
+	if lane == null:
+		return
+
+	for child in lane.get_children():
+		var shape := child as CollisionShape2D
+
+		if shape == null or not shape.shape is RectangleShape2D or shape.disabled:
+			continue
+
+		var area := _shape_bounds(shape)
+		var c0 := world_to_cell(area.position)
+		var c1 := world_to_cell(area.end)
+
+		for x in range(mini(c0.x, c1.x), maxi(c0.x, c1.x) + 1):
+			for y in range(mini(c0.y, c1.y), maxi(c0.y, c1.y) + 1):
+				var cell := Vector2i(x, y)
+
+				if road_cells.has(cell) or _dilated_cells.has(cell):
+					astar.set_point_weight_scale(cell, weight)
 
 
 ## Rend la voie des stands plus coûteuse (zone du nœud PitStop).
@@ -408,7 +529,7 @@ func _weight_pit_lane(track: Node, astar: AStarGrid2D, weight: float = PIT_LANE_
 			for y in range(c0.y, c1.y + 1):
 				var cell := Vector2i(x, y)
 
-				if astar.is_in_boundsv(cell) and not astar.is_point_solid(cell):
+				if road_cells.has(cell):
 					astar.set_point_weight_scale(cell, weight)
 
 
@@ -634,6 +755,10 @@ func build_racing_line(spacing: float = 32.0, margin: float = 75.0, iterations: 
 	for i in range(count):
 		line[i] = center[i] + normals[i] * offsets[i]
 
+	# Le lissage peut couper un coin à travers un obstacle : les points
+	# trop proches d'un obstacle dur en sont écartés.
+	line = _push_from_hard_cells(line, LINE_CLEARANCE, true)
+
 	return resample_closed(line, spacing)
 
 
@@ -701,41 +826,42 @@ func build_pit_route(track: Node, line: PackedVector2Array, spacing: float = 32.
 	if lane_in == Vector2.INF or lane_out == Vector2.INF:
 		return {}
 
-	# Calcul sans surcoût de la voie des stands.
+	# Calcul sans surcoût de la voie des stands ni de la voie limitée,
+	# obstacles à leur taille réelle (la voie des stands est étroite).
 	_weight_pit_lane(track, grid, 1.0)
+	_weight_speed_limited(track, grid, 1.0)
+
+	for cell in _dilated_cells:
+		grid.set_point_solid(cell, false)
 	var restore := _weight_near_hard_cells()
 
 	var route := PackedVector2Array()
 	var entry_index := -1
 	var exit_index := -1
 
-	# Entrée : dernier point de la ligne (en remontant) d'où la voie des
-	# stands s'atteint directement, sans faire demi-tour.
-	for back in range(4, count / 2, 2):
-		var index := posmod(center_index - back, count)
-		var path := _grid_path(line[index], lane_in)
-
-		if _is_direct(path, line[index], lane_in):
-			entry_index = index
-			route.append_array(path)
-			break
+	# Entrée : point de la ligne (en remontant) d'où la voie des stands
+	# s'atteint directement et en tournant le moins (on prend la route
+	# qui bifurque, plutôt que de tourner à angle droit au dernier
+	# moment).
+	var entry := _best_junction(line, center_index, lane_in, true)
+	entry_index = entry.get("index", -1)
+	route.append_array(entry.get("path", PackedVector2Array()))
 
 	var lane := _grid_path(lane_in, lane_out)
 	route.append_array(lane)
 
-	for forward in range(4, count / 2, 2):
-		var index := (center_index + forward) % count
-		var path := _grid_path(lane_out, line[index])
-
-		if _is_direct(path, lane_out, line[index]):
-			exit_index = index
-			route.append_array(path)
-			break
+	var exit := _best_junction(line, center_index, lane_out, false)
+	exit_index = exit.get("index", -1)
+	route.append_array(exit.get("path", PackedVector2Array()))
 
 	for cell in restore:
 		grid.set_point_weight_scale(cell, restore[cell])
 
 	_weight_pit_lane(track, grid, PIT_LANE_WEIGHT)
+	_weight_speed_limited(track, grid)
+
+	for cell in _dilated_cells:
+		grid.set_point_solid(cell, true)
 
 	if entry_index < 0 or exit_index < 0 or lane.is_empty():
 		return {}
@@ -819,6 +945,82 @@ func _grid_path(from: Vector2, to: Vector2) -> PackedVector2Array:
 	return result
 
 
+## Longueur de ligne (px) examinée pour l'entrée et la sortie du stand,
+## et pas entre deux raccords essayés.
+const PIT_JUNCTION_SEARCH := 3000.0
+const PIT_JUNCTION_STEP := 48.0
+## Angle (rad) en deçà duquel un raccord est jugé aussi bon qu'un autre :
+## on garde alors le plus proche du stand.
+const PIT_JUNCTION_TOLERANCE := 0.12
+
+
+## Raccord entre la ligne et la voie des stands (`lane_point`) : parmi
+## les points de la ligne d'où le trajet est direct, celui dont le
+## raccord tourne le moins (angle le plus fort sur la ligne puis le
+## trajet). Entrée : en remontant depuis `center_index` ; sortie : en
+## avançant. {index, path} ou {}.
+func _best_junction(line: PackedVector2Array, center_index: int, lane_point: Vector2, entering: bool) -> Dictionary:
+	var count := line.size()
+	var best: Dictionary = {}
+	var best_turn := INF
+	var spacing := maxf(line[0].distance_to(line[1]), 1.0)
+	var step := maxi(1, int(PIT_JUNCTION_STEP / spacing))
+	var first_direct := -1
+
+	for offset in range(4, count / 2, step):
+		# Au-delà de la recherche après le premier raccord direct : fini.
+		if first_direct >= 0 and (offset - first_direct) * spacing > PIT_JUNCTION_SEARCH:
+			break
+
+		var index := posmod(center_index - offset, count) if entering else (center_index + offset) % count
+		var path := _grid_path(line[index], lane_point) if entering else _grid_path(lane_point, line[index])
+
+		if not _is_direct(path, line[index] if entering else lane_point, lane_point if entering else line[index]):
+			continue
+
+		if first_direct < 0:
+			first_direct = offset
+
+		# Ligne avant (ou après) le raccord, puis le trajet.
+		var chain := PackedVector2Array()
+
+		if entering:
+			for k in range(4, 0, -1):
+				chain.append(line[posmod(index - k, count)])
+			chain.append_array(path)
+		else:
+			chain.append_array(path)
+			for k in range(1, 5):
+				chain.append(line[(index + k) % count])
+
+		var turn := _max_turn(chain, 96.0)
+
+		if turn < best_turn - PIT_JUNCTION_TOLERANCE:
+			best_turn = turn
+			best = {"index": index, "path": path}
+
+	return best
+
+
+## Plus fort changement de direction le long d'un tracé, mesuré entre
+## segments d'environ `step` px (rad).
+static func _max_turn(points: PackedVector2Array, step: float) -> float:
+	var sparse := PackedVector2Array()
+
+	for point in points:
+		if sparse.is_empty() or sparse[sparse.size() - 1].distance_to(point) >= step:
+			sparse.append(point)
+
+	var worst := 0.0
+
+	for i in range(2, sparse.size()):
+		var a := sparse[i - 1] - sparse[i - 2]
+		var b := sparse[i] - sparse[i - 1]
+		worst = maxf(worst, absf(a.angle_to(b)))
+
+	return worst
+
+
 func _is_direct(path: PackedVector2Array, from: Vector2, to: Vector2) -> bool:
 	if path.size() < 2:
 		return false
@@ -836,6 +1038,8 @@ func _is_direct(path: PackedVector2Array, from: Vector2, to: Vector2) -> bool:
 const HARD_CLEARANCE_CELLS := 2
 const HARD_CLEARANCE_WEIGHT := 6.0
 const HARD_CLEARANCE := 60.0
+## Distance minimale (px) entre la trajectoire de course et un obstacle dur.
+const LINE_CLEARANCE := 90.0
 
 
 ## Rend coûteuses les cases praticables proches d'un obstacle dur ;
@@ -858,12 +1062,14 @@ func _weight_near_hard_cells() -> Dictionary:
 
 
 ## Éloigne les points des obstacles durs (le lissage coupe les angles).
-func _push_from_hard_cells(points: PackedVector2Array) -> PackedVector2Array:
+func _push_from_hard_cells(points: PackedVector2Array, clearance: float = HARD_CLEARANCE, closed: bool = false) -> PackedVector2Array:
 	var result := points.duplicate()
-	var reach := int(ceil(HARD_CLEARANCE / _cell_size.x))
+	var reach := int(ceil(clearance / _cell_size.x))
+	var first := 0 if closed else 1
+	var last := result.size() if closed else result.size() - 1
 
 	for _pass in range(3):
-		for i in range(1, result.size() - 1):
+		for i in range(first, last):
 			var origin := world_to_cell(result[i])
 			var push := Vector2.ZERO
 
@@ -877,10 +1083,10 @@ func _push_from_hard_cells(points: PackedVector2Array) -> PackedVector2Array:
 					var away := result[i] - _cell_to_world(cell)
 					var distance := away.length()
 
-					if distance < HARD_CLEARANCE and distance > 0.01:
-						push += away / distance * (HARD_CLEARANCE - distance)
+					if distance < clearance and distance > 0.01:
+						push += away / distance * (clearance - distance)
 
-			result[i] += push.limit_length(HARD_CLEARANCE) * 0.5
+			result[i] += push.limit_length(clearance) * 0.5
 
 	return result
 
@@ -897,7 +1103,7 @@ func _nearest_drivable(world_position: Vector2) -> Vector2:
 
 				var cell := origin + Vector2i(x, y)
 
-				if is_drivable_cell(grid, cell):
+				if is_road_cell(cell):
 					return _cell_to_world(cell)
 
 	return Vector2.INF
@@ -964,9 +1170,14 @@ func drivable_extent(origin: Vector2, direction: Vector2) -> float:
 ## Distance praticable depuis `origin` dans une direction (max 700 px).
 func _drivable_extent(origin: Vector2, direction: Vector2) -> float:
 	var distance := 0.0
+	# Sur la route : la chaussée. Dans un passage hors piste : le couloir
+	# (herbe et route) jusqu'au balisage ou à un obstacle.
+	var offroad := offroad_cells.has(world_to_cell(origin))
 
 	while distance < 700.0:
-		if not is_drivable_cell(grid, world_to_cell(origin + direction * (distance + 8.0))):
+		var cell := world_to_cell(origin + direction * (distance + 8.0))
+
+		if not is_road_cell(cell) and not (offroad and offroad_cells.has(cell)):
 			break
 
 		distance += 8.0
@@ -1005,6 +1216,185 @@ static func resample_closed(points: PackedVector2Array, spacing: float) -> Packe
 		result.remove_at(result.size() - 1)
 
 	return result
+
+
+## Case de route (asphalte, vibreur) non bloquée.
+func is_road_cell(cell: Vector2i) -> bool:
+	return road_cells.has(cell) and grid != null and not grid.is_point_solid(cell)
+
+
+## Surface réellement roulée en un point, d'après les calques physiques
+## présents (comme Car.get_surface_profile) ; aucun calque reconnu :
+## profil DEFAULT, comme la voiture. Sans physique : d'après les cases.
+func surface_at(world_position: Vector2) -> SurfaceProfile:
+	if _space != null:
+		# Tous les calques présents au point ; la route l'emporte (une
+		# route est peinte par-dessus l'herbe).
+		var query := PhysicsPointQueryParameters2D.new()
+		query.position = world_position
+		query.collision_mask = GROUND_PROBE_MASK
+		var groups: Dictionary = {}
+
+		for hit in _space.intersect_point(query, 16):
+			var collider: Object = hit.get("collider")
+
+			if collider is Node:
+				for group in (collider as Node).get_groups():
+					groups[String(group)] = true
+
+		for profile in [
+			["asphalt", SurfaceCatalog.ASPHALT], ["gravel", SurfaceCatalog.GRAVEL],
+			["mud", SurfaceCatalog.MUD], ["ice", SurfaceCatalog.ICE], ["grass", SurfaceCatalog.GRASS]
+		]:
+			if groups.has(profile[0]):
+				return profile[1]
+
+		return SurfaceCatalog.DEFAULT
+
+	var name: String = offroad_cells.get(world_to_cell(world_position), "")
+
+	if name == "grass":
+		return SurfaceCatalog.GRASS
+
+	if name == "gravel":
+		return SurfaceCatalog.GRAVEL
+
+	return SurfaceCatalog.ASPHALT
+
+
+## Normale de chaque porte, orientée dans le sens de la course (point de
+## réapparition de la section, sinon vers la porte suivante).
+func _gate_normals(track: Node, gate_segments: Dictionary) -> Dictionary:
+	var directions: Dictionary = {}
+	var sections := track.get_node_or_null("Sections")
+
+	if sections != null:
+		for section in sections.get_children():
+			var marker := section.get_node_or_null("RespawnPoint") as Node2D
+
+			if marker != null and section.get("section_id") != null:
+				directions[int(section.get("section_id"))] = Vector2.RIGHT.rotated(marker.global_rotation)
+
+	var normals: Dictionary = {}
+
+	for section_id in gate_segments:
+		var a: Vector2 = gate_segments[section_id][0]
+		var b: Vector2 = gate_segments[section_id][1]
+		var normal := (b - a).orthogonal().normalized()
+		var wanted: Vector2 = directions.get(section_id, Vector2.ZERO)
+
+		if wanted == Vector2.ZERO:
+			var next: Array = gate_segments[(section_id + 1) % gate_segments.size()]
+			wanted = ((next[0] + next[1]) / 2.0) - (a + b) / 2.0
+
+		normals[section_id] = normal if normal.dot(wanted) >= 0.0 else -normal
+
+	return normals
+
+
+## Chemins du tronçon section_id -> next_id entre leurs points de
+## passage : départ juste après la porte, arrivée juste avant la
+## suivante, toutes les portes fermées entre-temps. `offroad` : herbe et
+## gravier ouverts.
+func _section_paths(
+	astar: AStarGrid2D,
+	section_id: int,
+	next_id: int,
+	candidates: Dictionary,
+	normals: Dictionary,
+	offroad: bool
+) -> Dictionary:
+	if offroad:
+		_set_offroad_open(astar, true)
+
+	var closed: Dictionary = {}
+
+	# Toutes les portes fermées : un tronçon ne franchit aucune autre
+	# porte (ce serait un raccourci, ou un retour en arrière).
+	for id in gates:
+		for cell in _gate_line_cells(gates[id][0], gates[id][1]):
+			if astar.is_in_boundsv(cell) and not closed.has(cell):
+				closed[cell] = astar.is_point_solid(cell)
+				astar.set_point_solid(cell, true)
+
+	var table: Dictionary = {}
+
+	for i in range(candidates[section_id].size()):
+		var from_cell: Vector2i = candidates[section_id][i]
+		var start := _beside_gate(astar, from_cell, normals[section_id])
+
+		for j in range(candidates[next_id].size()):
+			var to_cell: Vector2i = candidates[next_id][j]
+			var goal := _beside_gate(astar, to_cell, -normals[next_id])
+
+			if start == NO_CELL or goal == NO_CELL:
+				continue
+
+			var cells := astar.get_id_path(start, goal)
+
+			if cells.is_empty():
+				continue
+
+			var path: Array[Vector2i] = [from_cell]
+			path.append_array(cells)
+			path.append(to_cell)
+			table[Vector2i(i, j)] = path
+
+	for cell in closed:
+		astar.set_point_solid(cell, closed[cell])
+
+	if offroad:
+		_set_offroad_open(astar, false)
+
+	return table
+
+
+const NO_CELL := Vector2i(-2147483648, 0)
+## Distance (px) au-delà de la porte du point de départ / d'arrivée.
+const GATE_STEP := 48.0
+
+
+## Case praticable juste à côté d'une porte, du côté `side` ; NO_CELL
+## si aucune (porte au bord d'un obstacle).
+func _beside_gate(astar: AStarGrid2D, cell: Vector2i, side: Vector2) -> Vector2i:
+	var origin := _cell_to_world(cell)
+
+	for step in [GATE_STEP, GATE_STEP * 1.5, GATE_STEP * 2.0]:
+		var beside := world_to_cell(origin + side * step)
+
+		if astar.is_in_boundsv(beside) and not astar.is_point_solid(beside):
+			return beside
+
+	return NO_CELL
+
+
+## Cases de la grille sous le segment d'une porte, prolongé de
+## GATE_END_EXTENSION px à chaque bout (on ne contourne pas une porte).
+const GATE_END_EXTENSION := 96.0
+
+func _gate_line_cells(a: Vector2, b: Vector2) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	var along := (b - a).normalized()
+	a -= along * GATE_END_EXTENSION
+	b += along * GATE_END_EXTENSION
+	var steps := maxi(int(a.distance_to(b) / (_cell_size.x * 0.5)), 1)
+
+	for k in range(steps + 1):
+		var cell := world_to_cell(a.lerp(b, float(k) / steps))
+
+		if cells.is_empty() or cells[cells.size() - 1] != cell:
+			cells.append(cell)
+
+	return cells
+
+
+## Ouvre (ou referme) les cases hors piste au calcul de chemin.
+func _set_offroad_open(astar: AStarGrid2D, open: bool) -> void:
+	for cell in offroad_cells:
+		astar.set_point_solid(cell, not open)
+
+		if open:
+			astar.set_point_weight_scale(cell, OFFROAD_WEIGHT)
 
 
 func is_drivable_cell(astar: AStarGrid2D, cell: Vector2i) -> bool:

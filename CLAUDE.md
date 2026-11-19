@@ -12,7 +12,7 @@ Skill de référence pour les patrons Godot : `.claude/skills/godot-gdscript-pat
 | `level/map/` | **Cartes** : décor et physique d'un lieu (tuiles, obstacles, eau). Aucune logique de course. Aujourd'hui : Brissac. |
 | `level/track/` | **Circuits** : intègrent une carte (nœud nommé d'après le lieu, ex. « Brissac ») et portent leur logique : `Sections`, `SpawnPoints`, `PitStop` (zones d'arrêt), `PitLane` (vitesse limitée), `RaceStartLightsMap`, `RacingLine` (facultatif). Catalogue : `TrackCatalog.gd`. |
 | `level/script/` | Course : `RaceController`, `TrackProgress` (parcours A*), stand (`PitStopManager`, `PitStop`, `PitLane`), élimination, fantômes. |
-| `level/script/ai/` | IA : `AIDriver` (pilote), `RacingLine` (trajectoire), `AIPitStrategy` (pneus), `AILearning` + `ai_learning.json` (virages appris, livré). |
+| `level/script/ai/` | IA : `AIDriver` (pilote, garde-fou anti-collision, erreurs selon le niveau), `AIStyle` (styles de pilotage), `RacingLine` (trajectoire), `AIPitStrategy` (pneus), `AILearning` + `ai_learning.json` (virages appris ; `GENERATION` à incrémenter quand le comportement de l'IA change). |
 | `perso/car/` | Voiture (`Car.gd`) et définitions (`definition/*.tres`). |
 | `ui/` | Menus. Parcours de course : Mode (`RaceModeSelect`) → Joueurs (`CarSelection`) → IA (`AISetup`, classique et élimination) → Circuit (`RaceSetup`) → Course. |
 | `tools/track/` | Générateurs lancés sans fenêtre (variantes de Brissac, élargissement des portes, séparation carte / circuit, aperçus). |
@@ -23,6 +23,14 @@ Skill de référence pour les patrons Godot : `.claude/skills/godot-gdscript-pat
   partagent une carte ; ne jamais intégrer un circuit dans un autre (les
   sections et le stand seraient en double). Nouveau circuit : nouvelle
   scène dans `level/track/` qui instancie la carte, plus sa logique.
+- Portes (`Sections`) : elles se franchissent dans le sens de la course,
+  donné par le `RespawnPoint` de chaque section. Une porte posée dans
+  une trouée de mur impose de passer par cette trouée.
+- Passages hors piste : le parcours de l'IA peut traverser l'herbe ou le
+  gravier quand le tracé l'impose (coût élevé), jamais l'eau. Le
+  balisage posé à la racine d'un circuit (couche `Pneu_sac`...) est
+  épaissi pour former des barrières continues ; la voie `PitLane` est
+  évitée par le tracé de course.
 - Le code trouve les nœuds de logique à la racine du circuit
   (`get_node("Sections")`, `"PitStop"`, `"PitLane"`, `"SpawnPoints"`) et la
   carte par `find_child("Map")`.

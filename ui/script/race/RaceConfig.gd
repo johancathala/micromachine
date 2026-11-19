@@ -53,11 +53,13 @@ var target_score: int = DEFAULT_TARGET_SCORE
 # au lieu d'une caméra commune (écran partagé).
 var split_screen: bool = false
 
-# Course classique : usure des pneus et arrêts au stand.
-var tire_wear: bool = false
+# Course classique : usure des pneus et arrêts au stand (activée par
+# défaut).
+var tire_wear: bool = true
 
-# Course classique : IA engagées (écran des IA), dans l'ordre.
-# Chacune : {"pilot": AIPilot, "car_id": String, "color_id": String}.
+# IA engagées (écran des IA), dans l'ordre. Chacune : {"pilot": AIPilot,
+# "style": identifiant AIStyle, "car_id": String, "color_id": String,
+# "name" (facultatif : nom saisi, prioritaire sur celui du style)}.
 var ai_slots: Array[Dictionary] = []
 
 # Contre-la-montre : fantômes affichés (GhostManager.GhostMode :
@@ -105,8 +107,8 @@ func remember_ai_slots() -> void:
 	last_ai_difficulty = ai_difficulty
 
 
-## Niveau de conduite réel d'une IA : un pilote fantôme roule en
-## Expert tant que la conduite des fantômes n'existe pas.
+## Niveau de conduite réel d'une IA : un pilote fantôme sans
+## enregistrement sur le circuit choisi roule en Expert.
 static func get_ai_difficulty(pilot: int) -> int:
 	if pilot == AIPilot.GHOST:
 		return AIPilot.EXPERT
@@ -295,6 +297,18 @@ func build_participants() -> void:
 	# fantôme).
 	var ai_count := mini(ai_slots.size(), get_max_ai_count())
 
+	# Les IA portent le nom de leur style, numéroté s'il y a des doublons.
+	var style_totals: Dictionary = {}
+	var style_seen: Dictionary = {}
+
+	for i in range(ai_count):
+		# Un nom saisi ne compte pas dans la numérotation des styles.
+		if not String(ai_slots[i].get("name", "")).is_empty():
+			continue
+
+		var id := _name_key(ai_slots[i])
+		style_totals[id] = int(style_totals.get(id, 0)) + 1
+
 	for i in range(ai_count):
 		var slot := ai_slots[i]
 		var pilot := int(slot.get("pilot", ai_difficulty))
@@ -304,16 +318,56 @@ func build_participants() -> void:
 			"player_id": -1,
 			"device_type": "ai",
 			"device_id": -1,
-			"nickname": "IA %d" % (i + 1),
+			"nickname": (
+				String(slot["name"]) if not String(slot.get("name", "")).is_empty()
+				else _ai_name(slot, style_totals, style_seen)
+			),
+			# Pilote fantôme : joueur dont le fantôme est rejoué (vide :
+			# le meilleur) ; nom donné d'après lui s'il n'a pas été saisi.
+			"ai_ghost": String(slot.get("ghost", "")),
+			"ghost_auto_name": String(slot.get("name", "")).is_empty(),
 			"is_ai": true,
 			"enabled": true,
 			"ai_pilot": pilot,
 			"ai_difficulty": get_ai_difficulty(pilot),
+			"ai_style": String(slot.get("style", AIStyle.DEFAULT_ID)),
 			"car_id": String(slot.get("car_id", "")),
 			"color_id": String(slot.get("color_id", ""))
 		})
 
 	_resolve_ai_liveries()
+
+
+## Nom d'une IA : le pilote de son style (« Régis »), ou pour un
+## fantôme le joueur et la médaille (« Flavien Or »), numéroté
+## si plusieurs IA ont le même (« Régis 1 », « Régis 2 »).
+func _ai_name(slot: Dictionary, totals: Dictionary, seen: Dictionary) -> String:
+	var key := _name_key(slot)
+	var name := ghost_name(slot) if key.begins_with("ghost:") else String(AIStyle.get_style(key)["driver"])
+
+	if int(totals.get(key, 0)) <= 1:
+		return name
+
+	seen[key] = int(seen.get(key, 0)) + 1
+	return "%s %d" % [name, seen[key]]
+
+
+static func _name_key(slot: Dictionary) -> String:
+	if int(slot.get("pilot", AIPilot.MEDIUM)) == AIPilot.GHOST:
+		return "ghost:%s:%s" % [String(slot.get("car_id", "")), String(slot.get("ghost", ""))]
+
+	return String(slot.get("style", AIStyle.DEFAULT_ID))
+
+
+## Nom d'un pilote fantôme : joueur et médaille (« Flavien Or ») ; le
+## meilleur n'est connu qu'une fois le circuit choisi.
+static func ghost_name(slot: Dictionary) -> String:
+	var label := String(slot.get("ghost_name", ""))
+
+	if String(slot.get("ghost", "")).is_empty() or label.is_empty():
+		return "Platine"
+
+	return label
 
 
 ## Les IA cèdent leur livrée : une IA dont la voiture ou la couleur

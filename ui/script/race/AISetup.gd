@@ -13,14 +13,25 @@ extends Control
 # haut de l'écran, avec une voiture au hasard. La composition est
 # reprise d'une course à l'autre (RaceConfig.remember_ai_slots).
 #
-# Pilote fantôme : il roulera avec le meilleur fantôme valide de sa
-# voiture sur le circuit choisi à l'écran suivant. Grisé tant que la
-# conduite des fantômes n'existe pas.
+# Pilote fantôme : à la place du style, on choisit le fantôme rejoué
+# (le Platine, meilleur de tous, ou celui d'un joueur et d'une
+# médaille : Or, Argent, Bronze) parmi ceux enregistrés avec sa
+# voiture ; il en prend le nom (« Flavien Or »). Sans enregistrement sur le
+# circuit choisi ensuite, il roule en Expert. Pas de fantôme en
+# élimination (il ne peut pas être éliminé).
 # ============================================================
 
-const GHOST_PILOT_AVAILABLE := false
+const GHOST_DESCRIPTION := "Fantôme : rejoue un tour enregistré en contre-la-montre avec sa voiture, tour après tour. Il traverse les autres voitures et ne peut pas exploser. Ses pneus s'usent et il passe au stand comme les autres."
+
+# Fantômes enregistrés, par voiture (lus une fois par écran).
+var _ghost_cache: Dictionary = {}
 
 var race_config: RaceConfig
+# Styles restant à distribuer (Ajouter / Remplir).
+var _style_pool: Array[String] = []
+var _description_slot := -1
+var _description_kind := "level"
+var _color_icons: Dictionary = {}
 var cars: Array[CarDefinition] = []
 var colors: Array = []
 
@@ -31,6 +42,7 @@ var colors: Array = []
 @onready var clear_button: Button = $MarginContainer/VBoxContainer/Toolbar/ClearButton
 @onready var rows_box: VBoxContainer = $MarginContainer/VBoxContainer/Scroll/Rows
 @onready var empty_label: Label = $MarginContainer/VBoxContainer/EmptyLabel
+@onready var description_label: Label = $MarginContainer/VBoxContainer/Description
 @onready var back_button: Button = $MarginContainer/VBoxContainer/Footer/BackButton
 @onready var help_label: Label = $MarginContainer/VBoxContainer/Footer/HelpLabel
 @onready var next_button: Button = $MarginContainer/VBoxContainer/Footer/NextButton
@@ -50,12 +62,30 @@ func _ready() -> void:
 	for level in [RaceConfig.AIPilot.NOVICE, RaceConfig.AIPilot.MEDIUM, RaceConfig.AIPilot.EXPERT]:
 		level_selector.add_item(RaceConfig.AI_PILOT_NAMES[level], level)
 
-	level_selector.select(level_selector.get_item_index(
-		RaceConfig.get_ai_difficulty(race_config.ai_difficulty)
-	))
+	# Fantômes : tirés au hasard parmi ceux enregistrés (pas en
+	# élimination).
+	if not race_config.is_elimination():
+		level_selector.add_item(RaceConfig.AI_PILOT_NAMES[RaceConfig.AIPilot.GHOST], RaceConfig.AIPilot.GHOST)
+
+		if _all_ghosts().is_empty():
+			level_selector.set_item_text(
+				level_selector.get_item_index(RaceConfig.AIPilot.GHOST), "Fantôme (aucun enregistré)"
+			)
+			level_selector.set_item_disabled(level_selector.get_item_index(RaceConfig.AIPilot.GHOST), true)
+
+	var level_index := level_selector.get_item_index(race_config.ai_difficulty)
+
+	if level_index < 0 or level_selector.is_item_disabled(level_index):
+		race_config.ai_difficulty = RaceConfig.get_ai_difficulty(race_config.ai_difficulty)
+		level_index = level_selector.get_item_index(race_config.ai_difficulty)
+
+	level_selector.select(level_index)
 	level_selector.item_selected.connect(
-		func(index: int): race_config.ai_difficulty = level_selector.get_item_id(index)
+		func(index: int):
+			race_config.ai_difficulty = level_selector.get_item_id(index)
+			_show_level_hint()
 	)
+	level_selector.focus_entered.connect(_show_level_hint)
 
 	add_button.pressed.connect(_on_add_pressed)
 	fill_button.pressed.connect(_on_fill_pressed)
@@ -94,9 +124,73 @@ func _add_ai() -> void:
 	if _free_places() <= 0:
 		return
 
+	if race_config.ai_difficulty == RaceConfig.AIPilot.GHOST:
+		_add_ghost()
+		return
+
+	if _style_pool.is_empty():
+		_style_pool = AIStyle.shuffled_ids()
+
 	race_config.ai_slots.append({
 		"pilot": race_config.ai_difficulty,
+		"style": _style_pool.pop_back(),
 		"car_id": cars[randi() % cars.size()].id,
+		"color_id": String(colors[randi() % colors.size()]["id"])
+	})
+	_sync()
+
+
+## Tous les fantômes enregistrés, toutes voitures : [{car_id, key,
+## nickname}] (lus une fois par écran).
+func _all_ghosts() -> Array[Dictionary]:
+	var ghosts: Array[Dictionary] = []
+
+	for car in cars:
+		for recorder in _ghost_recorders_for(car.id):
+			ghosts.append({"car_id": car.id, "key": recorder["key"], "nickname": recorder["nickname"]})
+
+	return ghosts
+
+
+func _ghost_recorders_for(car_id: String) -> Array[Dictionary]:
+	if not _ghost_cache.has(car_id):
+		_ghost_cache[car_id] = GhostManager.list_recorders(car_id)
+
+	return _ghost_cache[car_id]
+
+
+## Nouvelle IA fantôme : un fantôme enregistré au hasard (sa voiture
+## avec), en évitant ceux déjà engagés tant qu'il en reste.
+func _add_ghost() -> void:
+	var ghosts := _all_ghosts()
+
+	if ghosts.is_empty():
+		return
+
+	var unused: Array[Dictionary] = []
+
+	for ghost in ghosts:
+		var taken := false
+
+		for slot in race_config.ai_slots:
+			if (
+				int(slot.get("pilot", -1)) == RaceConfig.AIPilot.GHOST
+				and String(slot.get("car_id", "")) == ghost["car_id"]
+				and String(slot.get("ghost", "")) == ghost["key"]
+			):
+				taken = true
+
+		if not taken:
+			unused.append(ghost)
+
+	var pick: Dictionary = (unused if not unused.is_empty() else ghosts).pick_random()
+
+	race_config.ai_slots.append({
+		"pilot": RaceConfig.AIPilot.GHOST,
+		"style": AIStyle.DEFAULT_ID,
+		"ghost": pick["key"],
+		"ghost_name": pick["nickname"],
+		"car_id": pick["car_id"],
 		"color_id": String(colors[randi() % colors.size()]["id"])
 	})
 	_sync()
@@ -108,6 +202,9 @@ func _on_add_pressed() -> void:
 
 
 func _on_fill_pressed() -> void:
+	# Tous les styles avant de reprendre le même.
+	_style_pool = AIStyle.shuffled_ids()
+
 	while _free_places() > 0:
 		_add_ai()
 
@@ -131,6 +228,163 @@ func _on_pilot_selected(index: int, slot_index: int, selector: OptionButton) -> 
 	race_config.ai_slots[slot_index]["pilot"] = selector.get_item_id(index)
 	_sync()
 	_rebuild_rows()
+	_show_description(slot_index, "level")
+
+
+func _show_car_description(car: CarDefinition) -> void:
+	description_label.text = "%s : %s" % [car.display_name, car.description]
+
+
+## Description du niveau choisi pour les IA ajoutées.
+func _show_level_hint() -> void:
+	if race_config.ai_difficulty == RaceConfig.AIPilot.GHOST:
+		description_label.text = GHOST_DESCRIPTION + " « Ajouter » et « Remplir » prennent des fantômes au hasard parmi ceux enregistrés."
+		return
+
+	var level := RaceConfig.get_ai_difficulty(race_config.ai_difficulty)
+	description_label.text = "Niveau %s : %s" % [RaceConfig.AI_PILOT_NAMES[level], AIStyle.LEVEL_DESCRIPTIONS[level]]
+
+
+## Nom saisi : prioritaire sur le pilote du style (vide : pilote du style).
+func _on_name_changed(slot_index: int, edit: LineEdit) -> void:
+	if slot_index >= race_config.ai_slots.size():
+		return
+
+	var slot := race_config.ai_slots[slot_index]
+	var typed := edit.text.strip_edges()
+	var current := String(race_config.get_participant(_participant_index(slot_index)).get("nickname", ""))
+
+	if typed == current:
+		return
+
+	slot["name"] = typed
+	_sync()
+	_rebuild_rows.call_deferred()
+
+
+func _on_name_reset(slot_index: int) -> void:
+	race_config.ai_slots[slot_index].erase("name")
+	_sync()
+	_rebuild_rows()
+
+
+## Fantômes enregistrés avec la voiture de l'IA : le meilleur (connu
+## une fois le circuit choisi), puis ceux de chaque joueur.
+func _fill_ghost_selector(selector: OptionButton, slot_index: int) -> void:
+	var slot := race_config.ai_slots[slot_index]
+	var recorders := _ghost_recorders(slot_index)
+	var current := String(slot.get("ghost", ""))
+
+	selector.add_item("Platine (le meilleur)", 0)
+	selector.select(0)
+
+	for i in range(recorders.size()):
+		selector.add_item(String(recorders[i]["nickname"]), i + 1)
+
+		if recorders[i]["key"] == current:
+			selector.select(i + 1)
+
+	# Joueur sans fantôme avec cette voiture : retour au meilleur.
+	if selector.selected == 0 and not current.is_empty():
+		slot.erase("ghost")
+		slot.erase("ghost_name")
+
+	selector.item_selected.connect(_on_ghost_selected.bind(slot_index, recorders))
+
+
+func _ghost_recorders(slot_index: int) -> Array[Dictionary]:
+	return _ghost_recorders_for(String(race_config.get_participant(_participant_index(slot_index)).get("car_id", "")))
+
+
+func _on_ghost_selected(index: int, slot_index: int, recorders: Array[Dictionary]) -> void:
+	var slot := race_config.ai_slots[slot_index]
+
+	if index == 0:
+		slot.erase("ghost")
+		slot.erase("ghost_name")
+	else:
+		slot["ghost"] = String(recorders[index - 1]["key"])
+		slot["ghost_name"] = String(recorders[index - 1]["nickname"])
+
+	_sync()
+	_rebuild_rows()
+	_show_description(slot_index, "style")
+
+
+## Description d'un pilote fantôme : ses tours enregistrés par circuit.
+func _ghost_description(slot_index: int) -> String:
+	var slot := race_config.ai_slots[slot_index]
+	var key := String(slot.get("ghost", ""))
+	var recorders := _ghost_recorders(slot_index)
+	var car := CarCatalog.get_car(String(race_config.get_participant(_participant_index(slot_index)).get("car_id", "")))
+	var car_name := car.display_name if car != null else "cette voiture"
+
+	if recorders.is_empty():
+		return "Aucun fantôme enregistré avec la %s : ce pilote roulera en Expert. Enregistre des tours en contre-la-montre." % car_name
+
+	var best_by_track: Dictionary = {}
+
+	for recorder in recorders:
+		if not key.is_empty() and recorder["key"] != key:
+			continue
+
+		for lap in recorder["laps"]:
+			var track_id := int(lap["track_id"])
+
+			if not best_by_track.has(track_id) or float(lap["lap_time"]) < float(best_by_track[track_id]["lap_time"]):
+				best_by_track[track_id] = {"lap_time": float(lap["lap_time"]), "nickname": recorder["nickname"]}
+
+	var parts: PackedStringArray = []
+
+	for track in TrackCatalog.get_tracks():
+		var track_id := int(track.get("id", -1))
+
+		if best_by_track.has(track_id):
+			var entry: Dictionary = best_by_track[track_id]
+			parts.append("%s %s%s" % [
+				String(track.get("name", "")),
+				GhostManager._format_time(float(entry["lap_time"])),
+				"" if not key.is_empty() else " (%s)" % entry["nickname"]
+			])
+
+	var who := "le Platine (meilleur fantôme de tous)" if key.is_empty() else "le fantôme " + String(slot.get("ghost_name", key))
+	return "Rejoue %s en %s : %s. Ailleurs, roule en Expert." % [who, car_name, ", ".join(parts)]
+
+
+func _on_style_selected(index: int, slot_index: int) -> void:
+	race_config.ai_slots[slot_index]["style"] = String(AIStyle.get_styles()[index]["id"])
+	_sync()
+	_rebuild_rows()
+	_show_description(slot_index, "style")
+
+
+## Description sous le tableau : niveau, style ou voiture de l'IA
+## survolée / sélectionnée (souris, clavier ou manette).
+func _show_description(slot_index: int, kind: String) -> void:
+	if slot_index < 0 or slot_index >= race_config.ai_slots.size():
+		return
+
+	_description_slot = slot_index
+	_description_kind = kind
+	var slot := race_config.ai_slots[slot_index]
+	var level := RaceConfig.get_ai_difficulty(int(slot.get("pilot", RaceConfig.AIPilot.MEDIUM)))
+	var style := AIStyle.get_style(String(slot.get("style", AIStyle.DEFAULT_ID)))
+
+	if kind == "car":
+		var car := CarCatalog.get_car(String(race_config.get_participant(_participant_index(slot_index)).get("car_id", "")))
+
+		if car != null:
+			_show_car_description(car)
+	elif kind == "style" and int(slot.get("pilot", RaceConfig.AIPilot.MEDIUM)) == RaceConfig.AIPilot.GHOST:
+		description_label.text = _ghost_description(slot_index)
+	elif kind == "style":
+		description_label.text = "%s (%s) : %s" % [style["driver"], style["name"], style["description"]]
+	elif int(slot.get("pilot", RaceConfig.AIPilot.MEDIUM)) == RaceConfig.AIPilot.GHOST:
+		description_label.text = GHOST_DESCRIPTION
+	else:
+		description_label.text = "Niveau %s : %s" % [
+			RaceConfig.AI_PILOT_NAMES[level], AIStyle.LEVEL_DESCRIPTIONS[level]
+		]
 
 
 func _on_car_selected(index: int, slot_index: int, selector: OptionButton) -> void:
@@ -165,6 +419,9 @@ func _rebuild_rows() -> void:
 
 	var focus_rows: Array[Array] = []
 
+	if not race_config.ai_slots.is_empty():
+		_build_header()
+
 	for slot_index in range(race_config.ai_slots.size()):
 		focus_rows.append(_build_row(slot_index))
 
@@ -181,6 +438,13 @@ func _rebuild_rows() -> void:
 		race_config.is_elimination()
 		and race_config.players.size() + count < RaceConfig.ELIMINATION_MIN_PLAYERS
 	)
+
+	if count == 0:
+		_show_level_hint()
+	elif _description_slot >= 0 and _description_slot < count:
+		_show_description(_description_slot, _description_kind)
+	else:
+		_show_description(0, "level")
 
 	if race_config.get_max_ai_count() == 0:
 		empty_label.text = "Aucune place libre : la grille est complète."
@@ -214,6 +478,76 @@ func _rebuild_rows() -> void:
 		focus_manager.set_focus.call_deferred(next_button if count > 0 else add_button)
 
 
+## Largeurs des colonnes (px) : identiques pour toutes les lignes, pour
+## que les choix restent alignés.
+const COLUMN_WIDTHS := {
+	"swatch": 28, "name": 240, "reset": 48, "level": 190, "style": 230,
+	"car": 320, "color": 230, "remove": 140
+}
+const ICON_SIZE := 44
+# Colonnes étirées sur toute la largeur, dans les mêmes proportions pour
+# toutes les lignes (la pastille et le bouton ⟲ gardent leur taille).
+const FIXED_COLUMNS := ["swatch", "reset"]
+
+
+## Largeur d'une colonne : minimale, puis étirée dans sa proportion.
+func _size_column(control: Control, column: String) -> void:
+	control.custom_minimum_size.x = COLUMN_WIDTHS[column]
+
+	if not FIXED_COLUMNS.has(column):
+		control.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		control.size_flags_stretch_ratio = COLUMN_WIDTHS[column] / 100.0
+
+
+## En-têtes des colonnes, alignés sur les lignes.
+func _build_header() -> void:
+	var header := HBoxContainer.new()
+	header.name = "Header"
+	header.add_theme_constant_override("separation", 12)
+	rows_box.add_child(header)
+
+	for column in [
+		["swatch", ""], ["name", "Nom"], ["reset", ""], ["level", "Niveau"],
+		["style", "Style"], ["car", "Voiture"], ["color", "Couleur"], ["remove", ""]
+	]:
+		var label := Label.new()
+		label.text = column[1]
+		label.clip_text = true
+		_size_column(label, column[0])
+		label.add_theme_font_size_override("font_size", 24)
+		label.modulate = Color(1, 1, 1, 0.75)
+		header.add_child(label)
+
+
+## Choix d'une colonne : largeur fixe, texte aligné à gauche.
+func _column_selector(selector_name: String, column: String) -> OptionButton:
+	var selector := OptionButton.new()
+	selector.name = selector_name
+	_size_column(selector, column)
+	selector.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	selector.clip_text = true
+	selector.add_theme_constant_override("icon_max_width", ICON_SIZE)
+	selector.get_popup().add_theme_constant_override("icon_max_width", ICON_SIZE)
+	return selector
+
+
+## Pastille de couleur (icône des choix de couleur), mise en cache.
+func _color_icon(color: Color) -> Texture2D:
+	var key := color.to_html()
+
+	if not _color_icons.has(key):
+		var image := Image.create(28, 28, false, Image.FORMAT_RGBA8)
+		image.fill(color)
+		# Liseré sombre : une couleur claire reste visible.
+		for k in range(28):
+			for edge in [0, 27]:
+				image.set_pixel(k, edge, Color(0, 0, 0, 0.6))
+				image.set_pixel(edge, k, Color(0, 0, 0, 0.6))
+		_color_icons[key] = ImageTexture.create_from_image(image)
+
+	return _color_icons[key]
+
+
 ## Ligne d'une IA ; renvoie ses commandes (ordre de navigation).
 func _build_row(slot_index: int) -> Array[Control]:
 	var participant := race_config.get_participant(_participant_index(slot_index))
@@ -226,62 +560,110 @@ func _build_row(slot_index: int) -> Array[Control]:
 
 	# Pastille de couleur + nom.
 	var swatch := ColorRect.new()
-	swatch.custom_minimum_size = Vector2(28, 28)
+	swatch.custom_minimum_size = Vector2(COLUMN_WIDTHS["swatch"], 28)
 	swatch.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var color_data := ColorCatalog.get_color(String(participant.get("color_id", "")))
 	swatch.color = color_data.get("color", Color.WHITE)
 	row.add_child(swatch)
 
-	var name_label := Label.new()
-	name_label.text = String(participant.get("nickname", "IA %d" % (slot_index + 1)))
-	name_label.custom_minimum_size = Vector2(110, 0)
-	row.add_child(name_label)
+	# Nom : celui du style par défaut, modifiable ; un nom saisi reste
+	# prioritaire même si le style change. Le bouton ⟲ rend le nom du style.
+	var name_edit := LineEdit.new()
+	name_edit.name = "Name"
+	_size_column(name_edit, "name")
+	name_edit.text = String(participant.get("nickname", ""))
+	name_edit.max_length = 20
+	name_edit.select_all_on_focus = true
+	name_edit.text_submitted.connect(func(_text: String) -> void: name_edit.release_focus())
+	name_edit.focus_exited.connect(_on_name_changed.bind(slot_index, name_edit))
+	row.add_child(name_edit)
+
+	var reset := Button.new()
+	reset.name = "ResetName"
+	reset.text = "⟲"
+	reset.tooltip_text = "Nom par défaut (celui du style)"
+	_size_column(reset, "reset")
+	reset.disabled = String(slot.get("name", "")).is_empty()
+	reset.pressed.connect(_on_name_reset.bind(slot_index))
+	row.add_child(reset)
 
 	# Pilote.
-	var pilot := OptionButton.new()
-	pilot.name = "Pilot"
-	pilot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var pilot := _column_selector("Pilot", "level")
 
-	for value in [RaceConfig.AIPilot.NOVICE, RaceConfig.AIPilot.MEDIUM, RaceConfig.AIPilot.EXPERT, RaceConfig.AIPilot.GHOST]:
-		var label: String = RaceConfig.AI_PILOT_NAMES[value]
+	var pilots := [RaceConfig.AIPilot.NOVICE, RaceConfig.AIPilot.MEDIUM, RaceConfig.AIPilot.EXPERT]
 
-		if value == RaceConfig.AIPilot.GHOST:
-			label = "Fantôme" if GHOST_PILOT_AVAILABLE else "Fantôme (bientôt)"
+	# Pas de fantôme en élimination : il ne pourrait pas être éliminé.
+	if not race_config.is_elimination():
+		pilots.append(RaceConfig.AIPilot.GHOST)
+	elif int(slot.get("pilot", -1)) == RaceConfig.AIPilot.GHOST:
+		slot["pilot"] = RaceConfig.AIPilot.EXPERT
 
-		pilot.add_item(label, value)
-
-		if value == RaceConfig.AIPilot.GHOST and not GHOST_PILOT_AVAILABLE:
-			pilot.set_item_disabled(pilot.get_item_index(value), true)
+	for value in pilots:
+		pilot.add_item(RaceConfig.AI_PILOT_NAMES[value], value)
 
 	pilot.select(pilot.get_item_index(int(slot.get("pilot", RaceConfig.AIPilot.MEDIUM))))
 	pilot.item_selected.connect(_on_pilot_selected.bind(slot_index, pilot))
+	pilot.focus_entered.connect(_show_description.bind(slot_index, "level"))
+	pilot.mouse_entered.connect(_show_description.bind(slot_index, "level"))
+
+	# Style de pilotage ; pour un pilote fantôme, le joueur dont le
+	# fantôme (enregistré avec cette voiture) est rejoué.
+	var style_selector := _column_selector("Style", "style")
+
+	if int(slot.get("pilot", RaceConfig.AIPilot.MEDIUM)) == RaceConfig.AIPilot.GHOST:
+		_fill_ghost_selector(style_selector, slot_index)
+	else:
+		var styles := AIStyle.get_styles()
+		var style_id := String(slot.get("style", AIStyle.DEFAULT_ID))
+
+		for i in range(styles.size()):
+			style_selector.add_item(String(styles[i]["name"]), i)
+
+			if styles[i]["id"] == style_id:
+				style_selector.select(i)
+
+		style_selector.item_selected.connect(_on_style_selected.bind(slot_index))
+
+	style_selector.focus_entered.connect(_show_description.bind(slot_index, "style"))
+	style_selector.mouse_entered.connect(_show_description.bind(slot_index, "style"))
 	row.add_child(pilot)
+	row.add_child(style_selector)
 
 	# Voiture.
-	var car_selector := OptionButton.new()
-	car_selector.name = "Car"
-	car_selector.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# Voiture : miniature devant le nom.
+	var car_selector := _column_selector("Car", "car")
 	var car_id := String(participant.get("car_id", ""))
 
 	for i in range(cars.size()):
-		car_selector.add_item(cars[i].display_name, i)
+		if cars[i].preview_texture != null:
+			car_selector.add_icon_item(cars[i].preview_texture, cars[i].display_name, i)
+		else:
+			car_selector.add_item(cars[i].display_name, i)
 
 		if cars[i].id == car_id:
 			car_selector.select(i)
 
 	car_selector.item_selected.connect(_on_car_selected.bind(slot_index, car_selector))
+	car_selector.focus_entered.connect(_show_description.bind(slot_index, "car"))
+	car_selector.mouse_entered.connect(_show_description.bind(slot_index, "car"))
+	# Liste ouverte : description de la voiture survolée.
+	car_selector.get_popup().id_focused.connect(func(id: int) -> void: _show_car_description(cars[id]))
 	row.add_child(car_selector)
 
 	# Couleur : celles déjà prises pour ce modèle sont grisées.
-	var color_selector := OptionButton.new()
-	color_selector.name = "Color"
-	color_selector.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# Couleur : pastille devant le nom ; celles déjà prises pour ce modèle
+	# sont grisées.
+	var color_selector := _column_selector("Color", "color")
 	var participant_index := _participant_index(slot_index)
 
 	for i in range(colors.size()):
 		var color_id := String(colors[i]["id"])
 		var taken := race_config.is_livery_taken(car_id, color_id, participant_index)
-		color_selector.add_item(String(colors[i]["name"]) + (" (prise)" if taken else ""), i)
+		color_selector.add_icon_item(
+			_color_icon(colors[i]["color"]),
+			String(colors[i]["name"]) + (" (prise)" if taken else ""),
+			i
+		)
 		color_selector.set_item_disabled(i, taken)
 
 		if color_id == String(participant.get("color_id", "")):
@@ -293,11 +675,12 @@ func _build_row(slot_index: int) -> Array[Control]:
 	var remove := Button.new()
 	remove.name = "Remove"
 	remove.text = "RETIRER"
+	_size_column(remove, "remove")
 	remove.add_to_group("audio_back")
 	remove.pressed.connect(_on_remove_pressed.bind(slot_index))
 	row.add_child(remove)
 
-	var controls: Array[Control] = [pilot, car_selector, color_selector, remove]
+	var controls: Array[Control] = [name_edit, reset, pilot, style_selector, car_selector, color_selector, remove]
 
 	for control in controls:
 		control.focus_mode = Control.FOCUS_ALL
@@ -317,20 +700,20 @@ func _set_navigation(rows: Array[Array]) -> void:
 		typed.assign(row)
 		focus_manager.set_horizontal_navigation(typed, false)
 
-	for column in range(4):
-		var chain: Array[Control] = [toolbar[column]]
+	for column in range(7):
+		var chain: Array[Control] = [toolbar[clampi(column - 2, 0, toolbar.size() - 1)]]
 
 		for row: Array in rows:
 			chain.append(row[column])
 
-		chain.append(next_button if column >= 2 else back_button)
+		chain.append(next_button if column >= 5 else back_button)
 		focus_manager.set_vertical_navigation(chain, false)
 
 	var footer: Array[Control] = [back_button, next_button]
 	focus_manager.set_horizontal_navigation(footer, false)
-	var first_row: Control = rows[0][0] if not rows.is_empty() else level_selector
+	var first_row: Control = rows[0][2] if not rows.is_empty() else level_selector
 	focus_manager.set_neighbors(back_button, (rows[rows.size() - 1][0] if not rows.is_empty() else level_selector))
-	focus_manager.set_neighbors(next_button, (rows[rows.size() - 1][2] if not rows.is_empty() else fill_button))
+	focus_manager.set_neighbors(next_button, (rows[rows.size() - 1][5] if not rows.is_empty() else fill_button))
 	focus_manager.set_neighbors(level_selector, null, first_row)
 
 

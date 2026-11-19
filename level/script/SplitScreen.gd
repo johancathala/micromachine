@@ -50,6 +50,9 @@ var _status_labels: Array[RichTextLabel] = []
 # de l'écran, pour ne pas gêner la vue).
 var _position_labels: Array[Label] = []
 
+# Usure des pneus, en bas à gauche de chaque vue.
+var _tire_gauges: Array[TireGauge] = []
+
 # Minimap : cases vides de la grille (ex. 3 joueurs en 2x2).
 var _minimap_viewports: Array[SubViewport] = []
 var _minimap_cameras: Array[Camera2D] = []
@@ -187,6 +190,19 @@ func attach_players(controller: RaceController) -> void:
 
 	for overlay in _minimap_overlays:
 		overlay.states = _states
+
+	# Usure des pneus : jauge en bas à gauche de chaque vue, le nom du
+	# joueur décalé à sa droite.
+	for i in range(mini(_labels.size(), _states.size())):
+		var gauge := TireGauge.new()
+		gauge.state = _states[i]
+		gauge.anchor_top = 1.0
+		gauge.anchor_bottom = 1.0
+		gauge.offset_left = 8.0
+		gauge.offset_bottom = -8.0
+		gauge.grow_vertical = Control.GROW_DIRECTION_BEGIN
+		_labels[i].get_parent().add_child(gauge)
+		_tire_gauges.append(gauge)
 
 	_frame_minimaps()
 
@@ -376,13 +392,15 @@ func _process(_delta: float) -> void:
 		if race_controller != null:
 			text += "   Tour " + race_controller.format_lap(state.current_lap)
 
-		if race_controller != null and race_controller.pit_stops != null:
-			text += "   Pneus %d %%" % int(state.car.tire_wear * 100.0)
-
 		if state.finished:
 			text += "   ARRIVÉ"
 
 		_labels[i].text = text
+
+		# Nom du joueur à droite de la jauge des pneus (si affichée).
+		if i < _tire_gauges.size():
+			var gauge := _tire_gauges[i]
+			_labels[i].offset_left = 16.0 + (gauge.size.x if gauge.visible else 0.0)
 
 		if state.race_position > 0:
 			_position_labels[i].text = "%s / %d" % [

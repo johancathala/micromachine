@@ -43,6 +43,7 @@ signal shortcut_detected(state: RaceParticipantState, missed_section: int)
 # Chaque entrée : {state, reaction, effect} ; effect > 0 bonus, < 0 malus.
 signal start_reactions_judged(results: Array)
 
+signal restart_race
 signal quit_race()
 
 signal return_to_main_menu()
@@ -114,6 +115,58 @@ var _progress_cache_frame: int = -1
 # franchissement d'une section) : les dépassements apparaissent
 # en temps réel.
 const POSITION_UPDATE_INTERVAL := 0.2
+
+# ============================================================
+# IA BLOQUÉE : RÉAPPARITION FORCÉE
+# ============================================================
+# Règle absolue, quel que soit le pilote : une IA qui n'avance plus
+# dans la course (progression le long du circuit, record jamais
+# amélioré de AI_STUCK_MIN_PROGRESS section) pendant AI_STUCK_TIME s
+# explose et réapparaît à son dernier point de passage. Les
+# allers-retours sur place ne comptent donc pas. Sauf arrêt au stand,
+# fantôme, course finie, et élimination (une explosion y vaut
+# élimination).
+const AI_STUCK_TIME := 3.0
+const AI_STUCK_MIN_PROGRESS := 0.05
+
+# participant_id -> {progress, time}
+var _ai_anchors: Dictionary = {}
+
+
+func _check_stuck_ai(delta: float) -> void:
+	if is_elimination_mode():
+		return
+
+	for state in participants:
+		if not state.is_ai or state.finished or not is_instance_valid(state.car):
+			continue
+
+		var car := state.car
+
+		if (
+			car.is_ghost
+			or car._destruction_started
+			or car._respawning
+			or not car.car_can_move
+			or (pit_stops != null and pit_stops.is_in_pit(state))
+		):
+			_ai_anchors.erase(state.participant_id)
+			continue
+
+		var progress := get_progress(state)
+		var anchor: Dictionary = _ai_anchors.get(state.participant_id, {})
+
+		if anchor.is_empty() or progress > float(anchor["progress"]) + AI_STUCK_MIN_PROGRESS:
+			_ai_anchors[state.participant_id] = {"progress": progress, "time": 0.0}
+			continue
+
+		anchor["time"] = float(anchor["time"]) + delta
+
+		if float(anchor["time"]) >= AI_STUCK_TIME:
+			print("IA bloquée : %s réapparaît" % state.nickname)
+			_ai_anchors.erase(state.participant_id)
+			car.explosion()
+
 
 # ============================================================
 # RÉACTION AU DÉPART
@@ -215,6 +268,7 @@ func initialize(
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	
 	pause_overlay.resume_pressed.connect(_on_pause_resume_pressed)
+	pause_overlay.restart_pressed.connect(_on_pause_restart_pressed)
 	pause_overlay.quit_pressed.connect(_on_pause_quit_pressed)
 	pause_overlay.controls_pressed.connect(_on_pause_controls_pressed)
 	pause_overlay.main_menu_pressed.connect(_on_pause_main_menu_pressed)
@@ -233,6 +287,7 @@ func initialize(
 	if race_config.uses_tire_wear():
 		_scale_tire_wear()
 
+	_setup_ghost_drivers()
 	_setup_ai_drivers()
 
 	if race_config.is_time_trial():
@@ -281,46 +336,131 @@ func _scale_tire_wear() -> void:
 
 
 ## Un pilote générique par IA, sur la trajectoire du circuit.
-func _setup_ai_drivers() -> void:
-	var has_ai := false
-
-	for state in participants:
-		if state.is_ai and is_instance_valid(state.car):
-			has_ai = true
-
-	if not has_ai:
-		return
+## Trajectoire de course des IA (calculée une fois).
+func _ensure_racing_line() -> bool:
+	if racing_line != null:
+		return racing_line.is_valid()
 
 	racing_line = RacingLine.from_track(race_world.current_track, track_progress)
 
 	if not racing_line.is_valid():
 		push_warning("RaceController : pas de trajectoire pour les IA.")
-		return
+		return false
 
 	print("IA : trajectoire = %s (%d points, %d px)" % [
 		racing_line.source, racing_line.points.size(), racing_line.length
 	])
+	return true
 
-	# Passage au stand (course avec usure des pneus).
-	var pit_route: Dictionary = {}
 
-	if race_config.uses_tire_wear():
-		pit_route = track_progress.build_pit_route(race_world.current_track, racing_line.points)
-		print("IA : passage au stand %s" % ("calculé" if not pit_route.is_empty() else "introuvable"))
+var _pit_route: Dictionary = {}
+var _pit_route_built := false
+
+
+## Trajet vers le stand (course avec usure des pneus), partagé par les
+## IA et les fantômes ; {} s'il n'y en a pas.
+func _get_pit_route() -> Dictionary:
+	if _pit_route_built:
+		return _pit_route
+
+	_pit_route_built = true
+
+	if race_config.uses_tire_wear() and _ensure_racing_line():
+		_pit_route = track_progress.build_pit_route(race_world.current_track, racing_line.points)
+		print("IA : passage au stand %s" % ("calculé" if not _pit_route.is_empty() else "introuvable"))
+
+	return _pit_route
+
+
+func _setup_ai_drivers() -> void:
+	var has_ai := false
 
 	for state in participants:
-		if state.is_ai and is_instance_valid(state.car):
+		if state.is_ai and is_instance_valid(state.car) and state.car.ghost_driver == null:
+			has_ai = true
+
+	if not has_ai:
+		return
+
+	if not _ensure_racing_line():
+		return
+
+	# Passage au stand (course avec usure des pneus).
+	var pit_route := _get_pit_route()
+
+	for state in participants:
+		if state.is_ai and is_instance_valid(state.car) and state.car.ghost_driver == null:
 			var driver := AIDriver.new(
 				state.car, racing_line, _get_ai_difficulty(state),
 				race_world.current_track.scene_file_path
 			)
 			driver.participant = state
+			driver.progress = track_progress
 			driver.learning_key = AILearning.make_key(
 				race_world.current_track.scene_file_path, state.car.definition.id
 			)
 			driver.lap_count = 0 if race_config.has_infinite_laps() else race_config.lap_count
 			driver.setup_pit(pit_route)
+			driver.set_style(_get_ai_style(state), randi())
 			state.car.ai_driver = driver
+
+
+## Pilotes fantômes : le tour enregistré par le joueur choisi (ou le
+## meilleur) avec cette voiture sur ce circuit. Sans enregistrement, le
+## pilote reste une IA (Expert).
+func _setup_ghost_drivers() -> void:
+	if race_config.is_elimination():
+		return
+
+	var track_id := int(race_config.track.get("id", -1))
+
+	for state in participants:
+		if not state.is_ai or not is_instance_valid(state.car) or state.car.definition == null:
+			continue
+
+		var participant := _get_participant_config(state)
+
+		if int(participant.get("ai_pilot", -1)) != RaceConfig.AIPilot.GHOST:
+			continue
+
+		var data := GhostManager.load_ghost_for(track_id, state.car.definition.id, String(participant.get("ai_ghost", "")))
+
+		if not GhostDriver.is_usable(data):
+			print("Fantôme : aucun enregistrement pour %s, pilote Expert" % state.nickname)
+			continue
+
+		var driver := GhostDriver.new(state.car, data)
+		driver.participant = state
+		driver.lap_count = 0 if race_config.has_infinite_laps() else race_config.lap_count
+		state.car.ghost_driver = driver
+		driver.prepare()
+
+		# Usure des pneus : le fantôme ralentit et passe au stand.
+		if race_config.uses_tire_wear():
+			driver.setup_pit(_get_pit_route())
+
+		# Le meilleur de tous : le Platine, au nom de son détenteur.
+		if bool(participant.get("ghost_auto_name", false)) and String(participant.get("ai_ghost", "")).is_empty():
+			state.nickname = "%s Platine" % String(data.get("nickname", "?"))
+
+		print("Fantôme : %s rejoue %.2f s" % [state.nickname, float(data.get("lap_time", 0.0))])
+
+
+func _get_participant_config(state: RaceParticipantState) -> Dictionary:
+	for participant in race_config.participants:
+		if int(participant.get("participant_id", -1)) == state.participant_id:
+			return participant
+
+	return {}
+
+
+## Style de pilotage de l'IA choisi sur l'écran des IA.
+func _get_ai_style(state: RaceParticipantState) -> String:
+	for participant in race_config.participants:
+		if int(participant.get("participant_id", -1)) == state.participant_id:
+			return String(participant.get("ai_style", AIStyle.DEFAULT_ID))
+
+	return AIStyle.DEFAULT_ID
 
 
 ## Niveau de l'IA choisi sur l'écran des IA.
@@ -329,7 +469,7 @@ func _get_ai_difficulty(state: RaceParticipantState) -> int:
 		if int(participant.get("participant_id", -1)) == state.participant_id:
 			return int(participant.get("ai_difficulty", race_config.ai_difficulty))
 
-	return race_config.ai_difficulty
+	return RaceConfig.get_ai_difficulty(race_config.ai_difficulty)
 
 
 func is_elimination_mode() -> bool:
@@ -623,6 +763,16 @@ func start_countdown() -> void:
 		return
 
 	# --------------------------------------------------------
+	# Contre-la-montre : pas de feux, départ immédiat (le chrono
+	# du tour part au passage de la ligne).
+	# --------------------------------------------------------
+	if race_config.is_time_trial():
+		_judging_start = false
+		start_lights.skip_to_green()
+		_start_race()
+		return
+
+	# --------------------------------------------------------
 	# Lancement de la séquence réelle de départ.
 	# --------------------------------------------------------
 	if not start_lights.start_sequence_finished.is_connected(
@@ -691,6 +841,15 @@ func _on_pause_resume_pressed() -> void:
 	resume_race()
 
 
+## Recommencer : même course, depuis la grille (comme « Rejouer »
+## au récapitulatif).
+func _on_pause_restart_pressed() -> void:
+	race_is_paused = false
+	get_tree().paused = false
+	timer_race_end.stop()
+	restart_race.emit()
+
+
 func _on_pause_quit_pressed() -> void:
 	_on_quit_race()
 
@@ -739,6 +898,12 @@ func _on_quit_race() -> void:
 	# fin ; les résultats de la session sont figés pour le récapitulatif.
 	if race_config != null and race_config.is_time_trial():
 		GameManager.store_race_results(build_race_results())
+
+		# Tours de la session : à garder en médailles au récapitulatif.
+		GameManager.last_ghost_laps.clear()
+
+		if ghost_manager != null:
+			GameManager.last_ghost_laps.append_array(ghost_manager.session_laps)
 	
 	#pause_overlay.close()
 	
@@ -1047,7 +1212,7 @@ func request_respawn(car: Car) -> void:
 		state.car.respawn_at(state.respawn_transform)
 
 		if state.car.ai_driver != null:
-			state.car.ai_driver.reset_tracking()
+			state.car.ai_driver.reset_tracking(true)
 
 		# Après un raccourci : les sections sautées, jusqu'à celle où la
 		# voiture est replacée, sont validées dans l'ordre.
@@ -1458,6 +1623,8 @@ func _physics_process(delta: float) -> void:
 	if race_state != RaceState.RUNNING or race_is_paused:
 		return
 
+	_check_stuck_ai(delta)
+
 	_position_update_timer += delta
 
 	if _position_update_timer < POSITION_UPDATE_INTERVAL:
@@ -1787,6 +1954,7 @@ func build_race_results() -> Array[Dictionary]:
 			"nickname": state.nickname,
 			"car_name": state.car.car_name,
 			"is_ai": state.is_ai,
+			"car_color": RaceParticipantHUD.car_display_color(state.car),
 
 			"position": state.race_position,
 			"finish_position": state.finish_position,
