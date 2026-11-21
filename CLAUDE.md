@@ -55,6 +55,16 @@ godot --headless --fixed-fps 60 --path . -s <script.gd> -- <args>   # essais san
 - L'import peut réécrire des `.tscn` (uid ajoutés) : ne committer que ce
   qui a été modifié volontairement.
 
+## Faire apprendre un circuit aux IA (à améliorer avec la prise en compte RacingLine contenu dans les circuits)
+
+Pour relancer un entraînement complet en une seule commande (pour le circuit Track03 dans cet exemple):
+	```bash
+godot --headless --fixed-fps 60 --path . -s tools/ai/train_ai.gd -- \
+  --track=res://level/track/Track03.tscn \
+  --cars=dacia,f1,ferrari,laguna,police,clio \
+  --laps=16 --difficulty=2
+```
+
 ## Données du joueur
 
 `user://` = `~/.local/share/godot/app_userdata/Micro Racer/` :

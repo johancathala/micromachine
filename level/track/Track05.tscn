@@ -312,3 +312,5 @@ script = ExtResource("pitlane_script")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PitLane" unique_id=1879951121]
 position = Vector2(0, -286)
 shape = SubResource("RectangleShape2D_pitlane")
+
+[node name="RacingLine" type="Path2D" parent="." unique_id=2070483268]

@@ -2,6 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://xu6inpaxhg6k" path="res://level/map/BrissacMap.tscn" id="1_u5tnh"]
 [ext_resource type="PackedScene" uid="uid://blt3kj7q32jp4" path="res://level/sprite/tilemap/pneu_sac.tscn" id="3_hgwmh"]
+[ext_resource type="Curve2D" uid="uid://wp6d0o52y5vt" path="res://level/track/lines/Track01_racing_line.tres" id="7_de7g6"]
 [ext_resource type="PackedScene" uid="uid://d2perx6hj7kx8" path="res://level/scene/RaceStartLightsMap.tscn" id="8_qiq11"]
 [ext_resource type="PackedScene" uid="uid://bp8cw2gqrqg1h" path="res://level/scene/RaceSection.tscn" id="9_qiq11"]
 [ext_resource type="Script" uid="uid://bu8b5jqrgamk7" path="res://level/script/PitLane.gd" id="pitlane_script"]
@@ -229,3 +230,6 @@ script = ExtResource("pitlane_script")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PitLane" unique_id=1764382556]
 position = Vector2(0, -252.5)
 shape = SubResource("RectangleShape2D_pitlane")
+
+[node name="RacingLine" type="Path2D" parent="." unique_id=1663496204]
+curve = ExtResource("7_de7g6")

@@ -8,6 +8,7 @@
 [ext_resource type="Script" uid="uid://bccf5ygro7jqh" path="res://level/script/PitStop.gd" id="4_j5m1u"]
 [ext_resource type="PackedScene" uid="uid://c1sce1qwjlpns" path="res://level/scene/Baril_toxic.tscn" id="5_ps6sn"]
 [ext_resource type="Script" uid="uid://bu8b5jqrgamk7" path="res://level/script/PitLane.gd" id="8_hge21"]
+[ext_resource type="Curve2D" path="res://level/track/lines/Track03_racing_line.tres" id="9_3t3hg"]
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_6g8tl"]
 a = Vector2(440, 2)
@@ -338,3 +339,6 @@ script = ExtResource("8_hge21")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PitLane" unique_id=1283510830]
 position = Vector2(-58, -240.5)
 shape = SubResource("RectangleShape2D_8wgrd")
+
+[node name="RacingLine" type="Path2D" parent="." unique_id=1965587932]
+curve = ExtResource("9_3t3hg")
