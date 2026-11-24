@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="CarDefinition" format=3 uid="uid://bjvfuffkrs7s1"]
+
+[ext_resource type="PackedScene" uid="uid://dbjqp45tr38ye" path="res://perso/car/model/GTI.tscn" id="1_6dtp7"]
+[ext_resource type="Texture2D" uid="uid://dm616oskhhshj" path="res://perso/car/sprite/GTI.png" id="2_naveh"]
+[ext_resource type="Script" uid="uid://de3h01guotde1" path="res://perso/car/definition/CarDefinition.gd" id="3_fhlra"]
+
+[resource]
+script = ExtResource("3_fhlra")
+id = "gti"
+display_name = "GTI"
+description = "Allez montez les neuveux !"
+group = "B"
+unlocked_by_default = true
+model_scene = ExtResource("1_6dtp7")
+preview_texture = ExtResource("2_naveh")
+engine_force = 1721.0
+brake_force = 1092.0
+max_speed = 2200.0
+max_reverse_speed = 534.0
+mass = 1550.0
+lateral_grip = 8.6
+metadata/_custom_type_script = "uid://de3h01guotde1"

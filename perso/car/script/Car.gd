@@ -367,6 +367,11 @@ func _apply_car_definition() -> void:
 
 	handbrake_grip_multiplier = definition.handbrake_grip_multiplier
 	handbrake_brake_multiplier = definition.handbrake_brake_multiplier
+	
+	setup_collision(
+		definition.collision_size,
+		definition.collision_offset
+	)
 
 func _load_car_model() -> void:
 	if model == null:
@@ -393,6 +398,29 @@ func _apply_car_color(color: Color) -> void:
 		body.modulate = color
 	else:
 		model.modulate = color
+
+func setup_collision(
+	collision_size: Vector2,
+	collision_offset: Vector2 = Vector2.ZERO
+) -> void:
+
+	if collision_shape == null:
+		push_error("Car : CollisionShape2D introuvable.")
+		return
+
+	if collision_size.x <= 0.0 or collision_size.y <= 0.0:
+		push_error("Car : dimensions de collision invalides > Valeurs par défaut prise")
+		collision_size.x = 60
+		collision_size.y = 120
+
+	var shape := collision_shape.shape as RectangleShape2D
+
+	if shape == null:
+		shape = RectangleShape2D.new()
+		collision_shape.shape = shape
+
+	shape.size = collision_size
+	collision_shape.position = collision_offset
 
 func _ready() -> void:
 	if ground_ray == null:

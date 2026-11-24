@@ -8,7 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://cfqp5ae3g5f7" path="res://level/scene/Citerne.tscn" id="4_wwk3q"]
 [ext_resource type="PackedScene" uid="uid://c1sce1qwjlpns" path="res://level/scene/Baril_toxic.tscn" id="5_o18ye"]
 [ext_resource type="Script" uid="uid://bu8b5jqrgamk7" path="res://level/script/PitLane.gd" id="5_q2nl6"]
-[ext_resource type="Curve2D" path="res://level/track/lines/Track02_racing_line.tres" id="6_racing"]
+[ext_resource type="Curve2D" uid="uid://vrc8pj2b643g" path="res://level/track/lines/Track02_racing_line.tres" id="6_racing"]
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_q2nl6"]
 a = Vector2(612, 0)
@@ -70,7 +70,7 @@ size = Vector2(408, 462)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_skds4"]
 size = Vector2(668, 3037)
 
-[node name="TrackPaddock1" type="Node2D" unique_id=1191149637]
+[node name="BrissacPaddock1" type="Node2D" unique_id=1191149637]
 
 [node name="RaceStartLightsMap" parent="." unique_id=901997129 instance=ExtResource("1_mdtsh")]
 z_index = 3

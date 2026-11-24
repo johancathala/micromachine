@@ -57,7 +57,7 @@ theme_override_constants/separation = 16
 
 [node name="LevelLabel" type="Label" parent="MarginContainer/VBoxContainer/Toolbar"]
 layout_mode = 2
-text = "Niveau des IA ajoutées"
+text = "Niveau des pilotes ajoutés"
 
 [node name="Level" type="OptionButton" parent="MarginContainer/VBoxContainer/Toolbar"]
 custom_minimum_size = Vector2(220, 0)

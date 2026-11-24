@@ -1,8 +1,8 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://cwrrip1d6anvf"]
 
 [ext_resource type="PackedScene" uid="uid://y33mux4t4ctc" path="res://perso/car/model/CarModel.tscn" id="1_lp31p"]
 [ext_resource type="AudioStream" uid="uid://da5esuwqgoelq" path="res://perso/car/sound/VEHSkid_Crissement de pneus 3 (ID 2370)_LaSonotheque.fr.wav" id="3_1d6my"]
-[ext_resource type="Texture2D" path="res://perso/car/sprite/f1.png" id="3_nvaje"]
+[ext_resource type="Texture2D" uid="uid://belxys132mumy" path="res://perso/car/sprite/f1.png" id="3_nvaje"]
 [ext_resource type="AudioStream" uid="uid://dqvmhlgm7g1a4" path="res://effects/sound/engine_idle/auto-engine-running-151384.mp3" id="4_1d6my"]
 [ext_resource type="AudioStream" uid="uid://twpfk6jnbojh" path="res://effects/sound/engine_acc/engine-revving-long.mp3" id="5_1d6my"]
 [ext_resource type="AudioStream" uid="uid://bfjgphtox7i5q" path="res://effects/sound/engine_max/engine-revving-long.mp3" id="6_s44fr"]

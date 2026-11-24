@@ -51,6 +51,16 @@ var display_settings: Dictionary = {
 }
 
 # ============================================================
+# CARRIÈRE
+# ============================================================
+
+# Voitures débloquées en carrière. Une voiture marquée
+# « unlocked_by_default » dans sa définition est toujours disponible.
+var career: Dictionary = {
+	"unlocked_cars": []
+}
+
+# ============================================================
 # CONSTANTES
 # ============================================================
 
@@ -74,6 +84,7 @@ func initialize() -> void:
 	_ensure_audio_structure()
 	_ensure_control_structure()
 	_ensure_display_structure()
+	_ensure_career_structure()
 
 func is_first_launch() -> bool:
 	if profile.get("nickname", "") == "":
@@ -148,6 +159,13 @@ func load_profile() -> void:
 		display_settings = data["display"].duplicate(true)
 
 	# --------------------------------------------------------
+	# Carrière
+	# --------------------------------------------------------
+
+	if data.has("career") and data["career"] is Dictionary:
+		career = data["career"].duplicate(true)
+
+	# --------------------------------------------------------
 	# Complète les éventuelles données manquantes
 	# --------------------------------------------------------
 
@@ -160,13 +178,15 @@ func save_profile() -> void:
 	_ensure_audio_structure()
 	_ensure_control_structure()
 	_ensure_display_structure()
+	_ensure_career_structure()
 
 	var data := {
 		"profile": profile,
 		"player_nicknames": player_nicknames,
 		"audio": audio_settings,
 		"controls": control_settings,
-		"display": display_settings
+		"display": display_settings,
+		"career": career
 	}
 
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
@@ -250,6 +270,63 @@ func set_profile_initialized(value: bool) -> void:
 	profile["initialized"] = value
 
 	save_profile()
+
+
+# ============================================================
+# CARRIÈRE : VOITURES DÉBLOQUÉES
+# ============================================================
+
+## Une voiture est disponible si elle l'est d'office ou si le joueur
+## l'a débloquée en carrière.
+func is_car_unlocked(car_id: String) -> bool:
+	_ensure_career_structure()
+
+	if not CarCatalog.has_car(car_id):
+		return false
+
+	var car := CarCatalog.get_car(car_id)
+
+	if car.unlocked_by_default:
+		return true
+
+	return career["unlocked_cars"].has(car_id)
+
+
+## Débloque une voiture (appelé par le mode carrière).
+func unlock_car(car_id: String) -> void:
+	_ensure_career_structure()
+
+	if not CarCatalog.has_car(car_id):
+		push_warning("SaveManager : voiture inconnue " + car_id)
+		return
+
+	if is_car_unlocked(car_id):
+		return
+
+	career["unlocked_cars"].append(car_id)
+	save_profile()
+
+
+## Voitures disponibles, dans l'ordre du catalogue.
+func get_unlocked_cars() -> Array[CarDefinition]:
+	var result: Array[CarDefinition] = []
+
+	for car in CarCatalog.get_cars():
+		if is_car_unlocked(car.id):
+			result.append(car)
+
+	return result
+
+
+## Voitures disponibles d'un groupe (D, C, B, A, S).
+func get_unlocked_cars_in_group(group: String) -> Array[CarDefinition]:
+	var result: Array[CarDefinition] = []
+
+	for car in CarCatalog.get_cars_in_group(group):
+		if is_car_unlocked(car.id):
+			result.append(car)
+
+	return result
 
 
 func _ensure_profile_structure() -> void:
@@ -549,6 +626,25 @@ func _ensure_display_structure() -> void:
 
 	if not display_settings.has("ui_scale"):
 		display_settings["ui_scale"] = DEFAULT_UI_SCALE
+
+
+func _ensure_career_structure() -> void:
+	if not career is Dictionary:
+		career = {}
+
+	if not career.has("unlocked_cars") or not career["unlocked_cars"] is Array:
+		career["unlocked_cars"] = []
+
+	# Nettoie les vieilles sauvegardes : voitures connues, sans doublon.
+	var cleaned: Array = []
+
+	for car_id in career["unlocked_cars"]:
+		var id := String(car_id)
+
+		if CarCatalog.has_car(id) and not cleaned.has(id):
+			cleaned.append(id)
+
+	career["unlocked_cars"] = cleaned
 
 
 # ============================================================

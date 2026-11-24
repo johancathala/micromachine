@@ -6,11 +6,13 @@ class_name AIStyle
 # ============================================================
 #
 # Le niveau (Novice, Moyen, Expert) dit à quel point un pilote est bon ;
-# le style dit COMMENT il pilote. Chaque IA a les deux, choisis sur
-# l'écran des IA.
+# le style dit COMMENT il pilote. Chaque pilote du roster
+# (AIDriverRoster) a les deux : le joueur choisit un nom, le niveau et
+# le style restent internes.
 #
-# Chaque style porte aussi le nom de pilote affiché en course
-# (« driver » : Régis...), et une description pour l'écran des IA.
+# Chaque style porte une description pour l'écran des IA. Le champ
+# « driver » n'est qu'un nom de secours pour les anciennes compositions
+# enregistrées sans pilote du roster.
 #
 # Traits (1 = neutre) :
 #   corner       vitesse visée en virage

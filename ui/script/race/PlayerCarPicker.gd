@@ -19,6 +19,7 @@ signal nickname_changed(picker: PlayerCarPicker, nickname: String)
 const INPUT_THRESHOLD := 0.5
 const READY_COLOR := Color("#81c784")
 const ACCENT_COLOR := Color("#ffd54f")
+const LOCKED_COLOR := Color("#ff8a65")
 
 var participant_index := -1
 var device_type := ""
@@ -30,6 +31,7 @@ var _previous := {"left": false, "right": false, "up": false, "down": false, "re
 var _title: Label
 var _nickname: LineEdit
 var _car_label: Label
+var _group_label: Label
 var _preview: TextureRect
 var _color_label: Label
 var _color_swatch: ColorRect
@@ -82,6 +84,10 @@ func setup(index: int, player_number: int, participant: Dictionary, stats: Array
 
 	_car_label = _label(box, "", 30, Color.WHITE)
 
+	# Groupe de performance (D à S) : les voitures d'un groupe plus
+	# élevé sont plus puissantes.
+	_group_label = _label(box, "", 22, ACCENT_COLOR)
+
 	_preview = TextureRect.new()
 	_preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -131,17 +137,33 @@ func setup(index: int, player_number: int, participant: Dictionary, stats: Array
 
 
 ## Met à jour l'affichage (voiture, couleur, barres, état prêt).
-func refresh(car: CarDefinition, color_data: Dictionary, stat_ratios: Array) -> void:
+## Voiture verrouillée : aperçu en silhouette noire et sélection refusée.
+func refresh(
+	car: CarDefinition,
+	color_data: Dictionary,
+	stat_ratios: Array,
+	locked: bool = false
+) -> void:
 	_car_label.text = "◀  %s  ▶" % (car.display_name if car else "?")
 	_preview.texture = car.preview_texture if car else null
+	_group_label.text = "Groupe %s" % car.group if car != null else ""
+
+	for i in range(mini(_bars.size(), stat_ratios.size())):
+		_bars[i].value = clampf(stat_ratios[i], 0.1, 1.0) * 100.0
+
+	if locked:
+		# Silhouette : la voiture reste reconnaissable, sans livrée.
+		_preview.modulate = Color.BLACK
+		_color_swatch.color = Color(0.18, 0.18, 0.18)
+		_color_label.text = "  À débloquer dans le mode carrière"
+		_status.text = "Voiture verrouillée : sélection impossible"
+		_status.add_theme_color_override("font_color", LOCKED_COLOR)
+		return
 
 	var color: Color = color_data.get("color", Color.WHITE)
 	_preview.modulate = color
 	_color_swatch.color = color
 	_color_label.text = "  ▲  %s  ▼" % color_data.get("name", "?")
-
-	for i in range(mini(_bars.size(), stat_ratios.size())):
-		_bars[i].value = clampf(stat_ratios[i], 0.1, 1.0) * 100.0
 
 	if is_ready:
 		_status.text = "PRÊT !"

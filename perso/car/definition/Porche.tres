@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="CarDefinition" format=3 uid="uid://cfvwingwubpug"]
+
+[ext_resource type="PackedScene" uid="uid://ci5j8soe6mi58" path="res://perso/car/model/Porche.tscn" id="1_oo7at"]
+[ext_resource type="Texture2D" uid="uid://ddqhcakdnp4gv" path="res://perso/car/sprite/porche.png" id="2_brd3v"]
+[ext_resource type="Script" uid="uid://de3h01guotde1" path="res://perso/car/definition/CarDefinition.gd" id="3_y4fjn"]
+
+[resource]
+script = ExtResource("3_y4fjn")
+id = "porche"
+display_name = "Porche"
+description = "Arrête de t'la péter"
+group = "A"
+unlocked_by_default = true
+model_scene = ExtResource("1_oo7at")
+preview_texture = ExtResource("2_brd3v")
+engine_force = 3058.0
+brake_force = 1699.0
+reverse_force = 1000.0
+max_speed = 3000.0
+max_reverse_speed = 667.0
+mass = 1450.0
+metadata/_custom_type_script = "uid://de3h01guotde1"

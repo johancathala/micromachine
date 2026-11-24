@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="CarDefinition" format=3 uid="uid://crp245p4tdgsa"]
+
+[ext_resource type="PackedScene" uid="uid://cuoss4e8jfgbv" path="res://perso/car/model/BMW.tscn" id="1_21mt4"]
+[ext_resource type="Texture2D" uid="uid://bhsag47usovne" path="res://perso/car/sprite/BMW.png" id="2_p3cq6"]
+[ext_resource type="Script" uid="uid://de3h01guotde1" path="res://perso/car/definition/CarDefinition.gd" id="3_06cnp"]
+
+[resource]
+script = ExtResource("3_06cnp")
+id = "bmw"
+display_name = "BMW"
+description = "Allez montez les neuveux !"
+group = "B"
+unlocked_by_default = true
+model_scene = ExtResource("1_21mt4")
+preview_texture = ExtResource("2_p3cq6")
+engine_force = 1721.0
+brake_force = 1092.0
+max_speed = 2200.0
+max_reverse_speed = 534.0
+mass = 1550.0
+lateral_grip = 8.6
+metadata/_custom_type_script = "uid://de3h01guotde1"

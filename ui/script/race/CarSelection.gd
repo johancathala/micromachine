@@ -168,11 +168,14 @@ func _rebuild_pickers() -> void:
 
 
 ## Voiture et couleur par défaut d'un joueur qui rejoint (livrée libre).
+## Un ancien choix verrouillé est conservé tel quel : le joueur le voit,
+## mais ne peut pas valider tant qu'il ne choisit pas une voiture
+## débloquée.
 func _ensure_player_livery(index: int) -> void:
 	var participant := race_config.participants[index]
 
-	if not participant.has("car_id"):
-		participant["car_id"] = cars[0].id
+	if not participant.has("car_id") or not CarCatalog.has_car(String(participant["car_id"])):
+		participant["car_id"] = _default_car_id()
 
 	if not participant.has("color_id"):
 		participant["color_id"] = colors[0]["id"]
@@ -286,8 +289,10 @@ func _on_picker_nickname(picker: PlayerCarPicker, nickname: String) -> void:
 func _refresh_pickers() -> void:
 	for picker in _pickers:
 		var participant := race_config.participants[picker.participant_index]
-		var car := CarCatalog.get_car(String(participant.get("car_id", "")))
+		var car_id := String(participant.get("car_id", ""))
+		var car := CarCatalog.get_car(car_id)
 		var color_data := ColorCatalog.get_color(String(participant.get("color_id", "")))
+		var locked := not _is_car_selectable(car_id)
 		var ratios: Array = []
 
 		if car != null:
@@ -296,21 +301,49 @@ func _refresh_pickers() -> void:
 			for i in range(values.size()):
 				ratios.append(values[i] / _stat_max[i] if _stat_max[i] > 0.0 else 0.0)
 
-		picker.refresh(car, color_data, ratios)
+		# Une voiture verrouillée ne peut pas être validée.
+		if locked:
+			picker.is_ready = false
+
+		picker.refresh(car, color_data, ratios, locked)
 		_store_player_choice(picker.participant_index)
 
 	_refresh_start_button()
 	_refresh_lobby_help()
 
 
+## Vrai si la voiture est débloquée : seule une voiture débloquée peut
+## être validée (les autres restent consultables).
+func _is_car_selectable(car_id: String) -> bool:
+	return CarCatalog.has_car(car_id) and SaveManager.is_car_unlocked(car_id)
+
+
+## Vrai si la voiture du joueur est validable (débloquée).
+func _picker_car_selectable(picker: PlayerCarPicker) -> bool:
+	return _is_car_selectable(
+		String(race_config.participants[picker.participant_index].get("car_id", ""))
+	)
+
+
+func _default_car_id() -> String:
+	var unlocked := SaveManager.get_unlocked_cars()
+
+	if not unlocked.is_empty():
+		return unlocked[0].id
+
+	return cars[0].id if not cars.is_empty() else ""
+
+
+## Toutes les voitures sont consultables (y compris celles à débloquer) :
+## une voiture verrouillée s'affiche en silhouette et empêche de valider.
 func _on_picker_car_step(picker: PlayerCarPicker, direction: int) -> void:
 	var participant := race_config.participants[picker.participant_index]
 	var current := _car_index(String(participant.get("car_id", "")))
 
 	# Voiture suivante qui a encore une couleur libre pour ce joueur.
 	for step in range(1, cars.size() + 1):
-		var car_id: String = cars[posmod(current + direction * step, cars.size())].id
-		participant["car_id"] = car_id
+		var car := cars[posmod(current + direction * step, cars.size())]
+		participant["car_id"] = car.id
 		race_config.participants[picker.participant_index] = participant
 
 		if _human_livery_available(picker.participant_index):
@@ -323,6 +356,10 @@ func _on_picker_car_step(picker: PlayerCarPicker, direction: int) -> void:
 
 
 func _on_picker_color_step(picker: PlayerCarPicker, direction: int) -> void:
+	# Une voiture verrouillée n'a pas de livrée à choisir.
+	if not _picker_car_selectable(picker):
+		return
+
 	var participant := race_config.participants[picker.participant_index]
 	var car_id := String(participant.get("car_id", ""))
 	var ids := _get_color_ids()
@@ -343,6 +380,12 @@ func _on_picker_color_step(picker: PlayerCarPicker, direction: int) -> void:
 
 
 func _on_picker_ready_toggled(picker: PlayerCarPicker) -> void:
+	# Voiture verrouillée : impossible de se déclarer prêt.
+	if not _picker_car_selectable(picker):
+		picker.is_ready = false
+		_refresh_pickers()
+		return
+
 	picker.is_ready = not picker.is_ready
 	AudioManager.play_click()
 	_refresh_pickers()
@@ -463,9 +506,8 @@ func _setup_participant_defaults() -> void:
 	for i in range(race_config.participants.size()):
 		var participant := race_config.participants[i]
 
-		if String(participant.get("car_id", "")).is_empty():
-			if not cars.is_empty():
-				participant["car_id"] = cars[0].id
+		if not participant.has("car_id") or not CarCatalog.has_car(String(participant["car_id"])):
+			participant["car_id"] = _default_car_id()
 
 		if String(participant.get("color_id", "")).is_empty():
 			participant["color_id"] = colors[0]["id"]
@@ -528,7 +570,8 @@ func _can_start() -> bool:
 		return false
 
 	for picker in _pickers:
-		if not picker.is_ready:
+		# Une voiture verrouillée invalide la sélection, même prête.
+		if not picker.is_ready or not _picker_car_selectable(picker):
 			return false
 
 	return not _pickers.is_empty()
@@ -537,6 +580,11 @@ func _can_start() -> bool:
 func _refresh_lobby_help() -> void:
 	var count := race_config.players.size()
 	var text := "E : rejoindre au clavier · B : à la manette"
+
+	for picker in _pickers:
+		if not _picker_car_selectable(picker):
+			help_label.text = "Voiture verrouillée : ◀ ▶ pour choisir une voiture débloquée"
+			return
 
 	if race_config.is_time_trial():
 		text = "Contre-la-montre : un seul joueur" if count != 1 else "Seul contre votre fantôme"

@@ -74,7 +74,7 @@ size = Vector2(403, 411)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_8wgrd"]
 size = Vector2(552, 3061)
 
-[node name="TrackPaddock2" type="Node2D" unique_id=168625439]
+[node name="BrissacPaddock2" type="Node2D" unique_id=168625439]
 
 [node name="RaceStartLightsMap" parent="." unique_id=901997129 instance=ExtResource("1_6g8tl")]
 z_index = 3

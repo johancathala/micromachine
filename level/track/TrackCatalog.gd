@@ -5,7 +5,7 @@ class_name TrackCatalog
 const TRACKS := [
 	{
 		"id": 0,
-		"name": "Brissac",
+		"name": "Brissac Classique",
 		"scene": "res://level/track/Track01.tscn"
 	},
 	# Variantes de Brissac : même carte, autre cheminement

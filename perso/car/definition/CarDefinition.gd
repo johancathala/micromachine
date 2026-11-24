@@ -8,10 +8,30 @@ class_name CarDefinition
 @export_multiline var description: String = ""
 
 
+@export_category("Progression")
+
+## Groupe de performance, du moins puissant au plus puissant :
+## D, C, B, A, S. Les IA ajoutées courent dans le groupe le plus
+## élevé des voitures choisies par les joueurs humains.
+@export_enum("D", "C", "B", "A", "S") var group: String = "D"
+
+## Voiture disponible sans progression. Les autres se débloquent dans
+## le mode carrière (SaveManager.unlock_car).
+@export var unlocked_by_default: bool = false
+
+
 @export_category("Visual")
 
 @export var model_scene: PackedScene
 @export var preview_texture: Texture2D
+
+@export_group("Collision")
+
+## Dimensions de la zone de collision (largeur, longueur).
+@export var collision_size: Vector2 = Vector2(60.0, 120.0)
+
+## Décalage de la zone de collision par rapport au centre du véhicule.
+@export var collision_offset: Vector2 = Vector2.ZERO
 
 
 @export_category("Performance")
@@ -33,7 +53,7 @@ var max_reverse_speed: float = 450.0
 
 ## Masse (kg) : répartit la vitesse échangée lors d'un choc entre
 ## voitures (la plus légère est la plus déviée).
-@export_range(200.0, 3000.0, 10.0)
+@export_range(200.0, 8000.0, 10.0)
 var mass: float = 1200.0
 
 

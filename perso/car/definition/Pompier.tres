@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="CarDefinition" format=3 uid="uid://h1pfqb277cqn"]
+
+[ext_resource type="PackedScene" uid="uid://b7ct1wdt2j6it" path="res://perso/car/model/Pompier.tscn" id="1_l14el"]
+[ext_resource type="Script" uid="uid://de3h01guotde1" path="res://perso/car/definition/CarDefinition.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://3snp3div4ij7" path="res://perso/car/sprite/pompier.png" id="2_l14el"]
+
+[resource]
+script = ExtResource("1_script")
+id = "pompier"
+display_name = "Pompier"
+description = "Une Dacia réquisitionnée par les pompiers. Elle éteint les feux, pas les chronos."
+group = "C"
+unlocked_by_default = true
+model_scene = ExtResource("1_l14el")
+preview_texture = ExtResource("2_l14el")
+collision_size = Vector2(82, 288)
+engine_force = 1650.0
+brake_force = 800.0
+max_speed = 2300.0
+mass = 7950.0
+metadata/_custom_type_script = "uid://de3h01guotde1"

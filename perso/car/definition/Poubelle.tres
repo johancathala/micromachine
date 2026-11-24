@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="CarDefinition" format=3 uid="uid://cg61eo28ml0b6"]
+
+[ext_resource type="PackedScene" uid="uid://dmrjnrxevqxfj" path="res://perso/car/model/Poubelle.tscn" id="1_m4jf0"]
+[ext_resource type="Texture2D" uid="uid://c0lvvrjlfd312" path="res://perso/car/sprite/poubelle.png" id="2_llcoa"]
+[ext_resource type="Script" uid="uid://de3h01guotde1" path="res://perso/car/definition/CarDefinition.gd" id="3_q16bb"]
+
+[resource]
+script = ExtResource("3_q16bb")
+id = "poubelle"
+display_name = "Camion poubelle"
+description = "Parfait pour trashtalk les adversaires"
+unlocked_by_default = true
+model_scene = ExtResource("1_m4jf0")
+preview_texture = ExtResource("2_llcoa")
+collision_size = Vector2(82, 288)
+engine_force = 950.0
+brake_force = 650.0
+max_speed = 1590.0
+mass = 7950.0
+metadata/_custom_type_script = "uid://de3h01guotde1"

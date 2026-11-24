@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CarDefinition" format=3 uid="uid://bqy2p5d8i1ivm"]
+
+[ext_resource type="PackedScene" uid="uid://bsm27c2m06exm" path="res://perso/car/model/ClioPrepa.tscn" id="1_h78pb"]
+[ext_resource type="Texture2D" uid="uid://bglut4d0byct7" path="res://perso/car/sprite/ClioPrepa.png" id="2_yia44"]
+[ext_resource type="Script" uid="uid://de3h01guotde1" path="res://perso/car/definition/CarDefinition.gd" id="3_pkslk"]
+
+[resource]
+script = ExtResource("3_pkslk")
+id = "clio_prepa"
+display_name = "Clio 16S"
+description = "La compacte française increvable. Même base que la Dacia en attendant sa carrosserie."
+group = "C"
+unlocked_by_default = true
+model_scene = ExtResource("1_h78pb")
+preview_texture = ExtResource("2_yia44")
+brake_force = 859.0
+mass = 1150.0
+metadata/_custom_type_script = "uid://de3h01guotde1"

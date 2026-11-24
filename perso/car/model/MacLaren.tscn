@@ -1,0 +1,97 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" uid="uid://y33mux4t4ctc" path="res://perso/car/model/CarModel.tscn" id="1_lp31p"]
+[ext_resource type="AudioStream" uid="uid://da5esuwqgoelq" path="res://perso/car/sound/VEHSkid_Crissement de pneus 3 (ID 2370)_LaSonotheque.fr.wav" id="3_1d6my"]
+[ext_resource type="Texture2D" path="res://perso/car/sprite/f1.png" id="3_nvaje"]
+[ext_resource type="AudioStream" uid="uid://dqvmhlgm7g1a4" path="res://effects/sound/engine_idle/auto-engine-running-151384.mp3" id="4_1d6my"]
+[ext_resource type="AudioStream" uid="uid://twpfk6jnbojh" path="res://effects/sound/engine_acc/engine-revving-long.mp3" id="5_1d6my"]
+[ext_resource type="AudioStream" uid="uid://bfjgphtox7i5q" path="res://effects/sound/engine_max/engine-revving-long.mp3" id="6_s44fr"]
+[ext_resource type="AudioStream" uid="uid://d2eeedikbxqea" path="res://perso/car/sound/4_crash.mp3" id="7_yrio1"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_u1uy7"]
+atlas = ExtResource("3_nvaje")
+region = Rect2(0, 0, 80, 144)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qy6jv"]
+atlas = ExtResource("3_nvaje")
+region = Rect2(80, 0, 80, 144)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_uhpkv"]
+atlas = ExtResource("3_nvaje")
+region = Rect2(160, 0, 80, 144)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1d6my"]
+atlas = ExtResource("3_nvaje")
+region = Rect2(240, 0, 80, 144)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_s44fr"]
+atlas = ExtResource("3_nvaje")
+region = Rect2(320, 0, 80, 144)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_b0mc7"]
+atlas = ExtResource("3_nvaje")
+region = Rect2(400, 0, 80, 144)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_nvaje"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_u1uy7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qy6jv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_uhpkv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1d6my")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_s44fr")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_b0mc7")
+}],
+"loop": 1,
+"name": &"down",
+"speed": 5.0
+}]
+
+[node name="CarModel" unique_id=1257048408 instance=ExtResource("1_lp31p")]
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Body" parent_id_path=PackedInt32Array(1345352734) index="0" unique_id=1123856708]
+y_sort_enabled = true
+position = Vector2(-11, 0)
+rotation = -1.5707964
+sprite_frames = SubResource("SpriteFrames_nvaje")
+animation = &"down"
+autoplay = "down"
+
+[node name="SkidSound" type="AudioStreamPlayer2D" parent="." index="1" unique_id=1574928081]
+stream = ExtResource("3_1d6my")
+max_distance = 4096.0
+
+[node name="EngineIdleSound" type="AudioStreamPlayer2D" parent="." index="2" unique_id=1716130611]
+stream = ExtResource("4_1d6my")
+volume_db = -20.0
+max_distance = 1600.0
+parameters/looping = true
+
+[node name="EngineRunningSound" type="AudioStreamPlayer2D" parent="." index="3" unique_id=1254086944]
+stream = ExtResource("5_1d6my")
+volume_db = 10.0
+max_distance = 4096.0
+parameters/looping = false
+
+[node name="EngineRupeurSound" type="AudioStreamPlayer2D" parent="." index="4" unique_id=1444427323]
+stream = ExtResource("6_s44fr")
+volume_db = -10.0
+max_distance = 4096.0
+
+[node name="CollisionSound" type="AudioStreamPlayer2D" parent="." index="5" unique_id=1398573162]
+stream = ExtResource("7_yrio1")
+volume_db = -5.0
+pitch_scale = 0.9
+max_distance = 4096.0
+max_polyphony = 4

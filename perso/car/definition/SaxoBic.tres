@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="CarDefinition" format=3 uid="uid://b8y5bu1fchecg"]
+
+[ext_resource type="PackedScene" uid="uid://dgqy72cy1pyk3" path="res://perso/car/model/SaxoBic.tscn" id="1_qnytp"]
+[ext_resource type="Script" uid="uid://de3h01guotde1" path="res://perso/car/definition/CarDefinition.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://ca6fj42o4e3k1" path="res://perso/car/sprite/saxo.png" id="2_qnytp"]
+
+[resource]
+script = ExtResource("1_script")
+id = "saxo_bic"
+display_name = "Saxo Bic"
+description = "La citadine d'entrée de gamme. Même base que la Clio en attendant sa carrosserie définitive."
+unlocked_by_default = true
+model_scene = ExtResource("1_qnytp")
+preview_texture = ExtResource("2_qnytp")
+engine_force = 950.0
+brake_force = 770.0
+reverse_force = 750.0
+max_speed = 1675.0
+max_reverse_speed = 410.0
+mass = 850.0
+lateral_grip = 6.7
+high_speed_grip_start = 272.0
+handbrake_grip_multiplier = 0.03
+handbrake_brake_multiplier = 0.3
+metadata/_custom_type_script = "uid://de3h01guotde1"

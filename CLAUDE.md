@@ -12,8 +12,8 @@ Skill de référence pour les patrons Godot : `.claude/skills/godot-gdscript-pat
 | `level/map/` | **Cartes** : décor et physique d'un lieu (tuiles, obstacles, eau). Aucune logique de course. Aujourd'hui : Brissac. |
 | `level/track/` | **Circuits** : intègrent une carte (nœud nommé d'après le lieu, ex. « Brissac ») et portent leur logique : `Sections`, `SpawnPoints`, `PitStop` (zones d'arrêt), `PitLane` (vitesse limitée), `RaceStartLightsMap`, `RacingLine` (facultatif). Catalogue : `TrackCatalog.gd`. |
 | `level/script/` | Course : `RaceController`, `TrackProgress` (parcours A*), stand (`PitStopManager`, `PitStop`, `PitLane`), élimination, fantômes. |
-| `level/script/ai/` | IA : `AIDriver` (pilote, garde-fou anti-collision, erreurs selon le niveau), `AIStyle` (styles de pilotage), `RacingLine` (trajectoire), `AIPitStrategy` (pneus), `AILearning` + `ai_learning.json` (virages appris ; `GENERATION` à incrémenter quand le comportement de l'IA change). |
-| `perso/car/` | Voiture (`Car.gd`) et définitions (`definition/*.tres`). |
+| `level/script/ai/` | IA : `AIDriver` (pilote, garde-fou anti-collision, erreurs selon le niveau), `AIDriverRoster` (24 pilotes nommés : 8 par niveau, un par style), `AIStyle` (styles de pilotage), `RacingLine` (trajectoire), `AIPitStrategy` (pneus), `AILearning` + `ai_learning.json` (virages appris ; `GENERATION` à incrémenter quand le comportement de l'IA change). |
+| `perso/car/` | Voiture (`Car.gd`) et définitions (`definition/*.tres`) : groupe de performance (D à S) et déblocage en carrière (`unlocked_by_default`, `SaveManager.unlock_car`). |
 | `ui/` | Menus. Parcours de course : Mode (`RaceModeSelect`) → Joueurs (`CarSelection`) → IA (`AISetup`, classique et élimination) → Circuit (`RaceSetup`) → Course. |
 | `tools/track/` | Générateurs lancés sans fenêtre (variantes de Brissac, élargissement des portes, séparation carte / circuit, aperçus). |
 
@@ -69,7 +69,8 @@ godot --headless --fixed-fps 60 --path . -s tools/ai/train_ai.gd -- \
 
 `user://` = `~/.local/share/godot/app_userdata/Micro Racer/` :
 `best_times.json` (chronos), `ghosts/` (fantômes), `profile.cfg`
-(profil, commandes, réglages), `ai_learning.json` (virages appris en jeu).
+(profil, commandes, réglages, voitures débloquées), `ai_learning.json`
+(virages appris en jeu).
 Ne jamais les supprimer ni les modifier sans demande explicite.
 
 ## Git

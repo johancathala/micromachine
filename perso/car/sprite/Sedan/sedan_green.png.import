@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cgv0t8dgai1mc"
-path="res://.godot/imported/ClioPreview.png-c662fce83b3e92452c52b5078bb82240.ctex"
+uid="uid://bdhpghd87snnw"
+path="res://.godot/imported/sedan_green.png-9aff85bf913535299be35cc59ba64b1f.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://perso/car/model/ClioPreview.png"
-dest_files=["res://.godot/imported/ClioPreview.png-c662fce83b3e92452c52b5078bb82240.ctex"]
+source_file="res://perso/car/sprite/Sedan/sedan_green.png"
+dest_files=["res://.godot/imported/sedan_green.png-9aff85bf913535299be35cc59ba64b1f.ctex"]
 
 [params]
 
