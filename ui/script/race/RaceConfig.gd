@@ -20,6 +20,7 @@ enum RaceRules {
 
 const ELIMINATION_MIN_PLAYERS := 2
 const DEFAULT_TARGET_SCORE := 20
+const DEFAULT_LAP_COUNT := 3
 
 # Pilote d'une IA : un des trois niveaux, ou un fantôme (le meilleur
 # fantôme valide de sa voiture sur le circuit choisi ensuite).
@@ -42,7 +43,11 @@ var mode: GameManager.GameMode = GameManager.GameMode.SINGLE_RACE
 # Niveau proposé pour les IA ajoutées (écran des IA).
 var ai_difficulty: int = AIPilot.MEDIUM
 var track: Dictionary = {}
-var lap_count: int = 3
+var championship_tracks: Array[Dictionary] = []
+var championship_race_index: int = 0
+var championship_standings: Array[Dictionary] = []
+var championship_race_recorded: bool = false
+var lap_count: int = DEFAULT_LAP_COUNT
 
 var race_rules: RaceRules = RaceRules.CLASSIC
 
@@ -236,6 +241,23 @@ func is_valid() -> bool:
 	if track.is_empty():
 		return false
 
+	if allows_ai() and championship_tracks.is_empty():
+		return false
+
+	for scheduled_track in championship_tracks:
+		if scheduled_track.is_empty():
+			return false
+
+		if is_classic() and int(scheduled_track.get("lap_count", 0)) <= 0:
+			return false
+
+	if is_championship():
+		if championship_race_index < 0 or championship_race_index >= championship_tracks.size():
+			return false
+
+		if championship_tracks[championship_race_index].is_empty():
+			return false
+
 	if lap_count <= 0:
 		return false
 
@@ -273,6 +295,14 @@ func is_time_trial() -> bool:
 
 func is_classic() -> bool:
 	return race_rules == RaceRules.CLASSIC
+
+
+func is_championship() -> bool:
+	return (
+		mode == GameManager.GameMode.CHAMPIONSHIP
+		and allows_ai()
+		and championship_tracks.size() > 1
+	)
 
 
 ## Tours illimités : élimination (fin au score) et contre-la-montre
@@ -673,6 +703,10 @@ func duplicate_config() -> RaceConfig:
 	copy.mode = mode
 	copy.ai_difficulty = ai_difficulty
 	copy.track = track
+	copy.championship_tracks = championship_tracks.duplicate(true)
+	copy.championship_race_index = championship_race_index
+	copy.championship_standings = championship_standings.duplicate(true)
+	copy.championship_race_recorded = championship_race_recorded
 	copy.lap_count = lap_count
 	copy.race_rules = race_rules
 	copy.target_score = target_score

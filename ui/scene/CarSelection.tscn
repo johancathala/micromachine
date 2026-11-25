@@ -51,101 +51,13 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 40
-text = "SELECTION DES VOITURES"
+text = "JOUEURS"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="MainContent" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=678890823]
 layout_mode = 2
 size_flags_vertical = 3
-
-[node name="ParticipantsPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer/MainContent" unique_id=1129108820]
-custom_minimum_size = Vector2(500, 0)
-layout_mode = 2
-
-[node name="ParticipantsMargin" type="MarginContainer" parent="MarginContainer/VBoxContainer/MainContent/ParticipantsPanel" unique_id=1677408882]
-layout_mode = 2
-
-[node name="ParticipantsVBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/ParticipantsPanel/ParticipantsMargin" unique_id=547720851]
-layout_mode = 2
-
-[node name="SectionTitle" type="Label" parent="MarginContainer/VBoxContainer/MainContent/ParticipantsPanel/ParticipantsMargin/ParticipantsVBox" unique_id=981718013]
-layout_mode = 2
-
-[node name="ParticipantScroll" type="ScrollContainer" parent="MarginContainer/VBoxContainer/MainContent/ParticipantsPanel/ParticipantsMargin/ParticipantsVBox" unique_id=1348362417]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="ParticipantList" type="VBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/ParticipantsPanel/ParticipantsMargin/ParticipantsVBox/ParticipantScroll" unique_id=1095908353]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-
-[node name="SelectionPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer/MainContent" unique_id=291794077]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="SelectionMargin" type="MarginContainer" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel" unique_id=1696268947]
-layout_mode = 2
-
-[node name="SelectionVBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin" unique_id=2051807126]
-layout_mode = 2
-
-[node name="SelectedParticipant" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox" unique_id=2109226196]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.7362919, 0.73492813, 7.70092e-07, 1)
-theme_override_font_sizes/font_size = 35
-text = "SelectedParticipant"
-horizontal_alignment = 1
-
-[node name="CarSectionTitle" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox" unique_id=1994955819]
-layout_mode = 2
-text = "Voiture"
-
-[node name="CarGridScroll" type="ScrollContainer" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox" unique_id=1980141893]
-custom_minimum_size = Vector2(0, 100)
-layout_mode = 2
-
-[node name="CarGrid" type="GridContainer" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox/CarGridScroll" unique_id=621817159]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-columns = 8
-
-[node name="ColorSectionTitle" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox" unique_id=709952902]
-layout_mode = 2
-text = "Couleur"
-
-[node name="ColorGrid" type="GridContainer" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox" unique_id=174474823]
-custom_minimum_size = Vector2(0, 100)
-layout_mode = 2
-columns = 8
-
-[node name="PreviewPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox" unique_id=2005428265]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="PreviewVBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox/PreviewPanel" unique_id=1621853513]
-layout_mode = 2
-alignment = 1
-
-[node name="PreviewImage" type="TextureRect" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox/PreviewPanel/PreviewVBox" unique_id=212479864]
-layout_mode = 2
-size_flags_vertical = 3
-expand_mode = 1
-stretch_mode = 4
-
-[node name="CarName" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox/PreviewPanel/PreviewVBox" unique_id=1822241586]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.7362919, 0.73492813, 7.70092e-07, 1)
-theme_override_font_sizes/font_size = 35
-text = "Nom voiture"
-horizontal_alignment = 1
-
-[node name="CarDescription" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox/PreviewPanel/PreviewVBox" unique_id=802754867]
-layout_mode = 2
-text = "Description"
-horizontal_alignment = 1
 
 [node name="Spacer" type="Control" parent="MarginContainer/VBoxContainer" unique_id=1010302561]
 custom_minimum_size = Vector2(0, 50)

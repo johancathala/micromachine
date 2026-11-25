@@ -60,37 +60,6 @@ vertical_alignment = 1
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="PlayersPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer/MainContent" unique_id=1265455363]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="PlayersMargin" type="MarginContainer" parent="MarginContainer/VBoxContainer/MainContent/PlayersPanel" unique_id=948895201]
-layout_mode = 2
-
-[node name="PlayersVBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/PlayersPanel/PlayersMargin" unique_id=1760024427]
-layout_mode = 2
-
-[node name="SectionTitle" type="Label" parent="MarginContainer/VBoxContainer/MainContent/PlayersPanel/PlayersMargin/PlayersVBox" unique_id=514968027]
-layout_mode = 2
-theme_override_font_sizes/font_size = 40
-text = "JOUEURS"
-horizontal_alignment = 1
-
-[node name="PlayerListScroll" type="ScrollContainer" parent="MarginContainer/VBoxContainer/MainContent/PlayersPanel/PlayersMargin/PlayersVBox" unique_id=1840911533]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="PlayerList" type="VBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/PlayersPanel/PlayersMargin/PlayersVBox/PlayerListScroll" unique_id=732365064]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-
-[node name="JoinHint" type="Label" parent="MarginContainer/VBoxContainer/MainContent/PlayersPanel/PlayersMargin/PlayersVBox" unique_id=1462166082]
-layout_mode = 2
-theme_override_font_sizes/font_size = 40
-text = "Appuyer sur une touche pour rejoindre"
-horizontal_alignment = 1
-
 [node name="SettingsPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer/MainContent" unique_id=402699361]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -119,14 +88,46 @@ horizontal_alignment = 1
 [node name="Track" type="OptionButton" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/TrackRow" unique_id=208004843]
 layout_mode = 2
 size_flags_horizontal = 3
-selected = 0
-item_count = 3
-popup/item_0/text = "Classique"
-popup/item_0/id = 0
-popup/item_1/text = "Reverse"
-popup/item_1/id = 1
-popup/item_2/text = "Padock"
-popup/item_2/id = 2
+
+[node name="ChampionshipPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox"]
+layout_mode = 2
+
+[node name="ChampionshipMargin" type="MarginContainer" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/ChampionshipPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 8
+
+[node name="ChampionshipVBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/ChampionshipPanel/ChampionshipMargin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ChampionshipTitle" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/ChampionshipPanel/ChampionshipMargin/ChampionshipVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "PROGRAMME DU CHAMPIONNAT"
+horizontal_alignment = 1
+
+[node name="ScoringLabel" type="Label" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/ChampionshipPanel/ChampionshipMargin/ChampionshipVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Barème : 10 / 8 / 6 / 5 / 4 / 3 / 2 / 1 points, puis 0."
+horizontal_alignment = 1
+
+[node name="AddTrackButton" type="Button" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/ChampionshipPanel/ChampionshipMargin/ChampionshipVBox" groups=["audio_confirm"]]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "AJOUTER LE CIRCUIT SÉLECTIONNÉ"
+
+[node name="TrackListScroll" type="ScrollContainer" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/ChampionshipPanel/ChampionshipMargin/ChampionshipVBox"]
+custom_minimum_size = Vector2(0, 130)
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="TrackList" type="VBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/ChampionshipPanel/ChampionshipMargin/ChampionshipVBox/TrackListScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="LapCountRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox" unique_id=566487758]
 layout_mode = 2
@@ -140,28 +141,6 @@ horizontal_alignment = 1
 [node name="LapCount" type="OptionButton" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox/LapCountRow" unique_id=1436093478]
 layout_mode = 2
 size_flags_horizontal = 3
-selected = 2
-item_count = 10
-popup/item_0/text = "1"
-popup/item_0/id = 0
-popup/item_1/text = "2"
-popup/item_1/id = 1
-popup/item_2/text = "3"
-popup/item_2/id = 2
-popup/item_3/text = "4"
-popup/item_3/id = 3
-popup/item_4/text = "5"
-popup/item_4/id = 4
-popup/item_5/text = "6"
-popup/item_5/id = 5
-popup/item_6/text = "7"
-popup/item_6/id = 6
-popup/item_7/text = "8"
-popup/item_7/id = 7
-popup/item_8/text = "9"
-popup/item_8/id = 8
-popup/item_9/text = "10"
-popup/item_9/id = 9
 
 [node name="ScreenModeRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/MainContent/SettingsPanel/SettingsMargin/SettingsVBox"]
 layout_mode = 2
@@ -250,18 +229,12 @@ text = "RETOUR"
 [node name="HelpLabel" type="Label" parent="MarginContainer/VBoxContainer/Footer" unique_id=453760545]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Cofiguration : 2 joueurs + 6 IA"
 horizontal_alignment = 1
 
 [node name="StartButton" type="Button" parent="MarginContainer/VBoxContainer/Footer" unique_id=678058027 groups=["audio_confirm"]]
 layout_mode = 2
 theme_override_font_sizes/font_size = 40
 text = "DÉPART"
-
-[node name="PlayerJoinOverlay" type="Control" parent="." unique_id=294078709]
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
 
 [node name="MenuFocusManager" type="Node" parent="." unique_id=1044521647]
 script = ExtResource("3_p1law")

@@ -1,0 +1,101 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://ui/script/race/ChampionshipStandings.gd" id="1_standings"]
+[ext_resource type="Script" path="res://ui/script/MenuFocusManager.gd" id="2_focus"]
+
+[sub_resource type="SystemFont" id="SystemFont_championship"]
+font_names = PackedStringArray("Impact")
+
+[sub_resource type="Theme" id="Theme_championship"]
+default_font = SubResource("SystemFont_championship")
+default_font_size = 34
+
+[node name="ChampionshipStandings" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_championship")
+script = ExtResource("1_standings")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.36862746, 0.5058824, 1, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 45.0
+offset_top = 45.0
+offset_right = -45.0
+offset_bottom = -50.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.84705883, 0.3019608, 1)
+theme_override_font_sizes/font_size = 60
+text = "CLASSEMENT DU CHAMPIONNAT"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="Champion" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.84705883, 0.3019608, 1)
+theme_override_font_sizes/font_size = 40
+horizontal_alignment = 1
+
+[node name="StandingsPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/VBoxContainer/StandingsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 16
+
+[node name="StandingsScroll" type="ScrollContainer" parent="MarginContainer/VBoxContainer/StandingsPanel/MarginContainer"]
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="StandingsList" type="VBoxContainer" parent="MarginContainer/VBoxContainer/StandingsPanel/MarginContainer/StandingsScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="Buttons" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 24
+
+[node name="MainMenuButton" type="Button" parent="MarginContainer/VBoxContainer/Buttons" groups=["audio_back"]]
+layout_mode = 2
+theme_override_font_sizes/font_size = 34
+text = "QUITTER LE CHAMPIONNAT"
+
+[node name="ContinueButton" type="Button" parent="MarginContainer/VBoxContainer/Buttons" groups=["audio_confirm"]]
+layout_mode = 2
+theme_override_font_sizes/font_size = 34
+text = "COURSE SUIVANTE ›"
+
+[node name="MenuFocusManager" type="Node" parent="."]
+script = ExtResource("2_focus")
+initial_focus_path = NodePath("../MarginContainer/VBoxContainer/Buttons/ContinueButton")

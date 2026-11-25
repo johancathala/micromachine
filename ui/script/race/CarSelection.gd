@@ -2,37 +2,16 @@ extends Control
 
 
 var race_config: RaceConfig
-var selected_participant_index: int = -1
 
 var cars: Array[CarDefinition] = []
 var colors: Array = []
 
-@onready var focus_manager: MenuFocusManager = $MenuFocusManager
-
 @onready var back_button: Button = $MarginContainer/VBoxContainer/Footer/BackButton
-
-@onready var participant_list: VBoxContainer = $MarginContainer/VBoxContainer/MainContent/ParticipantsPanel/ParticipantsMargin/ParticipantsVBox/ParticipantScroll/ParticipantList
-
-@onready var selected_participant_label: Label = $MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox/SelectedParticipant
-
-@onready var car_grid: GridContainer = $MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox/CarGridScroll/CarGrid
-
-@onready var color_grid: GridContainer = $MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox/ColorGrid
-
-@onready var preview_image: TextureRect = $MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox/PreviewPanel/PreviewVBox/PreviewImage
-
-@onready var car_name_label: Label = $MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox/PreviewPanel/PreviewVBox/CarName
-
-@onready var car_description_label: Label = $MarginContainer/VBoxContainer/MainContent/SelectionPanel/SelectionMargin/SelectionVBox/PreviewPanel/PreviewVBox/CarDescription
 
 @onready var start_button: Button = $MarginContainer/VBoxContainer/Footer/StartButton
 
 @onready var help_label: Label = $MarginContainer/VBoxContainer/Footer/HelpLabel
 
-# ------------------------------------------------------------
-# Barres de caractéristiques (relatives à la meilleure voiture
-# du catalogue pour chaque caractéristique).
-# ------------------------------------------------------------
 const STATS := [
 	{"name": "Vitesse", "color": Color("#4fc3f7")},
 	{"name": "Accélération", "color": Color("#81c784")},
@@ -40,15 +19,13 @@ const STATS := [
 	{"name": "Adhérence", "color": Color("#ffd54f")}
 ]
 
-var _stat_bars: Array[ProgressBar] = []
 var _stat_max: Array[float] = []
 
 # ------------------------------------------------------------
-# Sélection simultanée : un panneau par joueur humain (jusqu'à 8),
-# chacun avec ses propres commandes.
+# Sélection simultanée : un panneau par joueur humain, chacun avec ses
+# propres commandes.
 # ------------------------------------------------------------
-const MAX_SIMULTANEOUS_PLAYERS := 8
-# Au-delà, panneaux sur 4 colonnes et liste de gauche masquée.
+# À partir de cinq joueurs, disposition compacte en quatre colonnes.
 const COMPACT_FROM_PLAYERS := 5
 # Délai avant le départ quand tout le monde est prêt.
 const ALL_READY_DELAY := 0.8
@@ -71,13 +48,7 @@ func _ready() -> void:
 	cars = CarCatalog.get_cars()
 	colors = ColorCatalog.get_colors()
 
-	_setup_stat_bars()
-
-	# Ancien affichage (liste + choix unique) remplacé par un panneau
-	# par joueur.
-	($MarginContainer/VBoxContainer/MainContent/ParticipantsPanel as Control).hide()
-	($MarginContainer/VBoxContainer/MainContent/SelectionPanel as Control).hide()
-	($MarginContainer/VBoxContainer/Header/Title as Label).text = "JOUEURS"
+	_setup_stat_maxima()
 	start_button.text = "IA ›" if race_config.allows_ai() else "CIRCUIT ›"
 
 	start_button.pressed.connect(_on_start_pressed)
@@ -101,7 +72,7 @@ func _exit_tree() -> void:
 
 
 # ============================================================
-# SÉLECTION SIMULTANÉE (1 à 4 joueurs)
+# SÉLECTION SIMULTANÉE (1 à 8 joueurs)
 # ============================================================
 
 func _rebuild_pickers() -> void:
@@ -502,54 +473,6 @@ func _resolve_ai_liveries() -> void:
 				break
 
 
-func _setup_participant_defaults() -> void:
-	for i in range(race_config.participants.size()):
-		var participant := race_config.participants[i]
-
-		if not participant.has("car_id") or not CarCatalog.has_car(String(participant["car_id"])):
-			participant["car_id"] = _default_car_id()
-
-		if String(participant.get("color_id", "")).is_empty():
-			participant["color_id"] = colors[0]["id"]
-
-		race_config.participants[i] = participant
-
-	# Écran commun : chaque participant reçoit une livrée distincte.
-	for i in range(race_config.participants.size()):
-		_ensure_unique_livery(i)
-
-
-## Si la livrée (modèle + couleur) du participant est déjà prise,
-## lui attribue la première couleur libre pour ce modèle.
-func _ensure_unique_livery(index: int) -> void:
-	if not race_config.requires_unique_liveries():
-		return
-
-	var participant := race_config.participants[index]
-
-	if not bool(participant.get("enabled", true)):
-		return
-
-	var car_id := String(participant.get("car_id", ""))
-
-	if not race_config.is_livery_taken(
-		car_id,
-		String(participant.get("color_id", "")),
-		index
-	):
-		return
-
-	var free_color := race_config.find_free_color(
-		car_id,
-		index,
-		_get_color_ids()
-	)
-
-	if not free_color.is_empty():
-		participant["color_id"] = free_color
-		race_config.participants[index] = participant
-
-
 func _get_color_ids() -> Array:
 	var ids: Array = []
 
@@ -557,6 +480,29 @@ func _get_color_ids() -> Array:
 		ids.append(String(color_data["id"]))
 
 	return ids
+
+
+## Valeurs brutes des caractéristiques d'une voiture, dans l'ordre STATS.
+static func get_car_stats(car: CarDefinition) -> Array[float]:
+	return [
+		car.max_speed,
+		car.engine_force,
+		car.brake_force,
+		car.lateral_grip + 2.0 * car.lateral_grip_at_high_speed
+	]
+
+
+func _setup_stat_maxima() -> void:
+	_stat_max.clear()
+
+	for i in range(STATS.size()):
+		_stat_max.append(0.0)
+
+	for car in cars:
+		var values := get_car_stats(car)
+
+		for i in range(values.size()):
+			_stat_max[i] = maxf(_stat_max[i], values[i])
 
 
 func _refresh_start_button() -> void:
@@ -594,499 +540,6 @@ func _refresh_lobby_help() -> void:
 		text += " — tout le monde « prêt » pour continuer"
 
 	help_label.text = text
-
-
-func _setup_car_grid() -> void:
-	for child in car_grid.get_children():
-		child.queue_free()
-
-	for car: CarDefinition in cars:
-		var button := Button.new()
-
-		button.text = car.display_name
-		button.set_meta("car_id", car.id)
-
-		button.custom_minimum_size = Vector2(150, 60)
-		button.focus_mode = Control.FOCUS_ALL
-
-		button.pressed.connect(
-			_on_car_selected.bind(car.id, car.display_name)
-		)
-
-		car_grid.add_child(button)
-
-
-func _setup_color_grid() -> void:
-	for child in color_grid.get_children():
-		child.queue_free()
-
-	for color_data: Dictionary in colors:
-		var button := Button.new()
-
-		button.text = color_data["name"]
-		button.custom_minimum_size = Vector2(110, 50)
-		button.focus_mode = Control.FOCUS_ALL
-
-		_apply_color_button_style(
-			button,
-			color_data["color"]
-		)
-
-		button.pressed.connect(
-			_on_color_selected.bind(color_data["id"])
-		)
-
-		color_grid.add_child(button)
-
-
-func _apply_color_button_style(
-	button: Button,
-	color: Color
-) -> void:
-
-	var normal := StyleBoxFlat.new()
-	normal.bg_color = color
-	normal.corner_radius_top_left = 6
-	normal.corner_radius_top_right = 6
-	normal.corner_radius_bottom_left = 6
-	normal.corner_radius_bottom_right = 6
-
-	button.add_theme_stylebox_override(
-		"normal",
-		normal
-	)
-
-	var hover := normal.duplicate()
-	hover.bg_color = color.lightened(0.12)
-
-	button.add_theme_stylebox_override(
-		"hover",
-		hover
-	)
-
-	var pressed := normal.duplicate()
-	pressed.bg_color = color.darkened(0.12)
-
-	button.add_theme_stylebox_override(
-		"pressed",
-		pressed
-	)
-
-
-func _refresh_participant_list() -> void:
-	for child in participant_list.get_children():
-		child.queue_free()
-
-	for i in range(race_config.participants.size()):
-		var participant := race_config.participants[i]
-
-		var is_ai: bool = bool(
-			participant.get("is_ai", false)
-		)
-
-		var enabled: bool = bool(
-			participant.get("enabled", true)
-		)
-
-		var hbox := HBoxContainer.new()
-
-		var select_button := Button.new()
-
-		select_button.text = _get_participant_display_text(
-			participant,
-			i
-		)
-
-		select_button.custom_minimum_size = Vector2(0, 60)
-		select_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		select_button.focus_mode = Control.FOCUS_ALL
-
-		# Une IA désactivée reste visible mais ne peut pas
-		# être sélectionnée pour modifier sa voiture/couleur.
-		select_button.disabled = is_ai and not enabled
-
-		select_button.pressed.connect(
-			_select_participant.bind(i)
-		)
-
-		hbox.add_child(select_button)
-
-		if is_ai:
-			var toggle_button := Button.new()
-
-			toggle_button.text = (
-				"Désactiver"
-				if enabled
-				else "Activer"
-			)
-
-			toggle_button.custom_minimum_size = Vector2(110, 60)
-			toggle_button.focus_mode = Control.FOCUS_ALL
-
-			toggle_button.pressed.connect(
-				_on_toggle_pressed.bind(i)
-			)
-			
-			toggle_button.add_to_group("audio_back")
-
-			hbox.add_child(toggle_button)
-
-			# Aspect visuel d'une IA désactivée.
-			if not enabled:
-				select_button.modulate = Color(
-					0.55,
-					0.55,
-					0.55,
-					1.0
-				)
-
-		participant_list.add_child(hbox)
-
-
-func _get_participant_display_text(
-	participant: Dictionary,
-	index: int
-) -> String:
-
-	var nickname := String(
-		participant.get(
-			"nickname",
-			"Participant %d" % (index + 1)
-		)
-	)
-
-	var car_id := String(
-		participant.get("car_id", "")
-	)
-
-	var color_id := String(
-		participant.get("color_id", "")
-	)
-
-	var car := CarCatalog.get_car(car_id)
-	var color := ColorCatalog.get_color(color_id)
-
-	var car_name := "?"
-	if car != null:
-		car_name = car.display_name
-
-	var color_name := "?"
-	if not color.is_empty():
-		color_name = color["name"]
-
-	var ai_text := ""
-
-	if bool(participant.get("is_ai", false)):
-		ai_text = " [IA]"
-
-	return "%d. %s%s — %s / %s" % [
-		index + 1,
-		nickname,
-		ai_text,
-		car_name,
-		color_name
-	]
-
-
-func _select_participant(index: int) -> void:
-	if index < 0 or index >= race_config.participants.size():
-		return
-
-	selected_participant_index = index
-
-	var participant := race_config.participants[index]
-
-	selected_participant_label.text = String(
-		participant.get(
-			"nickname",
-			"Participant %d" % (index + 1)
-		)
-	)
-
-	_refresh_car_buttons()
-	_refresh_color_buttons()
-	_refresh_preview()
-
-func _on_toggle_pressed(index: int) -> void:
-	if index < 0 or index >= race_config.participants.size():
-		return
-
-	var participant := race_config.participants[index]
-
-	if not bool(participant.get("is_ai", false)):
-		return
-
-	var enabled := bool(
-		participant.get("enabled", true)
-	)
-
-	participant["enabled"] = not enabled
-
-	race_config.participants[index] = participant
-
-	# Une IA réactivée ne doit pas reprendre une livrée déjà utilisée.
-	_ensure_unique_livery(index)
-
-	_refresh_participant_list()
-
-	_refresh_car_buttons()
-	_refresh_color_buttons()
-	_refresh_preview()
-	_refresh_start_button()
-	focus_manager.set_focus(back_button)
-
-func _refresh_car_buttons() -> void:
-	if selected_participant_index < 0:
-		return
-
-	var participant := race_config.participants[
-		selected_participant_index
-	]
-
-	var selected_car_id := String(
-		participant.get("car_id", "")
-	)
-
-	for child in car_grid.get_children():
-		var button := child as Button
-
-		if button == null:
-			continue
-
-		var car_id := String(
-			button.get_meta("car_id", "")
-		)
-
-		var car := CarCatalog.get_car(car_id)
-
-		if car == null:
-			continue
-
-		button.text = (
-			"✓ " + car.display_name
-			if car.id == selected_car_id
-			else car.display_name
-		)
-
-
-func _find_car_by_display_name(
-	display_name: String
-) -> CarDefinition:
-
-	for car: CarDefinition in cars:
-		if car.display_name == display_name:
-			return car
-
-	return null
-
-
-func _refresh_color_buttons() -> void:
-	if selected_participant_index < 0:
-		return
-
-	var participant := race_config.participants[
-		selected_participant_index
-	]
-
-	var selected_color_id := String(
-		participant.get("color_id", "")
-	)
-
-	var car_id := String(participant.get("car_id", ""))
-
-	for i in range(color_grid.get_child_count()):
-		var button := color_grid.get_child(i) as Button
-
-		if button == null:
-			continue
-
-		var color_data: Dictionary = colors[i]
-
-		var color_id := String(
-			color_data["id"]
-		)
-
-		var prefix := "✓ " if color_id == selected_color_id else ""
-
-		# Écran commun : couleur déjà prise pour ce modèle.
-		var taken: bool = (
-			race_config.requires_unique_liveries()
-			and race_config.is_livery_taken(
-				car_id,
-				color_id,
-				selected_participant_index
-			)
-		)
-
-		button.disabled = taken
-
-		button.text = prefix + String(
-			color_data["name"]
-		) + (" (prise)" if taken else "")
-
-
-func _on_car_selected(car_id: String, car_name: String) -> void:
-	if selected_participant_index < 0:
-		return
-
-	race_config.participants[
-		selected_participant_index
-	]["car_id"] = car_id
-	
-	race_config.participants[
-		selected_participant_index
-	]["car_name"] = car_name
-
-	# Nouveau modèle : la couleur actuelle peut y être déjà prise.
-	_ensure_unique_livery(selected_participant_index)
-
-	_refresh_participant_list()
-	_refresh_car_buttons()
-	_refresh_color_buttons()
-	_refresh_preview()
-	_refresh_start_button()
-
-
-func _on_color_selected(color_id: String) -> void:
-	if selected_participant_index < 0:
-		return
-
-	var car_id := String(
-		race_config.participants[selected_participant_index].get("car_id", "")
-	)
-
-	if (
-		race_config.requires_unique_liveries()
-		and race_config.is_livery_taken(
-			car_id,
-			color_id,
-			selected_participant_index
-		)
-	):
-		return
-
-	race_config.participants[
-		selected_participant_index
-	]["color_id"] = color_id
-
-	_refresh_participant_list()
-	_refresh_color_buttons()
-	_refresh_preview()
-	_refresh_start_button()
-
-
-## Valeurs brutes des caractéristiques d'une voiture, dans l'ordre STATS.
-static func get_car_stats(car: CarDefinition) -> Array[float]:
-	return [
-		car.max_speed,
-		car.engine_force,
-		car.brake_force,
-		# Adhérence : de base et à haute vitesse (qui compte double).
-		car.lateral_grip + 2.0 * car.lateral_grip_at_high_speed
-	]
-
-
-func _setup_stat_bars() -> void:
-	_stat_max.clear()
-
-	for i in range(STATS.size()):
-		_stat_max.append(0.0)
-
-	for car in cars:
-		var values := get_car_stats(car)
-
-		for i in range(values.size()):
-			_stat_max[i] = maxf(_stat_max[i], values[i])
-
-	var grid := GridContainer.new()
-	grid.name = "StatBars"
-	grid.columns = 2
-	grid.add_theme_constant_override("h_separation", 16)
-	grid.add_theme_constant_override("v_separation", 6)
-
-	# Sous la description, dans le panneau d'aperçu.
-	var preview_box := car_description_label.get_parent()
-	preview_box.add_child(grid)
-	preview_box.move_child(grid, car_description_label.get_index() + 1)
-
-	_stat_bars.clear()
-
-	for stat in STATS:
-		var label := Label.new()
-		label.text = stat["name"]
-		label.add_theme_font_size_override("font_size", 22)
-		grid.add_child(label)
-
-		var bar := ProgressBar.new()
-		bar.min_value = 0.0
-		bar.max_value = 100.0
-		bar.show_percentage = false
-		bar.custom_minimum_size = Vector2(260, 18)
-		bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-
-		var background := StyleBoxFlat.new()
-		background.bg_color = Color(0, 0, 0, 0.45)
-		background.set_corner_radius_all(4)
-		bar.add_theme_stylebox_override("background", background)
-
-		var fill := StyleBoxFlat.new()
-		fill.bg_color = stat["color"]
-		fill.set_corner_radius_all(4)
-		bar.add_theme_stylebox_override("fill", fill)
-
-		grid.add_child(bar)
-		_stat_bars.append(bar)
-
-
-func _refresh_stat_bars(car: CarDefinition) -> void:
-	if car == null:
-		for bar in _stat_bars:
-			bar.value = 0.0
-		return
-
-	var values := get_car_stats(car)
-
-	for i in range(_stat_bars.size()):
-		# 10 % minimum pour que la barre reste visible.
-		var ratio := values[i] / _stat_max[i] if _stat_max[i] > 0.0 else 0.0
-		_stat_bars[i].value = clampf(ratio, 0.1, 1.0) * 100.0
-
-
-func _refresh_preview() -> void:
-	if selected_participant_index < 0:
-		return
-
-	var participant := race_config.participants[
-		selected_participant_index
-	]
-
-	var car := CarCatalog.get_car(
-		String(participant.get("car_id", ""))
-	)
-
-	_refresh_stat_bars(car)
-
-	if car == null:
-		car_name_label.text = "Voiture inconnue"
-		car_description_label.text = ""
-		preview_image.texture = null
-		return
-
-	car_name_label.text = car.display_name
-	car_description_label.text = car.description
-
-	preview_image.texture = car.preview_texture
-
-	var color_data := ColorCatalog.get_color(
-		String(participant.get("color_id", ""))
-	)
-
-	if not color_data.is_empty():
-		preview_image.modulate = color_data["color"]
-		#preview_image.modulate = Color.WHITE
-	else:
-		preview_image.modulate = Color.WHITE
 
 
 func _on_start_pressed() -> void:

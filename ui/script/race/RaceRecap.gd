@@ -52,6 +52,13 @@ func _ready() -> void:
 	if race_config != null:
 		track_name_label.text = "Circuit : " + race_config.track.name
 
+		if race_config.is_championship():
+			if not GameManager.record_championship_race_results():
+				track_selection_button.disabled = true
+
+			restart_button.hide()
+			track_selection_button.text = "CLASSEMENT DU CHAMPIONNAT ›"
+
 		BestTimesManager.save_race_results(
 			results,
 			race_config
@@ -63,6 +70,17 @@ func _ready() -> void:
 
 
 func set_focus() -> void:
+	var race_config: RaceConfig = GameManager.get_active_race_config()
+
+	if race_config != null and race_config.is_championship():
+		focus_manager.set_horizontal_navigation([
+			main_menu_button,
+			track_selection_button
+		], false)
+		focus_manager.set_neighbors(main_menu_button, null, null, null, track_selection_button)
+		focus_manager.set_neighbors(track_selection_button, null, null, main_menu_button)
+		return
+
 	focus_manager.set_vertical_navigation([
 		results_list,
 		main_menu_button
@@ -412,6 +430,11 @@ func _on_restart_pressed() -> void:
 
 
 func _on_track_selection_pressed() -> void:
+	var race_config: RaceConfig = GameManager.get_active_race_config()
+
+	if race_config != null and race_config.is_championship():
+		NavigationManager.go("ChampionshipStandings")
+		return
 
 	GameManager.prepare_race_setup()
 

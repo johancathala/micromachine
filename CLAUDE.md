@@ -14,7 +14,7 @@ Skill de référence pour les patrons Godot : `.claude/skills/godot-gdscript-pat
 | `level/script/` | Course : `RaceController`, `TrackProgress` (parcours A*), stand (`PitStopManager`, `PitStop`, `PitLane`), élimination, fantômes. |
 | `level/script/ai/` | IA : `AIDriver` (pilote, garde-fou anti-collision, erreurs selon le niveau), `AIDriverRoster` (24 pilotes nommés : 8 par niveau, un par style), `AIStyle` (styles de pilotage), `RacingLine` (trajectoire), `AIPitStrategy` (pneus), `AILearning` + `ai_learning.json` (virages appris ; `GENERATION` à incrémenter quand le comportement de l'IA change). |
 | `perso/car/` | Voiture (`Car.gd`) et définitions (`definition/*.tres`) : groupe de performance (D à S) et déblocage en carrière (`unlocked_by_default`, `SaveManager.unlock_car`). |
-| `ui/` | Menus. Parcours de course : Mode (`RaceModeSelect`) → Joueurs (`CarSelection`) → IA (`AISetup`, classique et élimination) → Circuit (`RaceSetup`) → Course. |
+| `ui/` | Menus. Parcours de course : Mode (`RaceModeSelect`) → Joueurs (`CarSelection`) → IA (`AISetup`, classique et élimination) → Circuit (`RaceSetup`) → Course. Le programme peut répéter un circuit; en classique, chaque épreuve conserve son propre nombre de tours. Un programme vide bloque le départ. Plusieurs épreuves forment un championnat avec classement cumulé. |
 | `tools/track/` | Générateurs lancés sans fenêtre (variantes de Brissac, élargissement des portes, séparation carte / circuit, aperçus). |
 
 ## Règles
