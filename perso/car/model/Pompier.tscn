@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://b7ct1wdt2j6it"]
 
 [ext_resource type="PackedScene" uid="uid://y33mux4t4ctc" path="res://perso/car/model/CarModel.tscn" id="1_bvpu0"]
-[ext_resource type="Texture2D" uid="uid://2csx3gd1l0rn" path="res://perso/car/sprite/Car_3_32x32_5.png" id="2_o0b0v"]
+[ext_resource type="Texture2D" uid="uid://dmvy2ulhbyxks" path="res://perso/car/sprite/Cars_32x32/Car_3_32x32_5.png" id="2_o0b0v"]
 [ext_resource type="Texture2D" uid="uid://cal5pvfuj7mr2" path="res://perso/car/sprite/Fire_Truck_32x32/Fire_Truck_2_Going_Down_32x32.png" id="2_q54os"]
 [ext_resource type="AudioStream" uid="uid://da5esuwqgoelq" path="res://perso/car/sound/VEHSkid_Crissement de pneus 3 (ID 2370)_LaSonotheque.fr.wav" id="3_q54os"]
 [ext_resource type="AudioStream" uid="uid://ha6asmjf6ppy" path="res://effects/sound/engine_idle/Low Motorcycle.mp3" id="4_bkvdi"]
