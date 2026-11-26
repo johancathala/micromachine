@@ -10,11 +10,11 @@ const GROUP_ORDER := ["D", "C", "B", "A", "S"]
 const CARS: Array[CarDefinition] = [
 	preload("res://perso/car/definition/SaxoBic.tres"),
 	preload("res://perso/car/definition/Clio.tres"),
+	preload("res://perso/car/definition/Poubelle.tres"),
 	preload("res://perso/car/definition/Dacia.tres"),
 	preload("res://perso/car/definition/Laguna.tres"),
 	preload("res://perso/car/definition/ClioPrepa.tres"),
 	preload("res://perso/car/definition/Pompier.tres"),
-	preload("res://perso/car/definition/Poubelle.tres"),
 	preload("res://perso/car/definition/BMW.tres"),
 	preload("res://perso/car/definition/GTI.tres"),
 	preload("res://perso/car/definition/Police.tres"),
